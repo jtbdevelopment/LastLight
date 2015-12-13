@@ -34,7 +34,8 @@ angular.module('uiApp')
               map.addTilesetImage('hyptosis_tile-art-batch-1');
 
               this.blockLayer = map.createLayer('Block Layer');
-              map.createLayer('Path');
+              this.blockLayer.tint = 0x00264d;
+              map.createLayer('Path').tint = 0x00264d;
               this.blockLayer.resizeWorld();
               map.setCollisionBetween(573,575);
               map.setCollisionBetween(208,208);
@@ -72,7 +73,7 @@ angular.module('uiApp')
           render: function() {
               //this.game.debug.body(this.player);
               //this.game.debug.cameraInfo(game.camera);
-              //this.blockLayer.debug = true;
+              this.blockLayer.debug = true;
           }
       };
 
