@@ -20,6 +20,7 @@ angular.module('uiApp')
           this.game = game;
       };
       gameStates.TestMaze.prototype = {
+          //  TODO - contemplate lighting like http://www.html5gamedevs.com/topic/3052-phaser-and-2d-lighting/
           preload: function () {
 
               this.load.tilemap('testmaze', 'assets/tilemaps/testoutdoor.json', null, Phaser.Tilemap.TILED_JSON);
@@ -73,7 +74,7 @@ angular.module('uiApp')
           render: function() {
               //this.game.debug.body(this.player);
               //this.game.debug.cameraInfo(game.camera);
-              this.blockLayer.debug = true;
+              //this.blockLayer.debug = true;
           }
       };
 
