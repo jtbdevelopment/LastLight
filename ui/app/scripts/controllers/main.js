@@ -35,8 +35,8 @@ angular.module('uiApp')
                 this.load.tilemap('testmaze', 'assets/tilemaps/testoutdoor.json', null, Phaser.Tilemap.TILED_JSON);
 
                 this.load.image('hyptosis_tile-art-batch-1', 'images/hyptosis_tile-art-batch-1.png');
-                this.load.image('player', 'images/HB_Dwarf05.PNG');
-                this.load.image('demon', 'images/DemonMinorFighter.PNG');
+                this.load.image('player', 'images/HB_Dwarf05.png');
+                this.load.image('demon', 'images/DemonMinorFighter.png');
             },
 
             create: function () {
