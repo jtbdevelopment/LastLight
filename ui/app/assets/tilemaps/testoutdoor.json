@@ -6,7 +6,7 @@
          "name":"Block Layer",
          "opacity":1,
          "type":"tilelayer",
-         "visible":true,
+         "visible":false,
          "width":60,
          "x":0,
          "y":0
@@ -21,8 +21,68 @@
          "width":60,
          "x":0,
          "y":0
+        }, 
+        {
+         "draworder":"topdown",
+         "height":40,
+         "name":"Object Layer",
+         "objects":[
+                {
+                 "gid":782,
+                 "height":32,
+                 "id":8,
+                 "name":"",
+                 "properties":
+                    {
+
+                    },
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":32,
+                 "x":62,
+                 "y":918
+                }, 
+                {
+                 "gid":782,
+                 "height":32,
+                 "id":9,
+                 "name":"",
+                 "properties":
+                    {
+
+                    },
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":32,
+                 "x":880,
+                 "y":775
+                }, 
+                {
+                 "gid":782,
+                 "height":32,
+                 "id":10,
+                 "name":"",
+                 "properties":
+                    {
+
+                    },
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":32,
+                 "x":1730,
+                 "y":669
+                }],
+         "opacity":1,
+         "type":"objectgroup",
+         "visible":true,
+         "width":60,
+         "x":0,
+         "y":0
         }],
- "nextobjectid":7,
+ "nextobjectid":11,
  "orientation":"orthogonal",
  "properties":
     {

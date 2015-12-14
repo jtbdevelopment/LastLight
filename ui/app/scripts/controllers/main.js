@@ -13,10 +13,10 @@ angular.module('uiApp')
         var game = new Phaser.Game(1600, 800, Phaser.AUTO, 'phaser');
 
         var gameStates = {};
-        gameStates.TitleScreen = function() {
+        gameStates.TitleScreen = function () {
         };
         gameStates.TitleScreen.prototype = {
-            create: function() {
+            create: function () {
                 this.game.state.start('TestMaze');
             }
         };
@@ -63,13 +63,10 @@ angular.module('uiApp')
                 this.game.camera.follow(this.player);
 
                 this.enemyGroup = this.game.add.group();
-                var demon = this.game.add.sprite(112, 944, 'demon');
-                this.enemyGroup.add(demon);
-                this.enemies.push(demon);
-                demon = this.game.add.sprite(860, 740, 'demon');
-                this.enemyGroup.add(demon);
-                this.enemies.push(demon);
-                angular.forEach(this.enemies, function (enemy) {
+                this.enemyGroup.enableBody = true;
+
+                map.createFromObjects('Object Layer', 782, 'demon', 0, true, false, this.enemyGroup);
+                angular.forEach(this.enemyGroup.children, function (enemy) {
                     enemy.height = 32;
                     enemy.width = 32;
                     enemy.initialX = enemy.x;
@@ -80,7 +77,7 @@ angular.module('uiApp')
                     enemy.maxY = enemy.initialY + 64;
                     enemy.isChasing = false;
                     enemy.anchor.set(0.5);
-                    game.physics.arcade.enable(enemy, Phaser.Physics.ARCADE, true);
+                    this.game.physics.arcade.enable(enemy, Phaser.Physics.ARCADE, true);
                     enemy.body.setSize(32, 32, 0, 0);
                     enemy.body.bounce.set(1);
                     enemy.body.collideWorldBounds = true;
@@ -88,6 +85,7 @@ angular.module('uiApp')
                     enemy.body.velocity.y = 30;
                     this.game.physics.arcade.moveToXY(enemy, enemy.x + 64, enemy.y - 64);
                 }, this);
+
                 this.game.camera.follow(this.player);
 
                 this.cursors = this.game.input.keyboard.createCursorKeys();
@@ -104,10 +102,10 @@ angular.module('uiApp')
                     } else {
                         var compareX = Math.round(enemy.x * 100) / 100;
                         var compareY = Math.round(enemy.y * 100) / 100;
-                            if ((compareX <= enemy.minX && enemy.body.velocity.x < 0) ||
-                                (compareX >= enemy.maxX && enemy.body.velocity.x > 0)) {
-                                enemy.body.velocity.x *= -1;
-                            }
+                        if ((compareX <= enemy.minX && enemy.body.velocity.x < 0) ||
+                            (compareX >= enemy.maxX && enemy.body.velocity.x > 0)) {
+                            enemy.body.velocity.x *= -1;
+                        }
                         if ((compareY <= enemy.minY && enemy.body.velocity.y < 0) ||
                             (compareY >= enemy.maxY && enemy.body.velocity.y > 0)) {
                             enemy.body.velocity.y *= -1;
@@ -129,15 +127,15 @@ angular.module('uiApp')
             },
 
             /*
-            render: function () {
-                //this.game.debug.body(this.player);
-                this.game.debug.bodyInfo(this.enemies[0], 32, 32);
-                //this.game.debug.cameraInfo(game.camera);
-                //this.blockLayer.debug = true;
-                angular.forEach(this.enemies, function (enemy) {
-                    this.game.debug.body(enemy);
-                }, this);
-            },
+             render: function () {
+             //this.game.debug.body(this.player);
+             this.game.debug.bodyInfo(this.enemies[0], 32, 32);
+             //this.game.debug.cameraInfo(game.camera);
+             //this.blockLayer.debug = true;
+             angular.forEach(this.enemies, function (enemy) {
+             this.game.debug.body(enemy);
+             }, this);
+             },
              */
 
             death: function () {
