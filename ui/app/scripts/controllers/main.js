@@ -13,19 +13,25 @@ angular.module('uiApp')
         var game = new Phaser.Game(1600, 800, Phaser.AUTO, 'phaser');
 
         var gameStates = {};
-        gameStates.TestMaze = function (game) {
+        gameStates.TitleScreen = function() {
+        };
+        gameStates.TitleScreen.prototype = {
+            create: function() {
+                this.game.state.start('TestMaze');
+            }
+        };
+
+        gameStates.TestMaze = function () {
             this.player = null;
             this.cursors = null;
             this.blockLayer = null;
-            this.enemy = [];
+            this.enemies = [];
             this.enemyGroup = null;
-            this.game = game;
         };
         gameStates.TestMaze.prototype = {
             //  TODO - contemplate lighting like http://www.html5gamedevs.com/topic/3052-phaser-and-2d-lighting/
             //  TODO - or http://gamemechanicexplorer.com/#lighting-1
             preload: function () {
-
                 this.load.tilemap('testmaze', 'assets/tilemaps/testoutdoor.json', null, Phaser.Tilemap.TILED_JSON);
 
                 this.load.image('hyptosis_tile-art-batch-1', 'images/hyptosis_tile-art-batch-1.png');
@@ -38,8 +44,9 @@ angular.module('uiApp')
                 map.addTilesetImage('hyptosis_tile-art-batch-1');
 
                 this.blockLayer = map.createLayer('Block Layer');
-                this.blockLayer.tint = 0x00264d;
-                map.createLayer('Path').tint = 0x00264d;
+                //  TODO - darken
+                //this.blockLayer.tint = 0x00264d;
+                map.createLayer('Path');//.tint = 0x00264d;
                 this.blockLayer.resizeWorld();
                 map.setCollision([574, 575, 208, 79, 142, 146, 177]);
 
@@ -58,16 +65,29 @@ angular.module('uiApp')
                 this.enemyGroup = this.game.add.group();
                 var demon = this.game.add.sprite(112, 944, 'demon');
                 this.enemyGroup.add(demon);
-                this.enemy.push(demon);
-                angular.forEach(this.enemy, function (enemy) {
+                this.enemies.push(demon);
+                demon = this.game.add.sprite(860, 740, 'demon');
+                this.enemyGroup.add(demon);
+                this.enemies.push(demon);
+                angular.forEach(this.enemies, function (enemy) {
                     enemy.height = 32;
                     enemy.width = 32;
+                    enemy.initialX = enemy.x;
+                    enemy.initialY = enemy.y;
+                    enemy.minX = enemy.initialX - 64;
+                    enemy.maxX = enemy.initialX + 64;
+                    enemy.minY = enemy.initialY - 64;
+                    enemy.maxY = enemy.initialY + 64;
+                    enemy.isChasing = false;
                     enemy.anchor.set(0.5);
                     game.physics.arcade.enable(enemy, Phaser.Physics.ARCADE, true);
                     enemy.body.setSize(32, 32, 0, 0);
+                    enemy.body.bounce.set(1);
                     enemy.body.collideWorldBounds = true;
-                    game.add.tween(enemy).to({y: enemy.y -64, x: enemy.x + 64}, 1000, Phaser.Easing.Linear.None, true, undefined, -1, true);
-                });
+                    enemy.body.velocity.x = 30;
+                    enemy.body.velocity.y = 30;
+                    this.game.physics.arcade.moveToXY(enemy, enemy.x + 64, enemy.y - 64);
+                }, this);
                 this.game.camera.follow(this.player);
 
                 this.cursors = this.game.input.keyboard.createCursorKeys();
@@ -78,6 +98,22 @@ angular.module('uiApp')
                 this.game.physics.arcade.collide(this.enemyGroup, this.blockLayer);
                 this.game.physics.arcade.collide(this.player, this.enemyGroup, this.death, undefined, this);
                 this.player.body.velocity.set(0);
+                angular.forEach(this.enemies, function (enemy) {
+                    if (enemy.isChasing) {
+                        //  TODO
+                    } else {
+                        var compareX = Math.round(enemy.x * 100) / 100;
+                        var compareY = Math.round(enemy.y * 100) / 100;
+                            if ((compareX <= enemy.minX && enemy.body.velocity.x < 0) ||
+                                (compareX >= enemy.maxX && enemy.body.velocity.x > 0)) {
+                                enemy.body.velocity.x *= -1;
+                            }
+                        if ((compareY <= enemy.minY && enemy.body.velocity.y < 0) ||
+                            (compareY >= enemy.maxY && enemy.body.velocity.y > 0)) {
+                            enemy.body.velocity.y *= -1;
+                        }
+                    }
+                }, this);
                 if (this.cursors.up.isDown) {
                     this.player.body.velocity.y = -75;
                 }
@@ -92,27 +128,26 @@ angular.module('uiApp')
                 }
             },
 
+            /*
             render: function () {
-                this.game.debug.body(this.player);
-                this.game.debug.cameraInfo(game.camera);
-                this.blockLayer.debug = true;
-                angular.forEach(this.enemy, function (enemy) {
-                    game.debug.body(enemy);
-                });
+                //this.game.debug.body(this.player);
+                this.game.debug.bodyInfo(this.enemies[0], 32, 32);
+                //this.game.debug.cameraInfo(game.camera);
+                //this.blockLayer.debug = true;
+                angular.forEach(this.enemies, function (enemy) {
+                    this.game.debug.body(enemy);
+                }, this);
             },
+             */
 
-            death: function (sprite1, sprite2) {
+            death: function () {
                 this.player.kill();
-                /*
-                sprite1.body.velocity.set(0);
-                sprite2.body.velocity.set(0);
-                sprite1.kill();
-                */
-                this.shutdown();
+                this.game.state.start('TitleScreen');
             }
         };
 
+        game.state.add('TitleScreen', gameStates.TitleScreen);
         game.state.add('TestMaze', gameStates.TestMaze);
-        game.state.start('TestMaze');
+        game.state.start('TitleScreen');
     });
 
