@@ -25,7 +25,6 @@ angular.module('uiApp')
             this.player = null;
             this.cursors = null;
             this.blockLayer = null;
-            this.enemies = [];
             this.enemyGroup = null;
         };
         gameStates.TestMaze.prototype = {
@@ -81,9 +80,8 @@ angular.module('uiApp')
                     enemy.body.setSize(32, 32, 0, 0);
                     enemy.body.bounce.set(1);
                     enemy.body.collideWorldBounds = true;
-                    enemy.body.velocity.x = 30;
-                    enemy.body.velocity.y = 30;
-                    this.game.physics.arcade.moveToXY(enemy, enemy.x + 64, enemy.y - 64);
+                    enemy.body.velocity.x = 25;
+                    enemy.body.velocity.y = 25;
                 }, this);
 
                 this.game.camera.follow(this.player);
@@ -96,7 +94,7 @@ angular.module('uiApp')
                 this.game.physics.arcade.collide(this.enemyGroup, this.blockLayer);
                 this.game.physics.arcade.collide(this.player, this.enemyGroup, this.death, undefined, this);
                 this.player.body.velocity.set(0);
-                angular.forEach(this.enemies, function (enemy) {
+                angular.forEach(this.enemyGroup.children, function (enemy) {
                     if (enemy.isChasing) {
                         //  TODO
                     } else {
@@ -129,7 +127,6 @@ angular.module('uiApp')
             /*
              render: function () {
              //this.game.debug.body(this.player);
-             this.game.debug.bodyInfo(this.enemies[0], 32, 32);
              //this.game.debug.cameraInfo(game.camera);
              //this.blockLayer.debug = true;
              angular.forEach(this.enemies, function (enemy) {
