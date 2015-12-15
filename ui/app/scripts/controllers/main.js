@@ -34,7 +34,7 @@ angular.module('uiApp')
             preload: function () {
                 this.load.tilemap('testmaze', 'assets/tilemaps/testoutdoor.json', null, Phaser.Tilemap.TILED_JSON);
 
-                this.load.image('hyptosis_tile-art-batch-1', 'images/hyptosis_tile-art-batch-1.png');
+                this.load.spritesheet('hyptosis_tile-art-batch-1', 'images/hyptosis_tile-art-batch-1.png', 32,32);
                 this.load.image('player', 'images/HB_Dwarf05.png');
                 this.load.image('demon', 'images/DemonMinorFighter.png');
             },
@@ -67,9 +67,8 @@ angular.module('uiApp')
 
                 this.rockGroup = this.game.add.group();
                 this.rockGroup.enableBody = true;
-                //  TODO - actual rock
                 //  TODO - would work better as a hexagon I think
-                map.createFromObjects('Object Layer', 214, 'player', 0, true, false, this.rockGroup);
+                map.createFromObjects('Object Layer', 214, 'hyptosis_tile-art-batch-1', 214, true, false, this.rockGroup);
                 angular.forEach(this.rockGroup.children, function (rock) {
                     rock.height = 40;
                     rock.width = 40;
@@ -146,6 +145,7 @@ angular.module('uiApp')
             },
 
             render: function () {
+                /*
                 this.game.debug.body(this.player);
                 this.game.debug.cameraInfo(game.camera);
                 this.blockLayer.debug = true;
@@ -155,6 +155,7 @@ angular.module('uiApp')
                 angular.forEach(this.rockGroup.children, function (enemy) {
                     this.game.debug.body(enemy);
                 }, this);
+                */
             },
 
             death: function () {
