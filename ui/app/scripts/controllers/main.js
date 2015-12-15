@@ -26,6 +26,7 @@ angular.module('uiApp')
             this.cursors = null;
             this.blockLayer = null;
             this.enemyGroup = null;
+            this.rockGroup = null;
         };
         gameStates.TestMaze.prototype = {
             //  TODO - contemplate lighting like http://www.html5gamedevs.com/topic/3052-phaser-and-2d-lighting/
@@ -57,12 +58,30 @@ angular.module('uiApp')
                 this.player.width = 32;
                 this.player.anchor.set(0.5);
                 this.game.physics.arcade.enable(this.player, Phaser.Physics.ARCADE, true);
-                this.player.body.setSize(32, 32, 0, 0);
+                this.player.body.setSize(24, 28, 0, 0);
                 this.player.body.collideWorldBounds = true;
                 this.game.camera.follow(this.player);
 
                 this.enemyGroup = this.game.add.group();
                 this.enemyGroup.enableBody = true;
+
+                this.rockGroup = this.game.add.group();
+                this.rockGroup.enableBody = true;
+                //  TODO - actual rock
+                //  TODO - would work better as a hexagon I think
+                map.createFromObjects('Object Layer', 214, 'player', 0, true, false, this.rockGroup);
+                angular.forEach(this.rockGroup.children, function (rock) {
+                    rock.height = 40;
+                    rock.width = 40;
+                    rock.anchor.set(0.5);
+                    this.game.physics.arcade.enable(rock, Phaser.Physics.ARCADE, true);
+                    rock.body.setSize(28, 32, 0, 0);
+                    rock.body.bounce.set(0.1);
+                    rock.body.collideWorldBounds = true;
+                    rock.body.velocity.x = 0;
+                    rock.body.velocity.y = 0;
+                    rock.body.drag.setTo(150);
+                }, this);
 
                 map.createFromObjects('Object Layer', 782, 'demon', 0, true, false, this.enemyGroup);
                 angular.forEach(this.enemyGroup.children, function (enemy) {
@@ -80,8 +99,7 @@ angular.module('uiApp')
                     enemy.body.setSize(32, 32, 0, 0);
                     enemy.body.bounce.set(1);
                     enemy.body.collideWorldBounds = true;
-                    enemy.body.velocity.x = 25;
-                    enemy.body.velocity.y = 25;
+                    enemy.body.velocity.set(25);
                 }, this);
 
                 this.game.camera.follow(this.player);
@@ -90,8 +108,11 @@ angular.module('uiApp')
             },
 
             update: function () {
+                this.game.physics.arcade.collide(this.rockGroup, this.blockLayer);
                 this.game.physics.arcade.collide(this.player, this.blockLayer);
                 this.game.physics.arcade.collide(this.enemyGroup, this.blockLayer);
+                this.game.physics.arcade.collide(this.enemyGroup, this.rockGroup, this.noRockMove, undefined, this);
+                this.game.physics.arcade.collide(this.player, this.rockGroup);
                 this.game.physics.arcade.collide(this.player, this.enemyGroup, this.death, undefined, this);
                 this.player.body.velocity.set(0);
                 angular.forEach(this.enemyGroup.children, function (enemy) {
@@ -124,20 +145,26 @@ angular.module('uiApp')
                 }
             },
 
-            /*
-             render: function () {
-             //this.game.debug.body(this.player);
-             //this.game.debug.cameraInfo(game.camera);
-             //this.blockLayer.debug = true;
-             angular.forEach(this.enemies, function (enemy) {
-             this.game.debug.body(enemy);
-             }, this);
-             },
-             */
+            render: function () {
+                this.game.debug.body(this.player);
+                this.game.debug.cameraInfo(game.camera);
+                this.blockLayer.debug = true;
+                angular.forEach(this.enemyGroup.children, function (enemy) {
+                    this.game.debug.body(enemy);
+                }, this);
+                angular.forEach(this.rockGroup.children, function (enemy) {
+                    this.game.debug.body(enemy);
+                }, this);
+            },
 
             death: function () {
                 this.player.kill();
                 this.game.state.start('TitleScreen');
+            },
+
+            noRockMove: function(sprite1, sprite2) {
+                sprite2.body.velocity.set(0);
+                sprite1.body.velocity.set(25);
             }
         };
 
