@@ -117,14 +117,12 @@ angular.module('uiApp')
                 angular.forEach(this.rockGroup.children, function (rock) {
                     rock.height = 40;
                     rock.width = 40;
-                    //rock.body.debug = true;
                     rock.body.setRectangle(40, 40, 0, 0);
                     rock.body.collideWorldBounds = true;
                     rock.body.mass = 80;
                     rock.body.damping = 0.95;
                     rock.body.angularDamping = 0.85;
                     rock.body.setMaterial(rockMaterial);
-                    //rock.tint = 0x1f1b34;
                 }, this);
 
                 map.createFromObjects('Object Layer', 782, 'demon', 0, true, false, this.enemyGroup);
@@ -138,7 +136,6 @@ angular.module('uiApp')
                     enemy.minY = enemy.initialY - 64;
                     enemy.maxY = enemy.initialY + 64;
                     enemy.isChasing = false;
-                    //enemy.body.debug = true;
                     enemy.body.setCircle(11);
                     enemy.body.collideWorldBounds = true;
                     enemy.body.fixedRotation = true;
@@ -146,7 +143,6 @@ angular.module('uiApp')
                     enemy.body.velocity.y = 25;
                     enemy.body.setZeroDamping();
                     enemy.body.setMaterial(demonMaterial);
-                    //enemy.tint = 0x1f1b34;
                 }, this);
 
                 this.player.body.onBeginContact.add(this.death, this);
@@ -196,7 +192,7 @@ angular.module('uiApp')
 
                 this.shadowTexture.context.fillStyle = 'rgb(10, 10, 10)';
                 this.shadowTexture.context.fillRect(0, 0, this.game.world.width, this.game.world.height);
-                var radius = 100 + this.game.rnd.integerInRange(1,10),
+                var radius = 100 + this.game.rnd.integerInRange(1, 10),
                     heroX = this.player.x,
                     heroY = this.player.y;
 
@@ -210,7 +206,7 @@ angular.module('uiApp')
 
                 this.shadowTexture.context.beginPath();
                 this.shadowTexture.context.fillStyle = gradient;
-                this.shadowTexture.context.arc(heroX, heroY, radius, 0, Math.PI*2, false);
+                this.shadowTexture.context.arc(heroX, heroY, radius, 0, Math.PI * 2, false);
                 this.shadowTexture.context.fill();
 
                 // This just tells the engine it should update the texture cache
@@ -218,24 +214,26 @@ angular.module('uiApp')
 
             },
 
+/*
             render: function () {
-                /*
-                 this.game.debug.cameraInfo(game.camera, 0, 0);
-                 this.game.debug.spriteInfo(this.player, 400, 0);
-                 this.blockLayer.debug = true;
-                 var count = 0;
-                 angular.forEach(this.enemyGroup.children, function (child, index) {
-                 this.game.debug.spriteInfo(child, index * 350, 100);
-                 ++count;
-                 }, this);
-                 count = 0;
-                 angular.forEach(this.rockGroup.children, function (child, index) {
-                 this.game.debug.spriteInfo(child, index * 350, 200);
-                 ++count;
-                 }, this);
-                 */
+                this.game.debug.cameraInfo(game.camera, 0, 0);
+                this.game.debug.spriteInfo(this.player, 400, 0);
+                this.blockLayer.debug = true;
+                this.player.body.debug = true;
+                var count = 0;
+                angular.forEach(this.enemyGroup.children, function (child, index) {
+                    child.body.debug = true;
+                    this.game.debug.spriteInfo(child, index * 350, 100);
+                    ++count;
+                }, this);
+                count = 0;
+                angular.forEach(this.rockGroup.children, function (child, index) {
+                    child.body.debug = true;
+                    this.game.debug.spriteInfo(child, index * 350, 200);
+                    ++count;
+                }, this);
             },
-
+*/
             death: function (body) {
                 if (
                     angular.isDefined(body) &&
