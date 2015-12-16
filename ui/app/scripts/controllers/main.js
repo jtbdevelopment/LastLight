@@ -46,9 +46,7 @@ angular.module('uiApp')
                 map.addTilesetImage('hyptosis_tile-art-batch-1');
 
                 this.blockLayer = map.createLayer('Block Layer');
-                //  TODO - darken
-                this.blockLayer.tint = 0x1f1b34;
-                map.createLayer('Path').tint = 0x1f1b34;
+                map.createLayer('Path');
                 this.blockLayer.resizeWorld();
                 map.setCollision([574, 575, 208, 79, 142, 146, 177]);
 
@@ -69,7 +67,6 @@ angular.module('uiApp')
                 this.player.body.collideWorldBounds = true;
                 this.player.body.mass = 10;
                 this.player.body.fixedRotation = true;
-                this.player.tint = 0x1f1b34;
 
                 var playerMaterial = game.physics.p2.createMaterial('playerMaterial', this.player.body);
                 var worldMaterial = game.physics.p2.createMaterial('worldMaterial');
@@ -127,7 +124,7 @@ angular.module('uiApp')
                     rock.body.damping = 0.95;
                     rock.body.angularDamping = 0.85;
                     rock.body.setMaterial(rockMaterial);
-                    rock.tint = 0x1f1b34;
+                    //rock.tint = 0x1f1b34;
                 }, this);
 
                 map.createFromObjects('Object Layer', 782, 'demon', 0, true, false, this.enemyGroup);
@@ -149,11 +146,15 @@ angular.module('uiApp')
                     enemy.body.velocity.y = 25;
                     enemy.body.setZeroDamping();
                     enemy.body.setMaterial(demonMaterial);
-                    enemy.tint = 0x1f1b34;
+                    //enemy.tint = 0x1f1b34;
                 }, this);
 
                 this.player.body.onBeginContact.add(this.death, this);
                 this.cursors = this.game.input.keyboard.createCursorKeys();
+
+                this.shadowTexture = this.game.add.bitmapData(this.game.world.width, this.game.world.height);
+                this.lightSprite = this.game.add.image(this.game.camera.x, this.game.camera.y, this.shadowTexture);
+                this.lightSprite.blendMode = Phaser.blendModes.MULTIPLY;
             },
 
             update: function () {
@@ -192,24 +193,47 @@ angular.module('uiApp')
                 if (this.cursors.right.isDown) {
                     this.player.body.moveRight(75);
                 }
+
+                this.shadowTexture.context.fillStyle = 'rgb(10, 10, 10)';
+                this.shadowTexture.context.fillRect(0, 0, this.game.world.width, this.game.world.height);
+                var radius = 100 + this.game.rnd.integerInRange(1,10),
+                    heroX = this.player.x,
+                    heroY = this.player.y;
+
+                // Draw circle of light
+                var gradient =
+                    this.shadowTexture.context.createRadialGradient(
+                        heroX, heroY, 100 * 0.25,
+                        heroX, heroY, radius);
+                gradient.addColorStop(0, 'rgba(255, 255, 255, 0.6)');
+                gradient.addColorStop(1, 'rgba(255, 255, 255, 0.0)');
+
+                this.shadowTexture.context.beginPath();
+                this.shadowTexture.context.fillStyle = gradient;
+                this.shadowTexture.context.arc(heroX, heroY, radius, 0, Math.PI*2, false);
+                this.shadowTexture.context.fill();
+
+                // This just tells the engine it should update the texture cache
+                this.shadowTexture.dirty = true;
+
             },
 
             render: function () {
-/*
-                this.game.debug.cameraInfo(game.camera, 0, 0);
-                this.game.debug.spriteInfo(this.player, 400, 0);
-                this.blockLayer.debug = true;
-                var count = 0;
-                angular.forEach(this.enemyGroup.children, function (child, index) {
-                    this.game.debug.spriteInfo(child, index * 350, 100);
-                    ++count;
-                }, this);
-                count = 0;
-                angular.forEach(this.rockGroup.children, function (child, index) {
-                    this.game.debug.spriteInfo(child, index * 350, 200);
-                    ++count;
-                }, this);
-*/
+                /*
+                 this.game.debug.cameraInfo(game.camera, 0, 0);
+                 this.game.debug.spriteInfo(this.player, 400, 0);
+                 this.blockLayer.debug = true;
+                 var count = 0;
+                 angular.forEach(this.enemyGroup.children, function (child, index) {
+                 this.game.debug.spriteInfo(child, index * 350, 100);
+                 ++count;
+                 }, this);
+                 count = 0;
+                 angular.forEach(this.rockGroup.children, function (child, index) {
+                 this.game.debug.spriteInfo(child, index * 350, 200);
+                 ++count;
+                 }, this);
+                 */
             },
 
             death: function (body) {
