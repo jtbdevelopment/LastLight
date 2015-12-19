@@ -28,12 +28,12 @@ angular.module('uiApp')
             this.ROCK_MASS = 80;
 
             this.DEMON_PATROL_SPEED = 25;
-            this.DEMON_CHASE_SPEED = 85;
+            this.DEMON_CHASE_SPEED = 90;
             this.DEMON_PATROL_RANGE = 64;
             this.DEMON_MAX_SIGHT = 100;
             this.DEMON_STOP_CHASING_AFTER = 10;
 
-            this.LIGHT_RADIUS = 100;
+            this.LIGHT_RADIUS = 40;
 
             this.DEBUG = false;
 
@@ -260,11 +260,11 @@ angular.module('uiApp')
                     }
                 } else {
                     this.enemyGroup.forEach(function (enemy) {
-                        enemy.body.setZeroVelocity()
+                        enemy.body.setZeroVelocity();
                     });
                 }
 
-                this.shadowTexture.context.fillStyle = 'rgb(40, 40, 80)';
+                this.shadowTexture.context.fillStyle = 'rgb(10, 20, 50)';
                 this.shadowTexture.context.fillRect(0, 0, this.game.world.width, this.game.world.height);
                 var radius = this.LIGHT_RADIUS + this.game.rnd.integerInRange(1, 10),
                     heroX = this.player.x,
@@ -274,7 +274,7 @@ angular.module('uiApp')
                 var gradient = this.shadowTexture.context.createRadialGradient(
                     heroX, heroY, this.LIGHT_RADIUS * 0.25,
                     heroX, heroY, radius);
-                gradient.addColorStop(0, 'rgba(200, 200, 200, 0.6)');
+                gradient.addColorStop(0, 'rgba(200, 200, 200, 0.5)');
                 gradient.addColorStop(1, 'rgba(200, 200, 200, 0.0)');
 
                 this.shadowTexture.context.beginPath();
