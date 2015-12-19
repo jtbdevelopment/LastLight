@@ -10,7 +10,7 @@
  */
 angular.module('uiApp')
     .controller('MainCtrl', function () {
-        var game = new Phaser.Game(1600, 800, Phaser.AUTO, 'phaser');
+        var game = new Phaser.Game(800, 400, Phaser.AUTO, 'phaser');
 
         var gameStates = {};
         gameStates.TitleScreen = function () {
@@ -22,6 +22,8 @@ angular.module('uiApp')
         };
 
         gameStates.TestMaze = function () {
+            this.PLAYER_START_X = 16;
+            this.PLAYER_START_Y = 1264;
             this.PLAYER_MOVE_SPEED = 75;
             this.PLAYER_MASS = 10;
 
@@ -33,7 +35,8 @@ angular.module('uiApp')
             this.DEMON_MAX_SIGHT = 100;
             this.DEMON_STOP_CHASING_AFTER = 10;
 
-            this.LIGHT_RADIUS = 40;
+            this.PLAYER_LIGHT_RADIUS = 40;
+            this.FINISH_LIGHT_RADIUS = 50;
 
             this.DEBUG = false;
 
@@ -42,6 +45,7 @@ angular.module('uiApp')
             this.blockLayer = null;
             this.enemyGroup = null;
             this.rockGroup = null;
+            this.finishGroup = null;
 
             this.tileHits = [];
         };
@@ -67,7 +71,19 @@ angular.module('uiApp')
                 this.blockLayer = map.createLayer('Block Layer');
                 map.createLayer('Path');
                 this.blockLayer.resizeWorld();
-                map.setCollision([574, 575, 208, 79, 142, 146, 177]);
+                var tileIds = [];
+                this.blockLayer.map.layers.forEach(function(layer) {
+                    layer.data.forEach(function(layerRow) {
+                        layerRow.forEach(function(layerCell) {
+                            if(layerCell.index > 0) {
+                                if(tileIds.indexOf(layerCell.index) < 0) {
+                                    tileIds.push(layerCell.index);
+                                }
+                            }
+                        });
+                    });
+                });
+                map.setCollision(tileIds);
 
 
                 this.game.physics.p2.convertTilemap(map, this.blockLayer);
@@ -77,7 +93,7 @@ angular.module('uiApp')
                 //  https://code.google.com/p/box2d-editor/
                 //  http://phaser.io/examples/v2/p2-physics/load-polygon-1
 
-                this.player = this.game.add.sprite(16, 1264, 'player');
+                this.player = this.game.add.sprite(this.PLAYER_START_X, this.PLAYER_START_Y, 'player');
                 this.game.physics.p2.enable(this.player);
                 this.player.body.collideWorldBounds = true;
                 this.player.body.fixedRotation = true;
@@ -127,10 +143,22 @@ angular.module('uiApp')
                     surfaceVelocity: 0
                 });
 
-                this.enemyGroup = this.game.add.physicsGroup(Phaser.Physics.P2JS);
+                this.finishGroup = this.game.add.physicsGroup(Phaser.Physics.P2JS);
+                map.createFromObjects('Object Layer', 742, 'hyptosis_tile-art-batch-1', 742, true, false, this.finishGroup);
+                map.createFromObjects('Object Layer', 772, 'hyptosis_tile-art-batch-1', 772, true, false, this.finishGroup);
+                this.finishGroup.forEach(function (finish) {
+                    finish.body.debug = this.DEBUG;
+                    finish.height = 32;
+                    finish.width = 32;
+                    finish.anchor.setTo(0.5);
+                    finish.body.x += finish.width / 2;
+                    finish.body.y += finish.height / 2;
+                    finish.body.setRectangle(32, 32, 0, 0);
+                    finish.body.static = true;
+                    finish.body.debug = this.DEBUG;
+                }, this);
 
                 this.rockGroup = this.game.add.physicsGroup(Phaser.Physics.P2JS);
-
                 map.createFromObjects('Object Layer', 214, 'hyptosis_tile-art-batch-1', 214, true, false, this.rockGroup);
                 this.rockGroup.forEach(function (rock) {
                     rock.body.setMaterial(rockMaterial);
@@ -146,6 +174,7 @@ angular.module('uiApp')
                     rock.body.setRectangle(40, 40, 0, 0);
                 }, this);
 
+                this.enemyGroup = this.game.add.physicsGroup(Phaser.Physics.P2JS);
                 map.createFromObjects('Object Layer', 782, 'demon', 0, true, false, this.enemyGroup);
                 this.enemyGroup.forEach(function (enemy) {
                     enemy.height = 32;
@@ -168,7 +197,7 @@ angular.module('uiApp')
                     enemy.body.setMaterial(demonMaterial);
                 }, this);
 
-                this.player.body.onBeginContact.add(this.death, this);
+                this.player.body.onBeginContact.add(this.collisionCheck, this);
 
                 this.cursors = this.game.input.keyboard.createCursorKeys();
 
@@ -177,6 +206,20 @@ angular.module('uiApp')
                 this.lightSprite.blendMode = Phaser.blendModes.MULTIPLY;
 
                 this.game.camera.follow(this.player);
+            },
+
+            drawCircleOfLight: function (sprite, lightRadius) {
+                var radius = lightRadius + this.game.rnd.integerInRange(1, 10);
+                var gradient = this.shadowTexture.context.createRadialGradient(
+                    sprite.x, sprite.y, lightRadius * 0.25,
+                    sprite.x, sprite.y, radius);
+                gradient.addColorStop(0, 'rgba(200, 200, 200, 0.5)');
+                gradient.addColorStop(1, 'rgba(200, 200, 200, 0.0)');
+
+                this.shadowTexture.context.beginPath();
+                this.shadowTexture.context.fillStyle = gradient;
+                this.shadowTexture.context.arc(sprite.x, sprite.y, radius, 0, Math.PI * 2, false);
+                this.shadowTexture.context.fill();
             },
 
             update: function () {
@@ -266,21 +309,11 @@ angular.module('uiApp')
 
                 this.shadowTexture.context.fillStyle = 'rgb(10, 20, 50)';
                 this.shadowTexture.context.fillRect(0, 0, this.game.world.width, this.game.world.height);
-                var radius = this.LIGHT_RADIUS + this.game.rnd.integerInRange(1, 10),
-                    heroX = this.player.x,
-                    heroY = this.player.y;
 
-                // Draw circle of light
-                var gradient = this.shadowTexture.context.createRadialGradient(
-                    heroX, heroY, this.LIGHT_RADIUS * 0.25,
-                    heroX, heroY, radius);
-                gradient.addColorStop(0, 'rgba(200, 200, 200, 0.5)');
-                gradient.addColorStop(1, 'rgba(200, 200, 200, 0.0)');
-
-                this.shadowTexture.context.beginPath();
-                this.shadowTexture.context.fillStyle = gradient;
-                this.shadowTexture.context.arc(heroX, heroY, radius, 0, Math.PI * 2, false);
-                this.shadowTexture.context.fill();
+                this.drawCircleOfLight(this.player, this.PLAYER_LIGHT_RADIUS);
+                this.finishGroup.forEach(function (finish) {
+                    this.drawCircleOfLight(finish, this.FINISH_LIGHT_RADIUS);
+                }, this);
 
                 // This just tells the engine it should update the texture cache
                 this.shadowTexture.dirty = true;
@@ -302,25 +335,46 @@ angular.module('uiApp')
                 }
             },
 
-            death: function (body) {
-                if (
-                    angular.isDefined(body) &&
+            deathEnding: function () {
+                this.game.ending = true;
+                var savedRadius = this.PLAYER_LIGHT_RADIUS;
+                var deathTween = this.game.add.tween(this);
+                deathTween.to({PLAYER_LIGHT_RADIUS: 0}, 1000, Phaser.Easing.Power1, true);
+                deathTween.onComplete.add(function () {
+                    //  TODO - dying off screen doesn't reset cleanly without move
+                    this.player.x = this.PLAYER_START_X;
+                    this.player.y = this.PLAYER_START_Y;
+                    this.player.kill();
+                    this.PLAYER_LIGHT_RADIUS = savedRadius;
+                    this.game.state.start('TestMaze');
+                }, this);
+            },
+
+            winEnding: function () {
+                this.game.ending = true;
+                var savedRadius = this.PLAYER_LIGHT_RADIUS;
+                var winTween = this.game.add.tween(this);
+                winTween.to({PLAYER_LIGHT_RADIUS: 1000}, 1000, Phaser.Easing.Power1, true);
+                winTween.onComplete.add(function () {
+                    this.PLAYER_LIGHT_RADIUS = savedRadius;
+                    this.game.state.start('TestMaze');
+                }, this);
+            },
+
+            collisionCheck: function (body) {
+                if (angular.isDefined(body) &&
                     body !== null &&
                     angular.isDefined(body.sprite) &&
                     body.sprite !== null &&
-                    body.sprite.key === 'demon') {
-                    this.game.ending = true;
-                    //  TODO - dying off screen doesn't reset cleanly without move
-                    var savedRadius = this.LIGHT_RADIUS;
-                    var deathTween = this.game.add.tween(this);
-                    deathTween.to({LIGHT_RADIUS: 0}, 1000, Phaser.Easing.Power1, true);
-                    deathTween.onComplete.add(function () {
-                        this.player.x = 16;
-                        this.player.y = 1264;
-                        this.player.kill();
-                        this.LIGHT_RADIUS = savedRadius;
-                        this.game.state.start('TestMaze');
-                    }, this);
+                    angular.isDefined(body.sprite.key)) {
+                    switch (body.sprite.parent) {
+                        case this.enemyGroup:
+                            this.deathEnding();
+                            break;
+                        case this.finishGroup:
+                            this.winEnding();
+                            break;
+                    }
                 }
             }
         };
