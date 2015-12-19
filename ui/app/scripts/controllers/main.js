@@ -31,6 +31,7 @@ angular.module('uiApp')
             this.DEMON_CHASE_SPEED = 85;
             this.DEMON_PATROL_RANGE = 64;
             this.DEMON_MAX_SIGHT = 100;
+            this.DEMON_STOP_CHASING_AFTER = 10;
 
             this.LIGHT_RADIUS = 100;
 
@@ -155,6 +156,7 @@ angular.module('uiApp')
                     enemy.minY = enemy.initialY - this.DEMON_PATROL_RANGE;
                     enemy.maxY = enemy.initialY + this.DEMON_PATROL_RANGE;
                     enemy.isChasing = false;
+                    enemy.stopChasingCount = 0;
                     enemy.body.debug = this.DEBUG;
                     enemy.body.collideWorldBounds = true;
                     enemy.body.fixedRotation = true;
@@ -180,6 +182,7 @@ angular.module('uiApp')
                 this.enemyGroup.forEach(function (enemy) {
                     //  TODO - Play sound while chasing or play sound when chase begins?
                     var ray = new Phaser.Line(enemy.x, enemy.y, this.player.x, this.player.y);
+                    var wasChasing = enemy.isChasing;
                     enemy.isChasing = false;
                     if (ray.length < this.DEMON_MAX_SIGHT) {
                         if (this.DEBUG) {
@@ -196,13 +199,25 @@ angular.module('uiApp')
                             this.blockLayer.dirty = this.tileHits.length > 0;
                         }
 
-                        //  TODO - this rock test code does not work
                         var rocksHit = [];
                         var lineCoordinates = ray.coordinatesOnLine(1);
                         angular.forEach(lineCoordinates, function (point) {
-                            rocksHit.push(this.game.physics.p2.hitTest(point, this.rockGroup.children));
+                            this.game.physics.p2.hitTest({
+                                x: point[0],
+                                y: point[1]
+                            }, this.rockGroup.children, undefined, true).forEach(function (hit) {
+                                rocksHit.push(hit);
+                            });
                         }, this);
                         enemy.isChasing = this.tileHits.length === 0 && rocksHit.length === 0;
+                    }
+                    if(!enemy.isChasing && wasChasing ) {
+                        enemy.stopChasingCount++;
+                        if(enemy.stopChasingCount < this.DEMON_STOP_CHASING_AFTER) {
+                            enemy.isChasing = true;
+                        } else {
+                            enemy.stopChasingCount = 0;
+                        }
                     }
                     if (enemy.isChasing) {
                         var angle = Math.atan2(this.player.y - enemy.y, this.player.x - enemy.x);
