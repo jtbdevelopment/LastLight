@@ -50,8 +50,6 @@ angular.module('uiApp')
             this.tileHits = [];
         };
         gameStates.TestMaze.prototype = {
-            //  TODO - contemplate lighting like http://www.html5gamedevs.com/topic/3052-phaser-and-2d-lighting/
-            //  TODO - or http://gamemechanicexplorer.com/#lighting-1
             preload: function () {
                 this.load.tilemap('testmaze', 'assets/tilemaps/testoutdoor.json', null, Phaser.Tilemap.TILED_JSON);
 
