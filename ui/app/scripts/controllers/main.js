@@ -9,7 +9,7 @@
  * Controller of the uiApp
  */
 angular.module('uiApp')
-    .controller('MainCtrl', function () {
+    .controller('MainCtrl', ['Act1Settings', function (Act1Settings) {
         var game = new Phaser.Game(800, 400, Phaser.AUTO, 'phaser');
 
         var gameStates = {};
@@ -21,17 +21,17 @@ angular.module('uiApp')
             }
         };
 
-        gameStates.TestMaze = function () {
+        gameStates.Act1Maze = function () {
             this.PLAYER_MOVE_SPEED = 75;
             this.PLAYER_MASS = 10;
 
             this.ROCK_MASS = 400;
 
-            this.DEMON_PATROL_SPEED = 25;
-            this.DEMON_CHASE_SPEED = 90;
-            this.DEMON_PATROL_RANGE = 64;
-            this.DEMON_MAX_SIGHT_PLAYER_MOVING = 100;
-            this.DEMON_STOP_CHASING_AFTER = 10;
+            this.ENEMY_PATROL_SPEED = 25;
+            this.ENEMY_CHASE_SPEED = 90;
+            this.ENEMY_PATROL_RANGE = 64;
+            this.ENEMY_MAX_SIGHT_PLAYER_MOVING = 100;
+            this.ENEMY_STOP_CHASING_AFTER = 10;
 
             this.FINISH_LIGHT_RADIUS = 50;
 
@@ -39,15 +39,14 @@ angular.module('uiApp')
             this.tileHits = [];
         };
 
-        gameStates.TestMaze.prototype = {
+        gameStates.Act1Maze.prototype = {
             init: function(level) {
                 this.LEVEL = level;
-                //  Items expected to change from level to level
-                this.PLAYER_START_X = 16;
-                this.PLAYER_START_Y = 1264;
-                this.PLAYER_HIDING_LIGHT_RADIUS = 10;
-                this.PLAYER_MOVING_LIGHT_RADIUS = 40;
-                this.DEMON_MAX_SIGHT_PLAYER_HIDING = 32;
+                this.PLAYER_START_X = Act1Settings.startingXPositions[level];
+                this.PLAYER_START_Y = Act1Settings.startingYPositions[level];
+                this.PLAYER_HIDING_LIGHT_RADIUS = Act1Settings.playerHidingLightRadius[level];
+                this.PLAYER_MOVING_LIGHT_RADIUS = Act1Settings.playerMovingLightRadius[level];
+                this.ENEMY_MAX_SIGHT_PLAYER_HIDING = Act1Settings.enemySenseHidingDistance[level];
             },
             preload: function () {
                 this.load.tilemap('act1tilemaps', 'assets/tilemaps/act1tilemaps.json', null, Phaser.Tilemap.TILED_JSON);
@@ -66,7 +65,7 @@ angular.module('uiApp')
 
             create: function () {
                 this.PLAYER_LIGHT_RADIUS = this.PLAYER_MOVING_LIGHT_RADIUS;
-                this.DEMON_MAX_SIGHT = this.DEMON_MAX_SIGHT_PLAYER_MOVING;
+                this.DEMON_MAX_SIGHT = this.ENEMY_MAX_SIGHT_PLAYER_MOVING;
 
                 this.game.ending = false;
 
@@ -183,17 +182,17 @@ angular.module('uiApp')
                     enemy.body.setCircle(11);
                     enemy.initialX = enemy.x;
                     enemy.initialY = enemy.y;
-                    enemy.minX = enemy.initialX - this.DEMON_PATROL_RANGE;
-                    enemy.maxX = enemy.initialX + this.DEMON_PATROL_RANGE;
-                    enemy.minY = enemy.initialY - this.DEMON_PATROL_RANGE;
-                    enemy.maxY = enemy.initialY + this.DEMON_PATROL_RANGE;
+                    enemy.minX = enemy.initialX - this.ENEMY_PATROL_RANGE;
+                    enemy.maxX = enemy.initialX + this.ENEMY_PATROL_RANGE;
+                    enemy.minY = enemy.initialY - this.ENEMY_PATROL_RANGE;
+                    enemy.maxY = enemy.initialY + this.ENEMY_PATROL_RANGE;
                     enemy.isChasing = false;
                     enemy.stopChasingCount = 0;
                     enemy.body.debug = this.DEBUG;
                     enemy.body.collideWorldBounds = true;
                     enemy.body.fixedRotation = true;
-                    enemy.body.velocity.x = this.DEMON_PATROL_SPEED;
-                    enemy.body.velocity.y = this.DEMON_PATROL_SPEED;
+                    enemy.body.velocity.x = this.ENEMY_PATROL_SPEED;
+                    enemy.body.velocity.y = this.ENEMY_PATROL_SPEED;
                     enemy.body.setZeroDamping();
                     enemy.body.setMaterial(this.enemyMaterial);
                 }, this);
@@ -216,11 +215,11 @@ angular.module('uiApp')
                 this.player.isHiding = !this.player.isHiding;
                 if(this.player.isHiding) {
                     this.PLAYER_LIGHT_RADIUS = this.PLAYER_HIDING_LIGHT_RADIUS;
-                    this.DEMON_MAX_SIGHT = this.DEMON_MAX_SIGHT_PLAYER_HIDING;
+                    this.DEMON_MAX_SIGHT = this.ENEMY_MAX_SIGHT_PLAYER_HIDING;
                     this.player.loadTexture('playerHiding');
                 } else {
                     this.PLAYER_LIGHT_RADIUS = this.PLAYER_MOVING_LIGHT_RADIUS;
-                    this.DEMON_MAX_SIGHT = this.DEMON_MAX_SIGHT_PLAYER_MOVING;
+                    this.DEMON_MAX_SIGHT = this.ENEMY_MAX_SIGHT_PLAYER_MOVING;
                     this.player.loadTexture('player');
                 }
             },
@@ -277,7 +276,7 @@ angular.module('uiApp')
                         }
                         if (!enemy.isChasing && wasChasing) {
                             enemy.stopChasingCount++;
-                            if (enemy.stopChasingCount < this.DEMON_STOP_CHASING_AFTER) {
+                            if (enemy.stopChasingCount < this.ENEMY_STOP_CHASING_AFTER) {
                                 enemy.isChasing = true;
                             } else {
                                 enemy.stopChasingCount = 0;
@@ -286,8 +285,8 @@ angular.module('uiApp')
                         if (enemy.isChasing) {
                             //  TODO - smarter pathing logic - see easystar perhaps
                             var angle = Math.atan2(this.player.y - enemy.y, this.player.x - enemy.x);
-                            enemy.body.velocity.x = Math.cos(angle) * this.DEMON_CHASE_SPEED;
-                            enemy.body.velocity.y = Math.sin(angle) * this.DEMON_CHASE_SPEED;
+                            enemy.body.velocity.x = Math.cos(angle) * this.ENEMY_CHASE_SPEED;
+                            enemy.body.velocity.y = Math.sin(angle) * this.ENEMY_CHASE_SPEED;
                         } else {
                             var compareX = Math.round(enemy.x * 100) / 100;
                             var compareY = Math.round(enemy.y * 100) / 100;
@@ -299,11 +298,11 @@ angular.module('uiApp')
                                 (compareY >= enemy.maxY && enemy.body.velocity.y > 0)) {
                                 enemy.body.velocity.y *= -1;
                             }
-                            if (Math.abs(enemy.body.velocity.x) < this.DEMON_PATROL_SPEED / 5) {
-                                enemy.body.velocity.x = Math.sign(enemy.body.velocity.x) * -1 * this.DEMON_PATROL_SPEED;
+                            if (Math.abs(enemy.body.velocity.x) < this.ENEMY_PATROL_SPEED / 5) {
+                                enemy.body.velocity.x = Math.sign(enemy.body.velocity.x) * -1 * this.ENEMY_PATROL_SPEED;
                             }
-                            if (Math.abs(enemy.body.velocity.y) < this.DEMON_PATROL_SPEED / 5) {
-                                enemy.body.velocity.y = Math.sign(enemy.body.velocity.y) * -1 * this.DEMON_PATROL_SPEED;
+                            if (Math.abs(enemy.body.velocity.y) < this.ENEMY_PATROL_SPEED / 5) {
+                                enemy.body.velocity.y = Math.sign(enemy.body.velocity.y) * -1 * this.ENEMY_PATROL_SPEED;
                             }
                         }
                     }, this);
@@ -396,7 +395,7 @@ angular.module('uiApp')
         };
 
         game.state.add('TitleScreen', gameStates.TitleScreen);
-        game.state.add('Act1', gameStates.TestMaze);
-        game.state.start('TitleScreen', true, false, 0);
-    });
+        game.state.add('Act1', gameStates.Act1Maze);
+        game.state.start('Act1', true, false, 0);
+    }]);
 
