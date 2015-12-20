@@ -17,17 +17,11 @@ angular.module('uiApp')
         };
         gameStates.TitleScreen.prototype = {
             create: function () {
-                this.game.state.start('TestMaze');
+                this.game.state.start('Act1', true, false, 0);
             }
         };
 
         gameStates.TestMaze = function () {
-            //  Expected to change from level to level
-            this.PLAYER_START_X = 16;
-            this.PLAYER_START_Y = 1264;
-            this.PLAYER_HIDING_LIGHT_RADIUS = 10;
-            this.PLAYER_MOVING_LIGHT_RADIUS = 40;
-
             this.PLAYER_MOVE_SPEED = 75;
             this.PLAYER_MASS = 10;
 
@@ -37,19 +31,33 @@ angular.module('uiApp')
             this.DEMON_CHASE_SPEED = 90;
             this.DEMON_PATROL_RANGE = 64;
             this.DEMON_MAX_SIGHT_PLAYER_MOVING = 100;
-            this.DEMON_MAX_SIGHT_PLAYER_HIDING = 32;
             this.DEMON_STOP_CHASING_AFTER = 10;
 
             this.FINISH_LIGHT_RADIUS = 50;
 
             this.DEBUG = false;
-
             this.tileHits = [];
         };
-        gameStates.TestMaze.prototype = {
-            preload: function () {
-                this.load.tilemap('testmaze', 'assets/tilemaps/testoutdoor.json', null, Phaser.Tilemap.TILED_JSON);
 
+        gameStates.TestMaze.prototype = {
+            init: function(level) {
+                this.LEVEL = level;
+                //  Items expected to change from level to level
+                this.PLAYER_START_X = 16;
+                this.PLAYER_START_Y = 1264;
+                this.PLAYER_HIDING_LIGHT_RADIUS = 10;
+                this.PLAYER_MOVING_LIGHT_RADIUS = 40;
+                this.DEMON_MAX_SIGHT_PLAYER_HIDING = 32;
+            },
+            preload: function () {
+                this.load.tilemap('act1tilemaps', 'assets/tilemaps/act1tilemaps.json', null, Phaser.Tilemap.TILED_JSON);
+
+                //  TODO - actual art
+                //  TODO - physics for art
+                //  https://code.google.com/p/box2d-editor/
+                //  http://phaser.io/examples/v2/p2-physics/load-polygon-1
+                //  TODO - real boundary layer ?
+                //  TODO - music
                 this.load.spritesheet('hyptosis_tile-art-batch-1', 'images/hyptosis_tile-art-batch-1.png', 32, 32);
                 this.load.image('player', 'images/HB_Dwarf05.png');
                 this.load.image('playerHiding', 'images/HB_Dwarf05Hiding.png');
@@ -64,11 +72,11 @@ angular.module('uiApp')
 
                 this.game.physics.startSystem(Phaser.Physics.P2JS);
 
-                var map = this.game.add.tilemap('testmaze');
+                var map = this.game.add.tilemap('act1tilemaps');
                 map.addTilesetImage('hyptosis_tile-art-batch-1');
 
-                this.blockLayer = map.createLayer('Block Layer');
-                map.createLayer('Path');
+                this.blockLayer = map.createLayer('Block Layer ' + this.LEVEL);
+                map.createLayer('Path Layer '+ this.LEVEL);
                 this.blockLayer.resizeWorld();
                 var tileIds = [];
                 this.blockLayer.map.layers.forEach(function(layer) {
@@ -84,13 +92,8 @@ angular.module('uiApp')
                 });
                 map.setCollision(tileIds);
 
-
                 this.game.physics.p2.convertTilemap(map, this.blockLayer);
                 this.game.physics.p2.setBoundsToWorld(true, true, true, true, false);
-
-                //  TODO - physics for all objects really
-                //  https://code.google.com/p/box2d-editor/
-                //  http://phaser.io/examples/v2/p2-physics/load-polygon-1
 
                 this.playerMaterial = game.physics.p2.createMaterial('playerMaterial');
                 this.worldMaterial = game.physics.p2.createMaterial('worldMaterial');
@@ -103,7 +106,6 @@ angular.module('uiApp')
                 this.player.body.fixedRotation = true;
                 this.player.body.debug = this.DEBUG;
                 this.player.body.setMaterial(this.playerMaterial);
-                //  TODO - size with real image
                 this.player.height = 32;
                 this.player.width = 32;
                 this.player.body.setCircle(10);
@@ -145,8 +147,8 @@ angular.module('uiApp')
                 });
 
                 this.finishGroup = this.game.add.physicsGroup(Phaser.Physics.P2JS);
-                map.createFromObjects('Object Layer', 742, 'hyptosis_tile-art-batch-1', 742, true, false, this.finishGroup);
-                map.createFromObjects('Object Layer', 772, 'hyptosis_tile-art-batch-1', 772, true, false, this.finishGroup);
+                map.createFromObjects('Object Layer ' + this.LEVEL, 742, 'hyptosis_tile-art-batch-1', 742, true, false, this.finishGroup);
+                map.createFromObjects('Object Layer ' + this.LEVEL, 772, 'hyptosis_tile-art-batch-1', 772, true, false, this.finishGroup);
                 this.finishGroup.forEach(function (finish) {
                     finish.body.debug = this.DEBUG;
                     finish.height = 32;
@@ -160,7 +162,7 @@ angular.module('uiApp')
                 }, this);
 
                 this.rockGroup = this.game.add.physicsGroup(Phaser.Physics.P2JS);
-                map.createFromObjects('Object Layer', 214, 'hyptosis_tile-art-batch-1', 214, true, false, this.rockGroup);
+                map.createFromObjects('Object Layer ' + this.LEVEL, 214, 'hyptosis_tile-art-batch-1', 214, true, false, this.rockGroup);
                 this.rockGroup.forEach(function (rock) {
                     rock.body.setMaterial(this.rockMaterial);
                     rock.body.collideWorldBounds = true;
@@ -168,15 +170,13 @@ angular.module('uiApp')
                     rock.body.damping = 0.95;
                     rock.body.angularDamping = 0.85;
                     rock.body.debug = this.DEBUG;
-
-                    //  TODO - size with real image
                     rock.height = 40;
                     rock.width = 40;
                     rock.body.setRectangle(40, 40, 0, 0);
                 }, this);
 
                 this.enemyGroup = this.game.add.physicsGroup(Phaser.Physics.P2JS);
-                map.createFromObjects('Object Layer', 782, 'demon', 0, true, false, this.enemyGroup);
+                map.createFromObjects('Object Layer ' + this.LEVEL, 782, 'demon', 0, true, false, this.enemyGroup);
                 this.enemyGroup.forEach(function (enemy) {
                     enemy.height = 32;
                     enemy.width = 32;
@@ -284,6 +284,7 @@ angular.module('uiApp')
                             }
                         }
                         if (enemy.isChasing) {
+                            //  TODO - smarter pathing logic - see easystar perhaps
                             var angle = Math.atan2(this.player.y - enemy.y, this.player.x - enemy.x);
                             enemy.body.velocity.x = Math.cos(angle) * this.DEMON_CHASE_SPEED;
                             enemy.body.velocity.y = Math.sin(angle) * this.DEMON_CHASE_SPEED;
@@ -335,9 +336,7 @@ angular.module('uiApp')
                     this.drawCircleOfLight(finish, this.FINISH_LIGHT_RADIUS);
                 }, this);
 
-                // This just tells the engine it should update the texture cache
                 this.shadowTexture.dirty = true;
-
             },
 
             render: function () {
@@ -364,7 +363,7 @@ angular.module('uiApp')
                     this.player.x = this.PLAYER_START_X;
                     this.player.y = this.PLAYER_START_Y;
                     this.player.kill();
-                    this.game.state.start('TestMaze');
+                    this.game.state.start(this.state.current, true, false, this.LEVEL);
                 }, this);
             },
 
@@ -373,7 +372,8 @@ angular.module('uiApp')
                 var winTween = this.game.add.tween(this);
                 winTween.to({PLAYER_LIGHT_RADIUS: 100}, 1000, Phaser.Easing.Power1, true);
                 winTween.onComplete.add(function () {
-                    this.game.state.start('TestMaze');
+                    //  TODO - End of Act
+                    this.game.state.start(this.state.current, true, false, this.LEVEL + 1);
                 }, this);
             },
 
@@ -396,7 +396,7 @@ angular.module('uiApp')
         };
 
         game.state.add('TitleScreen', gameStates.TitleScreen);
-        game.state.add('TestMaze', gameStates.TestMaze);
-        game.state.start('TitleScreen');
+        game.state.add('Act1', gameStates.TestMaze);
+        game.state.start('TitleScreen', true, false, 0);
     });
 
