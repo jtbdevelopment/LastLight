@@ -286,8 +286,7 @@ angular.module('uiApp')
                 this.player.body.setZeroVelocity();
 
                 if(angular.isDefined(this.candleText)) {
-                    this.candleText.x = this.player.x;
-                    this.candleText.y = this.player.y + this.player.height / 2;
+                    //  TODO - this is a little flickery
                     this.candleText.x = this.camera.x;
                     this.candleText.y = this.camera.y;
                 }
@@ -447,6 +446,6 @@ angular.module('uiApp')
 
         game.state.add('TitleScreen', gameStates.TitleScreen);
         game.state.add('Act1', gameStates.Act1Maze);
-        game.state.start('Act1', true, false, 0, 0);
+        game.state.start('Act1', true, false, 0, 5);
     }]);
 
