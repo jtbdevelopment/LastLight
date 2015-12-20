@@ -9,7 +9,7 @@
  * Controller of the uiApp
  */
 angular.module('uiApp')
-    .controller('MainCtrl', ['Act1Settings', function (Act1Settings) {
+    .controller('MainCtrl', ['$timeout', 'Act1Settings', function ($timeout, Act1Settings) {
         var game = new Phaser.Game(800, 400, Phaser.AUTO, 'phaser');
 
         var gameStates = {};
@@ -17,7 +17,7 @@ angular.module('uiApp')
         };
         gameStates.TitleScreen.prototype = {
             create: function () {
-                this.game.state.start('Act1', true, false, 0);
+                this.game.state.start('Act1', true, false, 0, 0);
             }
         };
 
@@ -35,18 +35,23 @@ angular.module('uiApp')
 
             this.FINISH_LIGHT_RADIUS = 50;
 
+            this.TIME_PER_CANDLE = 60;    //  seconds
+
             this.DEBUG = false;
             this.tileHits = [];
         };
 
         gameStates.Act1Maze.prototype = {
-            init: function(level) {
+            init: function(level, startingCandles) {
                 this.LEVEL = level;
                 this.PLAYER_START_X = Act1Settings.startingXPositions[level];
                 this.PLAYER_START_Y = Act1Settings.startingYPositions[level];
                 this.PLAYER_HIDING_LIGHT_RADIUS = Act1Settings.playerHidingLightRadius[level];
                 this.PLAYER_MOVING_LIGHT_RADIUS = Act1Settings.playerMovingLightRadius[level];
                 this.ENEMY_MAX_SIGHT_PLAYER_HIDING = Act1Settings.enemySenseHidingDistance[level];
+                this.STARTING_CANDLES = startingCandles;
+                this.CURRENT_CANDLES = this.STARTING_CANDLES;
+                this.CURRENT_TIME = this.TIME_PER_CANDLE;
             },
             preload: function () {
                 this.load.tilemap('act1tilemaps', 'assets/tilemaps/act1tilemaps.json', null, Phaser.Tilemap.TILED_JSON);
@@ -209,6 +214,45 @@ angular.module('uiApp')
 
                 this.game.camera.follow(this.player);
                 this.game.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;
+                if(this.STARTING_CANDLES > 0) {
+                    var textStyle = {
+                        font: '10px Arial',
+                        fill: '#FF9329',
+                        align: 'left'
+                    };
+                    this.candleText = this.game.add.text(0, 0, this.makeCandleText(), textStyle);
+                    this.candleText.anchor.y = 0;
+                    this.candleText.anchor.x = 0;
+                    $timeout(this.candleTimeoutHandler, 1000, true, this);
+                }
+            },
+
+            candleTimeoutHandler: function(state) {
+                if(state.game.ending) {
+                    return;
+                }
+                state.CURRENT_TIME -= 1;
+                if(state.CURRENT_TIME === 0) {
+                    if(state.CURRENT_CANDLES > 1) {
+                        if(state.player.isHiding) {
+                            state.deathEnding();
+                        } else {
+                            //  TODO - play match type sound?
+                            state.CURRENT_CANDLES -= 1;
+                            state.CURRENT_TIME = state.TIME_PER_CANDLE;
+                        }
+                    }
+                }
+                state.candleText.text = state.makeCandleText();
+                if(state.CURRENT_CANDLES > 0 || state.CURRENT_TIME > 0) {
+                    $timeout(state.candleTimeoutHandler, 1000, true, state);
+                } else {
+                    state.deathEnding();
+                }
+            },
+
+            makeCandleText: function() {
+                return 'Candles: ' + this.CURRENT_CANDLES + ', Time: ' + this.CURRENT_TIME;
             },
 
             switchTakingCover: function() {
@@ -241,6 +285,12 @@ angular.module('uiApp')
             update: function () {
                 this.player.body.setZeroVelocity();
 
+                if(angular.isDefined(this.candleText)) {
+                    this.candleText.x = this.player.x;
+                    this.candleText.y = this.player.y + this.player.height / 2;
+                    this.candleText.x = this.camera.x;
+                    this.candleText.y = this.camera.y;
+                }
                 if (!this.game.ending) {
                     this.enemyGroup.forEach(function (enemy) {
                         //  TODO - Play sound while chasing or play sound when chase begins?
@@ -362,7 +412,7 @@ angular.module('uiApp')
                     this.player.x = this.PLAYER_START_X;
                     this.player.y = this.PLAYER_START_Y;
                     this.player.kill();
-                    this.game.state.start(this.state.current, true, false, this.LEVEL);
+                    this.game.state.start(this.state.current, true, false, this.LEVEL, this.STARTING_CANDLES);
                 }, this);
             },
 
@@ -372,7 +422,8 @@ angular.module('uiApp')
                 winTween.to({PLAYER_LIGHT_RADIUS: 100}, 1000, Phaser.Easing.Power1, true);
                 winTween.onComplete.add(function () {
                     //  TODO - End of Act
-                    this.game.state.start(this.state.current, true, false, this.LEVEL + 1);
+                    //  TODO - interludes
+                    this.game.state.start(this.state.current, true, false, this.LEVEL + 1, this.CURRENT_CANDLES + Act1Settings.addsCandlesAtEnd[this.LEVEL]);
                 }, this);
             },
 
@@ -396,6 +447,6 @@ angular.module('uiApp')
 
         game.state.add('TitleScreen', gameStates.TitleScreen);
         game.state.add('Act1', gameStates.Act1Maze);
-        game.state.start('Act1', true, false, 0);
+        game.state.start('Act1', true, false, 0, 0);
     }]);
 
