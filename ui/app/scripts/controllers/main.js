@@ -22,30 +22,27 @@ angular.module('uiApp')
         };
 
         gameStates.TestMaze = function () {
+            //  Expected to change from level to level
             this.PLAYER_START_X = 16;
             this.PLAYER_START_Y = 1264;
+            this.PLAYER_HIDING_LIGHT_RADIUS = 10;
+            this.PLAYER_MOVING_LIGHT_RADIUS = 40;
+
             this.PLAYER_MOVE_SPEED = 75;
             this.PLAYER_MASS = 10;
 
-            this.ROCK_MASS = 80;
+            this.ROCK_MASS = 400;
 
             this.DEMON_PATROL_SPEED = 25;
             this.DEMON_CHASE_SPEED = 90;
             this.DEMON_PATROL_RANGE = 64;
-            this.DEMON_MAX_SIGHT = 100;
+            this.DEMON_MAX_SIGHT_PLAYER_MOVING = 100;
+            this.DEMON_MAX_SIGHT_PLAYER_HIDING = 32;
             this.DEMON_STOP_CHASING_AFTER = 10;
 
-            this.PLAYER_LIGHT_RADIUS = 40;
             this.FINISH_LIGHT_RADIUS = 50;
 
             this.DEBUG = false;
-
-            this.player = null;
-            this.cursors = null;
-            this.blockLayer = null;
-            this.enemyGroup = null;
-            this.rockGroup = null;
-            this.finishGroup = null;
 
             this.tileHits = [];
         };
@@ -55,10 +52,14 @@ angular.module('uiApp')
 
                 this.load.spritesheet('hyptosis_tile-art-batch-1', 'images/hyptosis_tile-art-batch-1.png', 32, 32);
                 this.load.image('player', 'images/HB_Dwarf05.png');
+                this.load.image('playerHiding', 'images/HB_Dwarf05Hiding.png');
                 this.load.image('demon', 'images/DemonMinorFighter.png');
             },
 
             create: function () {
+                this.PLAYER_LIGHT_RADIUS = this.PLAYER_MOVING_LIGHT_RADIUS;
+                this.DEMON_MAX_SIGHT = this.DEMON_MAX_SIGHT_PLAYER_MOVING;
+
                 this.game.ending = false;
 
                 this.game.physics.startSystem(Phaser.Physics.P2JS);
@@ -91,29 +92,31 @@ angular.module('uiApp')
                 //  https://code.google.com/p/box2d-editor/
                 //  http://phaser.io/examples/v2/p2-physics/load-polygon-1
 
+                this.playerMaterial = game.physics.p2.createMaterial('playerMaterial');
+                this.worldMaterial = game.physics.p2.createMaterial('worldMaterial');
+                this.rockMaterial = game.physics.p2.createMaterial('rockMaterial');
+                this.enemyMaterial = game.physics.p2.createMaterial('enemyMaterial');
+
                 this.player = this.game.add.sprite(this.PLAYER_START_X, this.PLAYER_START_Y, 'player');
                 this.game.physics.p2.enable(this.player);
                 this.player.body.collideWorldBounds = true;
                 this.player.body.fixedRotation = true;
                 this.player.body.debug = this.DEBUG;
+                this.player.body.setMaterial(this.playerMaterial);
                 //  TODO - size with real image
                 this.player.height = 32;
                 this.player.width = 32;
                 this.player.body.setCircle(10);
                 this.player.body.mass = this.PLAYER_MASS;
+                this.player.isHiding = false;
 
-                var playerMaterial = game.physics.p2.createMaterial('playerMaterial', this.player.body);
-                var worldMaterial = game.physics.p2.createMaterial('worldMaterial');
-                var rockMaterial = game.physics.p2.createMaterial('rockMaterial');
-                var demonMaterial = game.physics.p2.createMaterial('demonMaterial');
-
-                game.physics.p2.setWorldMaterial(worldMaterial, true, true, true, true);
-                this.game.physics.p2.createContactMaterial(playerMaterial, worldMaterial, {
+                game.physics.p2.setWorldMaterial(this.worldMaterial, true, true, true, true);
+                this.game.physics.p2.createContactMaterial(this.playerMaterial, this.worldMaterial, {
                     friction: 0.01,
                     restitution: 1,
                     stiffness: 0
                 });
-                this.game.physics.p2.createContactMaterial(rockMaterial, worldMaterial, {
+                this.game.physics.p2.createContactMaterial(this.rockMaterial, this.worldMaterial, {
                     friction: 0.9,
                     restitution: 0.1,
                     stiffness: 1e7,
@@ -122,7 +125,7 @@ angular.module('uiApp')
                     frictionRelaxation: 3,
                     surfaceVelocity: 0
                 });
-                this.game.physics.p2.createContactMaterial(demonMaterial, worldMaterial, {
+                this.game.physics.p2.createContactMaterial(this.enemyMaterial, this.worldMaterial, {
                     friction: 0,
                     restitution: 1,
                     stiffness: 0,
@@ -131,7 +134,7 @@ angular.module('uiApp')
                     frictionRelaxation: 0,
                     surfaceVelocity: 0
                 });
-                this.game.physics.p2.createContactMaterial(demonMaterial, rockMaterial, {
+                this.game.physics.p2.createContactMaterial(this.enemyMaterial, this.rockMaterial, {
                     friction: 1.0,
                     restitution: 0.0,
                     stiffness: 1e7,
@@ -159,7 +162,7 @@ angular.module('uiApp')
                 this.rockGroup = this.game.add.physicsGroup(Phaser.Physics.P2JS);
                 map.createFromObjects('Object Layer', 214, 'hyptosis_tile-art-batch-1', 214, true, false, this.rockGroup);
                 this.rockGroup.forEach(function (rock) {
-                    rock.body.setMaterial(rockMaterial);
+                    rock.body.setMaterial(this.rockMaterial);
                     rock.body.collideWorldBounds = true;
                     rock.body.mass = this.ROCK_MASS;
                     rock.body.damping = 0.95;
@@ -192,18 +195,34 @@ angular.module('uiApp')
                     enemy.body.velocity.x = this.DEMON_PATROL_SPEED;
                     enemy.body.velocity.y = this.DEMON_PATROL_SPEED;
                     enemy.body.setZeroDamping();
-                    enemy.body.setMaterial(demonMaterial);
+                    enemy.body.setMaterial(this.enemyMaterial);
                 }, this);
 
                 this.player.body.onBeginContact.add(this.collisionCheck, this);
 
                 this.cursors = this.game.input.keyboard.createCursorKeys();
+                this.coverKey = this.game.input.keyboard.addKey(Phaser.Keyboard.C);
+                this.coverKey.onUp.add(this.switchTakingCover, this);
 
                 this.shadowTexture = this.game.add.bitmapData(this.game.world.width, this.game.world.height);
                 this.lightSprite = this.game.add.image(this.game.camera.x, this.game.camera.y, this.shadowTexture);
                 this.lightSprite.blendMode = Phaser.blendModes.MULTIPLY;
 
                 this.game.camera.follow(this.player);
+                this.game.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;
+            },
+
+            switchTakingCover: function() {
+                this.player.isHiding = !this.player.isHiding;
+                if(this.player.isHiding) {
+                    this.PLAYER_LIGHT_RADIUS = this.PLAYER_HIDING_LIGHT_RADIUS;
+                    this.DEMON_MAX_SIGHT = this.DEMON_MAX_SIGHT_PLAYER_HIDING;
+                    this.player.loadTexture('playerHiding');
+                } else {
+                    this.PLAYER_LIGHT_RADIUS = this.PLAYER_MOVING_LIGHT_RADIUS;
+                    this.DEMON_MAX_SIGHT = this.DEMON_MAX_SIGHT_PLAYER_MOVING;
+                    this.player.loadTexture('player');
+                }
             },
 
             drawCircleOfLight: function (sprite, lightRadius) {
@@ -287,17 +306,20 @@ angular.module('uiApp')
                             }
                         }
                     }, this);
-                    if (this.cursors.up.isDown) {
-                        this.player.body.moveUp(this.PLAYER_MOVE_SPEED);
-                    }
-                    if (this.cursors.down.isDown) {
-                        this.player.body.moveDown(this.PLAYER_MOVE_SPEED);
-                    }
-                    if (this.cursors.left.isDown) {
-                        this.player.body.moveLeft(this.PLAYER_MOVE_SPEED);
-                    }
-                    if (this.cursors.right.isDown) {
-                        this.player.body.moveRight(this.PLAYER_MOVE_SPEED);
+
+                    if(!this.player.isHiding) {
+                        if (this.cursors.up.isDown) {
+                            this.player.body.moveUp(this.PLAYER_MOVE_SPEED);
+                        }
+                        if (this.cursors.down.isDown) {
+                            this.player.body.moveDown(this.PLAYER_MOVE_SPEED);
+                        }
+                        if (this.cursors.left.isDown) {
+                            this.player.body.moveLeft(this.PLAYER_MOVE_SPEED);
+                        }
+                        if (this.cursors.right.isDown) {
+                            this.player.body.moveRight(this.PLAYER_MOVE_SPEED);
+                        }
                     }
                 } else {
                     this.enemyGroup.forEach(function (enemy) {
@@ -335,7 +357,6 @@ angular.module('uiApp')
 
             deathEnding: function () {
                 this.game.ending = true;
-                var savedRadius = this.PLAYER_LIGHT_RADIUS;
                 var deathTween = this.game.add.tween(this);
                 deathTween.to({PLAYER_LIGHT_RADIUS: 0}, 1000, Phaser.Easing.Power1, true);
                 deathTween.onComplete.add(function () {
@@ -343,18 +364,15 @@ angular.module('uiApp')
                     this.player.x = this.PLAYER_START_X;
                     this.player.y = this.PLAYER_START_Y;
                     this.player.kill();
-                    this.PLAYER_LIGHT_RADIUS = savedRadius;
                     this.game.state.start('TestMaze');
                 }, this);
             },
 
             winEnding: function () {
                 this.game.ending = true;
-                var savedRadius = this.PLAYER_LIGHT_RADIUS;
                 var winTween = this.game.add.tween(this);
-                winTween.to({PLAYER_LIGHT_RADIUS: 1000}, 1000, Phaser.Easing.Power1, true);
+                winTween.to({PLAYER_LIGHT_RADIUS: 100}, 1000, Phaser.Easing.Power1, true);
                 winTween.onComplete.add(function () {
-                    this.PLAYER_LIGHT_RADIUS = savedRadius;
                     this.game.state.start('TestMaze');
                 }, this);
             },
