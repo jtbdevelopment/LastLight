@@ -25,7 +25,7 @@ angular.module('uiApp')
             this.PLAYER_MOVE_SPEED = 75;
             this.PLAYER_MASS = 10;
 
-            this.ROCK_MASS = 400;
+            this.ROCK_MASS = 300;
 
             this.ENEMY_PATROL_SPEED = 25;
             this.ENEMY_CHASE_SPEED = 90;
@@ -42,7 +42,7 @@ angular.module('uiApp')
         };
 
         gameStates.Act1Maze.prototype = {
-            init: function(level, startingCandles) {
+            init: function (level, startingCandles) {
                 this.LEVEL = level;
                 this.PLAYER_START_X = Act1Settings.startingXPositions[level];
                 this.PLAYER_START_Y = Act1Settings.startingYPositions[level];
@@ -54,6 +54,7 @@ angular.module('uiApp')
                 this.CURRENT_TIME = this.TIME_PER_CANDLE;
             },
             preload: function () {
+                //  Tiled and Phaser seem to be one off on the tile sprites here
                 this.load.tilemap('act1tilemaps', 'assets/tilemaps/act1tilemaps.json', null, Phaser.Tilemap.TILED_JSON);
 
                 //  TODO - actual art
@@ -80,21 +81,20 @@ angular.module('uiApp')
                 map.addTilesetImage('hyptosis_tile-art-batch-1');
 
                 this.blockLayer = map.createLayer('Block Layer ' + this.LEVEL);
-                map.createLayer('Path Layer '+ this.LEVEL);
+                map.createLayer('Path Layer ' + this.LEVEL);
                 this.blockLayer.resizeWorld();
                 var tileIds = [];
-                this.blockLayer.map.layers.forEach(function(layer) {
-                    layer.data.forEach(function(layerRow) {
-                        layerRow.forEach(function(layerCell) {
-                            if(layerCell.index > 0) {
-                                if(tileIds.indexOf(layerCell.index) < 0) {
-                                    tileIds.push(layerCell.index);
-                                }
+                this.blockLayer.layer.data.forEach(function (layerRow) {
+                    layerRow.forEach(function (layerCell) {
+                        if (layerCell.index > 0) {
+                            if (tileIds.indexOf(layerCell.index) < 0) {
+                                tileIds.push(layerCell.index);
                             }
-                        });
+                        }
                     });
                 });
-                map.setCollision(tileIds);
+                tileIds = tileIds.sort();
+                map.setCollision(tileIds, true, this.blockLayer);
 
                 this.game.physics.p2.convertTilemap(map, this.blockLayer);
                 this.game.physics.p2.setBoundsToWorld(true, true, true, true, false);
@@ -151,8 +151,8 @@ angular.module('uiApp')
                 });
 
                 this.finishGroup = this.game.add.physicsGroup(Phaser.Physics.P2JS);
-                map.createFromObjects('Object Layer ' + this.LEVEL, 742, 'hyptosis_tile-art-batch-1', 742, true, false, this.finishGroup);
-                map.createFromObjects('Object Layer ' + this.LEVEL, 772, 'hyptosis_tile-art-batch-1', 772, true, false, this.finishGroup);
+                map.createFromObjects('Object Layer ' + this.LEVEL, 742, 'hyptosis_tile-art-batch-1', 741, true, false, this.finishGroup);
+                map.createFromObjects('Object Layer ' + this.LEVEL, 772, 'hyptosis_tile-art-batch-1', 771, true, false, this.finishGroup);
                 this.finishGroup.forEach(function (finish) {
                     finish.body.debug = this.DEBUG;
                     finish.height = 32;
@@ -214,7 +214,7 @@ angular.module('uiApp')
 
                 this.game.camera.follow(this.player);
                 this.game.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;
-                if(this.STARTING_CANDLES > 0) {
+                if (this.STARTING_CANDLES > 0) {
                     var textStyle = {
                         font: '10px Arial',
                         fill: '#FF9329',
@@ -227,14 +227,14 @@ angular.module('uiApp')
                 }
             },
 
-            candleTimeoutHandler: function(state) {
-                if(state.game.ending) {
+            candleTimeoutHandler: function (state) {
+                if (state.game.ending) {
                     return;
                 }
                 state.CURRENT_TIME -= 1;
-                if(state.CURRENT_TIME === 0) {
-                    if(state.CURRENT_CANDLES > 1) {
-                        if(state.player.isHiding) {
+                if (state.CURRENT_TIME === 0) {
+                    if (state.CURRENT_CANDLES > 1) {
+                        if (state.player.isHiding) {
                             state.deathEnding();
                         } else {
                             //  TODO - play match type sound?
@@ -244,20 +244,20 @@ angular.module('uiApp')
                     }
                 }
                 state.candleText.text = state.makeCandleText();
-                if(state.CURRENT_CANDLES > 0 || state.CURRENT_TIME > 0) {
+                if (state.CURRENT_CANDLES > 0 || state.CURRENT_TIME > 0) {
                     $timeout(state.candleTimeoutHandler, 1000, true, state);
                 } else {
                     state.deathEnding();
                 }
             },
 
-            makeCandleText: function() {
+            makeCandleText: function () {
                 return 'Candles: ' + this.CURRENT_CANDLES + ', Time: ' + this.CURRENT_TIME;
             },
 
-            switchTakingCover: function() {
+            switchTakingCover: function () {
                 this.player.isHiding = !this.player.isHiding;
-                if(this.player.isHiding) {
+                if (this.player.isHiding) {
                     this.PLAYER_LIGHT_RADIUS = this.PLAYER_HIDING_LIGHT_RADIUS;
                     this.DEMON_MAX_SIGHT = this.ENEMY_MAX_SIGHT_PLAYER_HIDING;
                     this.player.loadTexture('playerHiding');
@@ -285,7 +285,7 @@ angular.module('uiApp')
             update: function () {
                 this.player.body.setZeroVelocity();
 
-                if(angular.isDefined(this.candleText)) {
+                if (angular.isDefined(this.candleText)) {
                     //  TODO - this is a little flickery
                     this.candleText.x = this.camera.x;
                     this.candleText.y = this.camera.y;
@@ -356,7 +356,7 @@ angular.module('uiApp')
                         }
                     }, this);
 
-                    if(!this.player.isHiding) {
+                    if (!this.player.isHiding) {
                         if (this.cursors.up.isDown) {
                             this.player.body.moveUp(this.PLAYER_MOVE_SPEED);
                         }
@@ -446,6 +446,6 @@ angular.module('uiApp')
 
         game.state.add('TitleScreen', gameStates.TitleScreen);
         game.state.add('Act1', gameStates.Act1Maze);
-        game.state.start('Act1', true, false, 0, 5);
+        game.state.start('Act1', true, false, 0, 0);
     }]);
 

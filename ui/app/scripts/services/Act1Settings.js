@@ -3,12 +3,12 @@
 angular.module('uiApp').factory('Act1Settings',
     [function () {
         var act1Data = {
-            startingXPositions: [16],
-            startingYPositions: [1264],
-            playerHidingLightRadius: [10],
-            playerMovingLightRadius: [40],
-            enemySenseHidingDistance: [32],
-            addsCandlesAtEnd: [0]
+            startingXPositions: [16, 32],
+            startingYPositions: [1264, 1050],
+            playerHidingLightRadius: [10,10],
+            playerMovingLightRadius: [40, 40],
+            enemySenseHidingDistance: [32, 32],
+            addsCandlesAtEnd: [0, 0]
         };
         act1Data.levels = act1Data.startingXPositions.length;
         while(act1Data.playerHidingLightRadius.length < act1Data.startingXPositions.length) {
