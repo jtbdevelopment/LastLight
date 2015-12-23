@@ -25,7 +25,7 @@ angular.module('uiApp')
             this.PLAYER_MOVE_SPEED = 75;
             this.PLAYER_MASS = 10;
 
-            this.ROCK_MASS = 300;
+            this.ROCK_MASS = 200;
 
             this.ENEMY_PATROL_SPEED = 25;
             this.ENEMY_CHASE_SPEED = 90;
@@ -160,7 +160,7 @@ angular.module('uiApp')
                     finish.anchor.setTo(0.5);
                     finish.body.x += finish.width / 2;
                     finish.body.y += finish.height / 2;
-                    finish.body.setRectangle(32, 32, 0, 0);
+                    finish.body.setRectangle(finish.width, finish.height, 0, 0);
                     finish.body.static = true;
                     finish.body.debug = this.DEBUG;
                 }, this);
@@ -174,9 +174,11 @@ angular.module('uiApp')
                     rock.body.damping = 0.95;
                     rock.body.angularDamping = 0.85;
                     rock.body.debug = this.DEBUG;
-                    rock.height = 40;
-                    rock.width = 40;
-                    rock.body.setRectangle(40, 40, 0, 0);
+                    rock.height = 30;
+                    rock.width = 30;
+                    rock.body.x += rock.width / 2;
+                    rock.body.y += rock.height / 2;
+                    rock.body.setRectangle(rock.width, rock.width, 0, 0);
                 }, this);
 
                 this.enemyGroup = this.game.add.physicsGroup(Phaser.Physics.P2JS);
@@ -185,6 +187,8 @@ angular.module('uiApp')
                     enemy.height = 32;
                     enemy.width = 32;
                     enemy.body.setCircle(11);
+                    enemy.x += 16;
+                    enemy.y += 16;
                     enemy.initialX = enemy.x;
                     enemy.initialY = enemy.y;
                     enemy.minX = enemy.initialX - this.ENEMY_PATROL_RANGE;
