@@ -25,7 +25,7 @@ angular.module('uiApp')
             this.PLAYER_MOVE_SPEED = 75;
             this.PLAYER_MASS = 10;
 
-            this.ROCK_MASS = 200;
+            this.MOVEABLE_MASS = 200;
 
             this.ENEMY_PATROL_SPEED = 25;
             this.ENEMY_CHASE_SPEED = 90;
@@ -42,6 +42,7 @@ angular.module('uiApp')
         };
 
         gameStates.Act1Maze.prototype = {
+            //  Phaser state functions - begin
             init: function (level, startingCandles) {
                 this.LEVEL = level;
                 this.PLAYER_START_X = Act1Settings.startingXPositions[level];
@@ -54,7 +55,10 @@ angular.module('uiApp')
                 this.CURRENT_TIME = this.TIME_PER_CANDLE;
             },
             preload: function () {
-                //  Tiled and Phaser seem to be one off on the tile sprites here
+                //  Note tile asset IDs do not match because 0 represents no tile
+                //  So in tiled - a tile will be asset id 535
+                //  In json file it will be 536
+                //  When remapping images from one to another you would need to say 536 -> 535
                 this.load.tilemap('act1tilemaps', 'assets/tilemaps/act1tilemaps.json', null, Phaser.Tilemap.TILED_JSON);
 
                 //  TODO - actual art
@@ -68,20 +72,70 @@ angular.module('uiApp')
                 this.load.image('playerHiding', 'images/HB_Dwarf05Hiding.png');
                 this.load.image('demon', 'images/DemonMinorFighter.png');
             },
-
             create: function () {
                 this.PLAYER_LIGHT_RADIUS = this.PLAYER_MOVING_LIGHT_RADIUS;
                 this.DEMON_MAX_SIGHT = this.ENEMY_MAX_SIGHT_PLAYER_MOVING;
-
                 this.game.ending = false;
 
-                this.game.physics.startSystem(Phaser.Physics.P2JS);
+                var map = this.createTileMap();
 
+                this.game.physics.startSystem(Phaser.Physics.P2JS);
+                this.game.physics.p2.convertTilemap(map, this.blockLayer);
+                this.game.physics.p2.setBoundsToWorld(true, true, true, true, false);
+                this.createMaterials();
+                this.createPlayer();
+                this.createFinishArea(map);
+                this.createMoveableObjects(map);
+                this.createEnemies(map);
+                this.initializeKeyboard();
+                this.initializeWorldShadowing();
+                this.game.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;
+                this.initializeCandleTracker();
+            },
+            update: function () {
+                this.player.body.setZeroVelocity();
+                this.updateCandleTextLocation();
+
+                if (!this.game.ending) {
+                    this.enemyGroup.forEach(function (enemy) {
+                        this.checkIfEnemyWillChasePlayer(enemy);
+                        if (enemy.isChasing) {
+                            this.enemyChasingPlayerMovement(enemy);
+                        } else {
+                            this.enemyRandomlyMoving(enemy);
+                        }
+                    }, this);
+                    this.handlePlayerMovement();
+                } else {
+                    this.enemyGroup.forEach(function (enemy) {
+                        enemy.body.setZeroVelocity();
+                    });
+                }
+                this.updateWorldShadowAndLights();
+            },
+            render: function () {
+                if (this.DEBUG) {
+                    this.game.debug.cameraInfo(game.camera, 0, 0);
+                    this.game.debug.spriteInfo(this.player, 400, 0);
+                    this.blockLayer.debug = true;
+                    this.player.body.debug = true;
+                    angular.forEach(this.enemyGroup.children, function (child, index) {
+                        this.game.debug.spriteInfo(child, index * 350, 100);
+                    }, this);
+                    angular.forEach(this.moveableGroup.children, function (child, index) {
+                        this.game.debug.spriteInfo(child, index * 350, 200);
+                    }, this);
+                }
+            },
+            //  Phaser state functions - end
+
+            //  Creation functions - begin
+            createTileMap: function () {
                 var map = this.game.add.tilemap('act1tilemaps');
                 map.addTilesetImage('hyptosis_tile-art-batch-1');
 
-                this.blockLayer = map.createLayer('Block Layer ' + this.LEVEL);
                 map.createLayer('Path Layer ' + this.LEVEL);
+                this.blockLayer = map.createLayer('Block Layer ' + this.LEVEL);
                 this.blockLayer.resizeWorld();
                 var tileIds = [];
                 this.blockLayer.layer.data.forEach(function (layerRow) {
@@ -95,34 +149,22 @@ angular.module('uiApp')
                 });
                 tileIds = tileIds.sort();
                 map.setCollision(tileIds, true, this.blockLayer);
-
-                this.game.physics.p2.convertTilemap(map, this.blockLayer);
-                this.game.physics.p2.setBoundsToWorld(true, true, true, true, false);
-
+                return map;
+            },
+            createMaterials: function () {
                 this.playerMaterial = game.physics.p2.createMaterial('playerMaterial');
                 this.worldMaterial = game.physics.p2.createMaterial('worldMaterial');
-                this.rockMaterial = game.physics.p2.createMaterial('rockMaterial');
+                this.moveableMaterial = game.physics.p2.createMaterial('moveableMaterial');
                 this.enemyMaterial = game.physics.p2.createMaterial('enemyMaterial');
 
-                this.player = this.game.add.sprite(this.PLAYER_START_X, this.PLAYER_START_Y, 'player');
-                this.game.physics.p2.enable(this.player);
-                this.player.body.collideWorldBounds = true;
-                this.player.body.fixedRotation = true;
-                this.player.body.debug = this.DEBUG;
-                this.player.body.setMaterial(this.playerMaterial);
-                this.player.height = 32;
-                this.player.width = 32;
-                this.player.body.setCircle(10);
-                this.player.body.mass = this.PLAYER_MASS;
-                this.player.isHiding = false;
-
                 game.physics.p2.setWorldMaterial(this.worldMaterial, true, true, true, true);
+
                 this.game.physics.p2.createContactMaterial(this.playerMaterial, this.worldMaterial, {
                     friction: 0.01,
                     restitution: 1,
                     stiffness: 0
                 });
-                this.game.physics.p2.createContactMaterial(this.rockMaterial, this.worldMaterial, {
+                this.game.physics.p2.createContactMaterial(this.moveableMaterial, this.worldMaterial, {
                     friction: 0.9,
                     restitution: 0.1,
                     stiffness: 1e7,
@@ -140,7 +182,7 @@ angular.module('uiApp')
                     frictionRelaxation: 0,
                     surfaceVelocity: 0
                 });
-                this.game.physics.p2.createContactMaterial(this.enemyMaterial, this.rockMaterial, {
+                this.game.physics.p2.createContactMaterial(this.enemyMaterial, this.moveableMaterial, {
                     friction: 1.0,
                     restitution: 0.0,
                     stiffness: 1e7,
@@ -149,7 +191,24 @@ angular.module('uiApp')
                     frictionRelaxation: 3,
                     surfaceVelocity: 0
                 });
+            },
+            createPlayer: function () {
+                this.player = this.game.add.sprite(this.PLAYER_START_X, this.PLAYER_START_Y, 'player');
+                this.game.physics.p2.enable(this.player);
+                this.player.body.collideWorldBounds = true;
+                this.player.body.fixedRotation = true;
+                this.player.body.debug = this.DEBUG;
+                this.player.body.setMaterial(this.playerMaterial);
+                this.player.height = 32;
+                this.player.width = 32;
+                this.player.body.setCircle(10);
+                this.player.body.mass = this.PLAYER_MASS;
+                this.player.isHiding = false;
+                this.game.camera.follow(this.player);
+                this.player.body.onBeginContact.add(this.collisionCheck, this);
 
+            },
+            createFinishArea: function (map) {
                 this.finishGroup = this.game.add.physicsGroup(Phaser.Physics.P2JS);
                 map.createFromObjects('Object Layer ' + this.LEVEL, 742, 'hyptosis_tile-art-batch-1', 741, true, false, this.finishGroup);
                 map.createFromObjects('Object Layer ' + this.LEVEL, 772, 'hyptosis_tile-art-batch-1', 771, true, false, this.finishGroup);
@@ -164,23 +223,24 @@ angular.module('uiApp')
                     finish.body.static = true;
                     finish.body.debug = this.DEBUG;
                 }, this);
-
-                this.rockGroup = this.game.add.physicsGroup(Phaser.Physics.P2JS);
-                map.createFromObjects('Object Layer ' + this.LEVEL, 214, 'hyptosis_tile-art-batch-1', 214, true, false, this.rockGroup);
-                this.rockGroup.forEach(function (rock) {
-                    rock.body.setMaterial(this.rockMaterial);
-                    rock.body.collideWorldBounds = true;
-                    rock.body.mass = this.ROCK_MASS;
-                    rock.body.damping = 0.95;
-                    rock.body.angularDamping = 0.85;
-                    rock.body.debug = this.DEBUG;
-                    rock.height = 30;
-                    rock.width = 30;
-                    rock.body.x += rock.width / 2;
-                    rock.body.y += rock.height / 2;
-                    rock.body.setRectangle(rock.width, rock.width, 0, 0);
+            },
+            createMoveableObjects: function (map) {
+                this.moveableGroup = this.game.add.physicsGroup(Phaser.Physics.P2JS);
+                map.createFromObjects('Object Layer ' + this.LEVEL, 214, 'hyptosis_tile-art-batch-1', 214, true, false, this.moveableGroup);
+                this.moveableGroup.forEach(function (moveable) {
+                    moveable.body.setMaterial(this.moveableMaterial);
+                    moveable.body.collideWorldBounds = true;
+                    moveable.body.mass = this.MOVEABLE_MASS;
+                    moveable.body.damping = 0.95;
+                    moveable.body.angularDamping = 0.85;
+                    moveable.body.debug = this.DEBUG;
+                    moveable.height = 30;
+                    moveable.width = 30;
+                    moveable.body.x += moveable.width / 2;
+                    moveable.body.y += moveable.height / 2;
+                    moveable.body.setRectangle(moveable.width, moveable.width, 0, 0);
                 }, this);
-
+            }, createEnemies: function (map) {
                 this.enemyGroup = this.game.add.physicsGroup(Phaser.Physics.P2JS);
                 map.createFromObjects('Object Layer ' + this.LEVEL, 782, 'demon', 0, true, false, this.enemyGroup);
                 this.enemyGroup.forEach(function (enemy) {
@@ -205,19 +265,18 @@ angular.module('uiApp')
                     enemy.body.setZeroDamping();
                     enemy.body.setMaterial(this.enemyMaterial);
                 }, this);
-
-                this.player.body.onBeginContact.add(this.collisionCheck, this);
-
-                this.cursors = this.game.input.keyboard.createCursorKeys();
-                this.coverKey = this.game.input.keyboard.addKey(Phaser.Keyboard.C);
-                this.coverKey.onUp.add(this.switchTakingCover, this);
-
+            },
+            initializeWorldShadowing: function () {
                 this.shadowTexture = this.game.add.bitmapData(this.game.world.width, this.game.world.height);
                 this.lightSprite = this.game.add.image(this.game.camera.x, this.game.camera.y, this.shadowTexture);
                 this.lightSprite.blendMode = Phaser.blendModes.MULTIPLY;
-
-                this.game.camera.follow(this.player);
-                this.game.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;
+            },
+            initializeKeyboard: function () {
+                this.cursors = this.game.input.keyboard.createCursorKeys();
+                this.coverKey = this.game.input.keyboard.addKey(Phaser.Keyboard.C);
+                this.coverKey.onUp.add(this.switchTakingCover, this);
+            },
+            initializeCandleTracker: function () {
                 if (this.STARTING_CANDLES > 0) {
                     var textStyle = {
                         font: '10px Arial',
@@ -228,6 +287,20 @@ angular.module('uiApp')
                     this.candleText.anchor.y = 0;
                     this.candleText.anchor.x = 0;
                     $timeout(this.candleTimeoutHandler, 1000, true, this);
+                }
+            },
+            //  Creation functions - end
+
+            //  Candle related - begin
+            makeCandleText: function () {
+                return 'Candles: ' + this.CURRENT_CANDLES + ', Time: ' + this.CURRENT_TIME;
+            },
+
+            updateCandleTextLocation: function () {
+                if (angular.isDefined(this.candleText)) {
+                    //  TODO - this is a little flickery
+                    this.candleText.x = this.camera.x;
+                    this.candleText.y = this.camera.y;
                 }
             },
 
@@ -255,23 +328,6 @@ angular.module('uiApp')
                 }
             },
 
-            makeCandleText: function () {
-                return 'Candles: ' + this.CURRENT_CANDLES + ', Time: ' + this.CURRENT_TIME;
-            },
-
-            switchTakingCover: function () {
-                this.player.isHiding = !this.player.isHiding;
-                if (this.player.isHiding) {
-                    this.PLAYER_LIGHT_RADIUS = this.PLAYER_HIDING_LIGHT_RADIUS;
-                    this.DEMON_MAX_SIGHT = this.ENEMY_MAX_SIGHT_PLAYER_HIDING;
-                    this.player.loadTexture('playerHiding');
-                } else {
-                    this.PLAYER_LIGHT_RADIUS = this.PLAYER_MOVING_LIGHT_RADIUS;
-                    this.DEMON_MAX_SIGHT = this.ENEMY_MAX_SIGHT_PLAYER_MOVING;
-                    this.player.loadTexture('player');
-                }
-            },
-
             drawCircleOfLight: function (sprite, lightRadius) {
                 var radius = lightRadius + this.game.rnd.integerInRange(1, 10);
                 var gradient = this.shadowTexture.context.createRadialGradient(
@@ -285,101 +341,7 @@ angular.module('uiApp')
                 this.shadowTexture.context.arc(sprite.x, sprite.y, radius, 0, Math.PI * 2, false);
                 this.shadowTexture.context.fill();
             },
-
-            update: function () {
-                this.player.body.setZeroVelocity();
-
-                if (angular.isDefined(this.candleText)) {
-                    //  TODO - this is a little flickery
-                    this.candleText.x = this.camera.x;
-                    this.candleText.y = this.camera.y;
-                }
-                if (!this.game.ending) {
-                    this.enemyGroup.forEach(function (enemy) {
-                        //  TODO - Play sound while chasing or play sound when chase begins?
-                        var ray = new Phaser.Line(enemy.x, enemy.y, this.player.x, this.player.y);
-                        var wasChasing = enemy.isChasing;
-                        enemy.isChasing = false;
-                        if (ray.length < this.DEMON_MAX_SIGHT) {
-                            if (this.DEBUG) {
-                                angular.forEach(this.tileHits, function (tileHit) {
-                                    tileHit.debug = false;
-                                });
-                                this.blockLayer.dirty = this.tileHits.length > 0;
-                            }
-                            this.tileHits = this.blockLayer.getRayCastTiles(ray, undefined, true);
-                            if (this.DEBUG) {
-                                angular.forEach(this.tileHits, function (tileHit) {
-                                    tileHit.debug = this.DEBUG;
-                                }, this);
-                                this.blockLayer.dirty = this.tileHits.length > 0;
-                            }
-
-                            var rocksHit = [];
-                            var lineCoordinates = ray.coordinatesOnLine(1);
-                            angular.forEach(lineCoordinates, function (point) {
-                                this.game.physics.p2.hitTest({
-                                    x: point[0],
-                                    y: point[1]
-                                }, this.rockGroup.children, undefined, true).forEach(function (hit) {
-                                    rocksHit.push(hit);
-                                });
-                            }, this);
-                            enemy.isChasing = this.tileHits.length === 0 && rocksHit.length === 0;
-                        }
-                        if (!enemy.isChasing && wasChasing) {
-                            enemy.stopChasingCount++;
-                            if (enemy.stopChasingCount < this.ENEMY_STOP_CHASING_AFTER) {
-                                enemy.isChasing = true;
-                            } else {
-                                enemy.stopChasingCount = 0;
-                            }
-                        }
-                        if (enemy.isChasing) {
-                            //  TODO - smarter pathing logic - see easystar perhaps
-                            var angle = Math.atan2(this.player.y - enemy.y, this.player.x - enemy.x);
-                            enemy.body.velocity.x = Math.cos(angle) * this.ENEMY_CHASE_SPEED;
-                            enemy.body.velocity.y = Math.sin(angle) * this.ENEMY_CHASE_SPEED;
-                        } else {
-                            var compareX = Math.round(enemy.x * 100) / 100;
-                            var compareY = Math.round(enemy.y * 100) / 100;
-                            if ((compareX <= enemy.minX && enemy.body.velocity.x < 0) ||
-                                (compareX >= enemy.maxX && enemy.body.velocity.x > 0)) {
-                                enemy.body.velocity.x *= -1;
-                            }
-                            if ((compareY <= enemy.minY && enemy.body.velocity.y < 0) ||
-                                (compareY >= enemy.maxY && enemy.body.velocity.y > 0)) {
-                                enemy.body.velocity.y *= -1;
-                            }
-                            if (Math.abs(enemy.body.velocity.x) < this.ENEMY_PATROL_SPEED / 5) {
-                                enemy.body.velocity.x = Math.sign(enemy.body.velocity.x) * -1 * this.ENEMY_PATROL_SPEED;
-                            }
-                            if (Math.abs(enemy.body.velocity.y) < this.ENEMY_PATROL_SPEED / 5) {
-                                enemy.body.velocity.y = Math.sign(enemy.body.velocity.y) * -1 * this.ENEMY_PATROL_SPEED;
-                            }
-                        }
-                    }, this);
-
-                    if (!this.player.isHiding) {
-                        if (this.cursors.up.isDown) {
-                            this.player.body.moveUp(this.PLAYER_MOVE_SPEED);
-                        }
-                        if (this.cursors.down.isDown) {
-                            this.player.body.moveDown(this.PLAYER_MOVE_SPEED);
-                        }
-                        if (this.cursors.left.isDown) {
-                            this.player.body.moveLeft(this.PLAYER_MOVE_SPEED);
-                        }
-                        if (this.cursors.right.isDown) {
-                            this.player.body.moveRight(this.PLAYER_MOVE_SPEED);
-                        }
-                    }
-                } else {
-                    this.enemyGroup.forEach(function (enemy) {
-                        enemy.body.setZeroVelocity();
-                    });
-                }
-
+            updateWorldShadowAndLights: function () {
                 this.shadowTexture.context.fillStyle = 'rgb(10, 20, 50)';
                 this.shadowTexture.context.fillRect(0, 0, this.game.world.width, this.game.world.height);
 
@@ -390,46 +352,9 @@ angular.module('uiApp')
 
                 this.shadowTexture.dirty = true;
             },
+            //  Candle related -end
 
-            render: function () {
-                if (this.DEBUG) {
-                    this.game.debug.cameraInfo(game.camera, 0, 0);
-                    this.game.debug.spriteInfo(this.player, 400, 0);
-                    this.blockLayer.debug = true;
-                    this.player.body.debug = true;
-                    angular.forEach(this.enemyGroup.children, function (child, index) {
-                        this.game.debug.spriteInfo(child, index * 350, 100);
-                    }, this);
-                    angular.forEach(this.rockGroup.children, function (child, index) {
-                        this.game.debug.spriteInfo(child, index * 350, 200);
-                    }, this);
-                }
-            },
-
-            deathEnding: function () {
-                this.game.ending = true;
-                var deathTween = this.game.add.tween(this);
-                deathTween.to({PLAYER_LIGHT_RADIUS: 0}, 1000, Phaser.Easing.Power1, true);
-                deathTween.onComplete.add(function () {
-                    //  TODO - dying off screen doesn't reset cleanly without move
-                    this.player.x = this.PLAYER_START_X;
-                    this.player.y = this.PLAYER_START_Y;
-                    this.player.kill();
-                    this.game.state.start(this.state.current, true, false, this.LEVEL, this.STARTING_CANDLES);
-                }, this);
-            },
-
-            winEnding: function () {
-                this.game.ending = true;
-                var winTween = this.game.add.tween(this);
-                winTween.to({PLAYER_LIGHT_RADIUS: 100}, 1000, Phaser.Easing.Power1, true);
-                winTween.onComplete.add(function () {
-                    //  TODO - End of Act
-                    //  TODO - interludes
-                    this.game.state.start(this.state.current, true, false, this.LEVEL + 1, this.CURRENT_CANDLES + Act1Settings.addsCandlesAtEnd[this.LEVEL]);
-                }, this);
-            },
-
+            //  Player action and movement - begin
             collisionCheck: function (body) {
                 if (angular.isDefined(body) &&
                     body !== null &&
@@ -445,7 +370,132 @@ angular.module('uiApp')
                             break;
                     }
                 }
+            },
+            switchTakingCover: function () {
+                this.player.isHiding = !this.player.isHiding;
+                if (this.player.isHiding) {
+                    this.PLAYER_LIGHT_RADIUS = this.PLAYER_HIDING_LIGHT_RADIUS;
+                    this.DEMON_MAX_SIGHT = this.ENEMY_MAX_SIGHT_PLAYER_HIDING;
+                    this.player.loadTexture('playerHiding');
+                } else {
+                    this.PLAYER_LIGHT_RADIUS = this.PLAYER_MOVING_LIGHT_RADIUS;
+                    this.DEMON_MAX_SIGHT = this.ENEMY_MAX_SIGHT_PLAYER_MOVING;
+                    this.player.loadTexture('player');
+                }
+            },
+            handlePlayerMovement: function () {
+                if (!this.player.isHiding) {
+                    if (this.cursors.up.isDown) {
+                        this.player.body.moveUp(this.PLAYER_MOVE_SPEED);
+                    }
+                    if (this.cursors.down.isDown) {
+                        this.player.body.moveDown(this.PLAYER_MOVE_SPEED);
+                    }
+                    if (this.cursors.left.isDown) {
+                        this.player.body.moveLeft(this.PLAYER_MOVE_SPEED);
+                    }
+                    if (this.cursors.right.isDown) {
+                        this.player.body.moveRight(this.PLAYER_MOVE_SPEED);
+                    }
+                }
+            },
+            //  Player action and movement - end
+
+            //  Enemy movement - begin
+            checkIfEnemyWillChasePlayer: function (enemy) {
+                //  TODO - Play sound while chasing or play sound when chase begins?
+                var ray = new Phaser.Line(enemy.x, enemy.y, this.player.x, this.player.y);
+                var wasChasing = enemy.isChasing;
+                enemy.isChasing = false;
+                if (ray.length < this.DEMON_MAX_SIGHT) {
+                    if (this.DEBUG) {
+                        angular.forEach(this.tileHits, function (tileHit) {
+                            tileHit.debug = false;
+                        });
+                        this.blockLayer.dirty = this.tileHits.length > 0;
+                    }
+                    this.tileHits = this.blockLayer.getRayCastTiles(ray, undefined, true);
+                    if (this.DEBUG) {
+                        angular.forEach(this.tileHits, function (tileHit) {
+                            tileHit.debug = this.DEBUG;
+                        }, this);
+                        this.blockLayer.dirty = this.tileHits.length > 0;
+                    }
+
+                    var rocksHit = [];
+                    var lineCoordinates = ray.coordinatesOnLine(1);
+                    angular.forEach(lineCoordinates, function (point) {
+                        this.game.physics.p2.hitTest({
+                            x: point[0],
+                            y: point[1]
+                        }, this.moveableGroup.children, undefined, true).forEach(function (hit) {
+                            rocksHit.push(hit);
+                        });
+                    }, this);
+                    enemy.isChasing = this.tileHits.length === 0 && rocksHit.length === 0;
+                }
+                if (!enemy.isChasing && wasChasing) {
+                    enemy.stopChasingCount++;
+                    if (enemy.stopChasingCount < this.ENEMY_STOP_CHASING_AFTER) {
+                        enemy.isChasing = true;
+                    } else {
+                        enemy.stopChasingCount = 0;
+                    }
+                }
+            },
+            enemyChasingPlayerMovement: function (enemy) {
+                //  TODO - smarter pathing logic - see easystar perhaps
+                var angle = Math.atan2(this.player.y - enemy.y, this.player.x - enemy.x);
+                enemy.body.velocity.x = Math.cos(angle) * this.ENEMY_CHASE_SPEED;
+                enemy.body.velocity.y = Math.sin(angle) * this.ENEMY_CHASE_SPEED;
+            },
+            enemyRandomlyMoving: function (enemy) {
+                var compareX = Math.round(enemy.x * 100) / 100;
+                var compareY = Math.round(enemy.y * 100) / 100;
+                if ((compareX <= enemy.minX && enemy.body.velocity.x < 0) ||
+                    (compareX >= enemy.maxX && enemy.body.velocity.x > 0)) {
+                    enemy.body.velocity.x *= -1;
+                }
+                if ((compareY <= enemy.minY && enemy.body.velocity.y < 0) ||
+                    (compareY >= enemy.maxY && enemy.body.velocity.y > 0)) {
+                    enemy.body.velocity.y *= -1;
+                }
+                if (Math.abs(enemy.body.velocity.x) < this.ENEMY_PATROL_SPEED / 5) {
+                    enemy.body.velocity.x = Math.sign(enemy.body.velocity.x) * -1 * this.ENEMY_PATROL_SPEED;
+                }
+                if (Math.abs(enemy.body.velocity.y) < this.ENEMY_PATROL_SPEED / 5) {
+                    enemy.body.velocity.y = Math.sign(enemy.body.velocity.y) * -1 * this.ENEMY_PATROL_SPEED;
+                }
+            },
+            //  Enemy movement - end
+
+            //  Ending related
+            deathEnding: function () {
+                this.game.ending = true;
+                var deathTween = this.game.add.tween(this);
+                deathTween.to({PLAYER_LIGHT_RADIUS: 0}, 1000, Phaser.Easing.Power1, true);
+                deathTween.onComplete.add(function () {
+                    //  TODO - dying off screen doesn't reset cleanly without move
+                    this.player.x = this.PLAYER_START_X;
+                    this.player.y = this.PLAYER_START_Y;
+                    this.player.kill();
+                    //  TODO - retry move on option
+                    this.game.state.start(this.state.current, true, false, this.LEVEL, this.STARTING_CANDLES);
+                }, this);
+            },
+
+            winEnding: function () {
+                this.game.ending = true;
+                var winTween = this.game.add.tween(this);
+                winTween.to({PLAYER_LIGHT_RADIUS: 100}, 1000, Phaser.Easing.Power1, true);
+                winTween.onComplete.add(function () {
+                    //  TODO - End of Act
+                    //  TODO - interludes
+                    //  TODO - retry move on option
+                    this.game.state.start(this.state.current, true, false, this.LEVEL + 1, this.CURRENT_CANDLES + Act1Settings.addsCandlesAtEnd[this.LEVEL]);
+                }, this);
             }
+
         };
 
         game.state.add('TitleScreen', gameStates.TitleScreen);
