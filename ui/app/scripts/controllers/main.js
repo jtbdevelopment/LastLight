@@ -12,36 +12,30 @@ angular.module('uiApp')
     .controller('MainCtrl', ['$timeout', 'Act1Settings', function ($timeout, Act1Settings) {
         var game = new Phaser.Game(800, 400, Phaser.AUTO, 'phaser');
 
-        var gameStates = {};
-        gameStates.TitleScreen = function () {
-        };
-        gameStates.TitleScreen.prototype = {
+        var TitleScreen = {
             create: function () {
                 this.game.state.start('Act1', true, false, 0, 0);
             }
         };
 
-        gameStates.Act1Maze = function () {
-            this.PLAYER_MOVE_SPEED = 75;
-            this.PLAYER_MASS = 10;
+        var Act1Maze = {
+            PLAYER_MOVE_SPEED: 75,
+            PLAYER_MASS: 10,
 
-            this.MOVEABLE_MASS = 200;
+            MOVABLE_MASS: 200,
 
-            this.ENEMY_PATROL_SPEED = 25;
-            this.ENEMY_CHASE_SPEED = 90;
-            this.ENEMY_PATROL_RANGE = 64;
-            this.ENEMY_MAX_SIGHT_PLAYER_MOVING = 100;
-            this.ENEMY_STOP_CHASING_AFTER = 10;
+            ENEMY_PATROL_SPEED: 25,
+            ENEMY_CHASE_SPEED: 90,
+            ENEMY_PATROL_RANGE: 64,
+            ENEMY_MAX_SIGHT_PLAYER_MOVING: 100,
+            ENEMY_STOP_CHASING_AFTER: 10,
 
-            this.FINISH_LIGHT_RADIUS = 50;
+            FINISH_LIGHT_RADIUS: 50,
 
-            this.TIME_PER_CANDLE = 60;    //  seconds
+            TIME_PER_CANDLE: 60,    //  seconds
 
-            this.DEBUG = false;
-            this.tileHits = [];
-        };
-
-        gameStates.Act1Maze.prototype = {
+            DEBUG: false,
+            tileHits: [],
             //  Phaser state functions - begin
             init: function (level, startingCandles) {
                 this.LEVEL = level;
@@ -85,7 +79,7 @@ angular.module('uiApp')
                 this.createMaterials();
                 this.createPlayer();
                 this.createFinishArea(map);
-                this.createMoveableObjects(map);
+                this.createMovableObjects(map);
                 this.createEnemies(map);
                 this.initializeKeyboard();
                 this.initializeWorldShadowing();
@@ -122,7 +116,7 @@ angular.module('uiApp')
                     angular.forEach(this.enemyGroup.children, function (child, index) {
                         this.game.debug.spriteInfo(child, index * 350, 100);
                     }, this);
-                    angular.forEach(this.moveableGroup.children, function (child, index) {
+                    angular.forEach(this.movableGroup.children, function (child, index) {
                         this.game.debug.spriteInfo(child, index * 350, 200);
                     }, this);
                 }
@@ -154,7 +148,7 @@ angular.module('uiApp')
             createMaterials: function () {
                 this.playerMaterial = game.physics.p2.createMaterial('playerMaterial');
                 this.worldMaterial = game.physics.p2.createMaterial('worldMaterial');
-                this.moveableMaterial = game.physics.p2.createMaterial('moveableMaterial');
+                this.movableMaterial = game.physics.p2.createMaterial('movableMaterial');
                 this.enemyMaterial = game.physics.p2.createMaterial('enemyMaterial');
 
                 game.physics.p2.setWorldMaterial(this.worldMaterial, true, true, true, true);
@@ -164,7 +158,7 @@ angular.module('uiApp')
                     restitution: 1,
                     stiffness: 0
                 });
-                this.game.physics.p2.createContactMaterial(this.moveableMaterial, this.worldMaterial, {
+                this.game.physics.p2.createContactMaterial(this.movableMaterial, this.worldMaterial, {
                     friction: 0.9,
                     restitution: 0.1,
                     stiffness: 1e7,
@@ -182,7 +176,7 @@ angular.module('uiApp')
                     frictionRelaxation: 0,
                     surfaceVelocity: 0
                 });
-                this.game.physics.p2.createContactMaterial(this.enemyMaterial, this.moveableMaterial, {
+                this.game.physics.p2.createContactMaterial(this.enemyMaterial, this.movableMaterial, {
                     friction: 1.0,
                     restitution: 0.0,
                     stiffness: 1e7,
@@ -224,21 +218,21 @@ angular.module('uiApp')
                     finish.body.debug = this.DEBUG;
                 }, this);
             },
-            createMoveableObjects: function (map) {
-                this.moveableGroup = this.game.add.physicsGroup(Phaser.Physics.P2JS);
-                map.createFromObjects('Object Layer ' + this.LEVEL, 214, 'hyptosis_tile-art-batch-1', 214, true, false, this.moveableGroup);
-                this.moveableGroup.forEach(function (moveable) {
-                    moveable.body.setMaterial(this.moveableMaterial);
-                    moveable.body.collideWorldBounds = true;
-                    moveable.body.mass = this.MOVEABLE_MASS;
-                    moveable.body.damping = 0.95;
-                    moveable.body.angularDamping = 0.85;
-                    moveable.body.debug = this.DEBUG;
-                    moveable.height = 30;
-                    moveable.width = 30;
-                    moveable.body.x += moveable.width / 2;
-                    moveable.body.y += moveable.height / 2;
-                    moveable.body.setRectangle(moveable.width, moveable.width, 0, 0);
+            createMovableObjects: function (map) {
+                this.movableGroup = this.game.add.physicsGroup(Phaser.Physics.P2JS);
+                map.createFromObjects('Object Layer ' + this.LEVEL, 214, 'hyptosis_tile-art-batch-1', 214, true, false, this.movableGroup);
+                this.movableGroup.forEach(function (movable) {
+                    movable.body.setMaterial(this.movableMaterial);
+                    movable.body.collideWorldBounds = true;
+                    movable.body.mass = this.MOVABLE_MASS;
+                    movable.body.damping = 0.95;
+                    movable.body.angularDamping = 0.85;
+                    movable.body.debug = this.DEBUG;
+                    movable.height = 30;
+                    movable.width = 30;
+                    movable.body.x += movable.width / 2;
+                    movable.body.y += movable.height / 2;
+                    movable.body.setRectangle(movable.width, movable.width, 0, 0);
                 }, this);
             }, createEnemies: function (map) {
                 this.enemyGroup = this.game.add.physicsGroup(Phaser.Physics.P2JS);
@@ -428,7 +422,7 @@ angular.module('uiApp')
                         this.game.physics.p2.hitTest({
                             x: point[0],
                             y: point[1]
-                        }, this.moveableGroup.children, undefined, true).forEach(function (hit) {
+                        }, this.movableGroup.children, undefined, true).forEach(function (hit) {
                             rocksHit.push(hit);
                         });
                     }, this);
@@ -498,8 +492,8 @@ angular.module('uiApp')
 
         };
 
-        game.state.add('TitleScreen', gameStates.TitleScreen);
-        game.state.add('Act1', gameStates.Act1Maze);
-        game.state.start('Act1', true, false, 0, 0);
+        game.state.add('TitleScreen', TitleScreen);
+        game.state.add('Act1', Act1Maze);
+        game.state.start('TitleScreen', true, false, 0, 0);
     }]);
 
