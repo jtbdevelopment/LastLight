@@ -5,7 +5,7 @@ angular.module('uiApp').factory('TitleScreenState',
         var TitleScreenState = {
             create: function () {
                 //  TODO
-                this.game.state.start('Act1', true, false, 0, 0);
+                //this.game.state.start('Act1', true, false, 0, 0);
             }
         };
 
