@@ -204,6 +204,7 @@ angular.module('uiApp').factory('Act1MazeState',
                     }, this);
                 },
                 createMovableObjects: function (map) {
+                    //  TODO - custom class for logic?
                     this.movableGroup = this.game.add.physicsGroup(Phaser.Physics.P2JS);
                     map.createFromObjects('Object Layer ' + this.LEVEL, 214, 'hyptosis_tile-art-batch-1', 214, true, false, this.movableGroup);
                     this.movableGroup.forEach(function (movable) {
@@ -221,6 +222,7 @@ angular.module('uiApp').factory('Act1MazeState',
                     }, this);
                 }, createEnemies: function (map) {
                     this.enemyGroup = this.game.add.physicsGroup(Phaser.Physics.P2JS);
+                    //  TODO - custom class for logic?
                     map.createFromObjects('Object Layer ' + this.LEVEL, 782, 'demon', 0, true, false, this.enemyGroup);
                     this.enemyGroup.forEach(function (enemy) {
                         enemy.height = 32;
