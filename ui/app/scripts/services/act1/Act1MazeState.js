@@ -323,7 +323,9 @@ angular.module('uiApp').factory('Act1MazeState',
                     this.shadowTexture.context.fill();
                 },
                 updateWorldShadowAndLights: function () {
-                    this.shadowTexture.context.fillStyle = 'rgb(10, 20, 50)';
+                    //  TODO - make a gamma slider  (10, 20,50)
+
+                    this.shadowTexture.context.fillStyle = 'rgb(110, 120, 150)';
                     this.shadowTexture.context.fillRect(0, 0, this.game.world.width, this.game.world.height);
 
                     this.drawCircleOfLight(this.player, this.PLAYER_LIGHT_RADIUS);
