@@ -73,7 +73,6 @@ angular.module('uiApp').factory('Act1MazeState',
                 },
                 update: function () {
                     this.player.body.setZeroVelocity();
-                    this.updateCandleTextLocation();
 
                     if (!this.game.ending) {
                         this.enemyGroup.forEach(function (enemy) {
@@ -265,8 +264,8 @@ angular.module('uiApp').factory('Act1MazeState',
                             align: 'left'
                         };
                         this.candleText = this.game.add.text(0, 0, this.makeCandleText(), textStyle);
-                        this.candleText.anchor.y = 0;
-                        this.candleText.anchor.x = 0;
+                        this.candleText.fixedToCamera = true;
+                        this.candleText.cameraOffset.setTo(0, 0);
                         $timeout(this.candleTimeoutHandler, 1000, true, this);
                     }
                 },
@@ -275,14 +274,6 @@ angular.module('uiApp').factory('Act1MazeState',
                 //  Candle related - begin
                 makeCandleText: function () {
                     return 'Candles: ' + this.CURRENT_CANDLES + ', Time: ' + this.CURRENT_TIME;
-                },
-
-                updateCandleTextLocation: function () {
-                    if (angular.isDefined(this.candleText)) {
-                        //  TODO - this is a little flickery
-                        this.candleText.x = this.camera.x;
-                        this.candleText.y = this.camera.y;
-                    }
                 },
 
                 candleTimeoutHandler: function (state) {

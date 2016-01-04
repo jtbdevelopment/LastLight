@@ -27,6 +27,10 @@ angular
         templateUrl: 'views/main.html',
         controller: 'Act1Ctrl'
       })
+        .when('/act1temp', {
+            templateUrl: 'views/main.html',
+            controller: 'Act1TempCtrl'
+        })
       .otherwise({
         redirectTo: '/title'
       });
