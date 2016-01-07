@@ -1,6 +1,11 @@
 'use strict';
 
-angular.module('uiApp').factory('Act1MazeState',
+var VERTICAL_FORMATION = 1;
+var HORIZONTAL_FORMATION = 2;
+var UP_DOWN_FORMATION = 3;
+var LEFT_RIGHT_FORMATION = 4;
+
+angular.module('uiApp').factory('Act3ScrollingState',
     ['$timeout', 'Act1Settings',
         function ($timeout, Act1Settings) {
             return {
@@ -9,103 +14,107 @@ angular.module('uiApp').factory('Act1MazeState',
                 data: undefined,
                 state: undefined,
 
-                PLAYER_MOVE_SPEED: 75,
-                PLAYER_MASS: 10,
+                PLAYER_HELPERS: 5,
+                PLAYER_MOVE_SPEED: 2,
+                //PLAYER_MASS: 10,
 
-                MOVABLE_MASS: 200,
+                //MOVABLE_MASS: 200,
 
-                ENEMY_PATROL_SPEED: 25,
-                ENEMY_CHASE_SPEED: 90,
-                ENEMY_PATROL_RANGE: 64,
-                ENEMY_MAX_SIGHT_PLAYER_MOVING: 100,
-                ENEMY_STOP_CHASING_AFTER: 10,
+                //ENEMY_PATROL_SPEED: 25,
+                //ENEMY_CHASE_SPEED: 90,
+                //ENEMY_PATROL_RANGE: 64,
+                //ENEMY_MAX_SIGHT_PLAYER_MOVING: 100,
+                //ENEMY_STOP_CHASING_AFTER: 10,
 
-                FINISH_LIGHT_RADIUS: 50,
+                //FINISH_LIGHT_RADIUS: 50,
 
-                TIME_PER_CANDLE: 60,    //  seconds
+                //TIME_PER_CANDLE: 60,    //  seconds
 
                 DEBUG: false,
                 tileHits: [],
+
                 //  Phaser state functions - begin
-                init: function (level, startingCandles) {
+                init: function (level, arrowsRemaining) {
                     this.LEVEL = level;
-                    this.PLAYER_START_X = Act1Settings.startingXPositions[level];
-                    this.PLAYER_START_Y = Act1Settings.startingYPositions[level];
+                    this.ARROWS_REMAINING = arrowsRemaining;
+                    //  TODO
+                    this.CURRENT_FORMATION = VERTICAL_FORMATION;
+                    this.PLAYER_START_X = 0;
+                    this.PLAYER_START_Y = 0;
                     this.PLAYER_HIDING_LIGHT_RADIUS = Act1Settings.playerHidingLightRadius[level];
                     this.PLAYER_MOVING_LIGHT_RADIUS = Act1Settings.playerMovingLightRadius[level];
                     this.ENEMY_MAX_SIGHT_PLAYER_HIDING = Act1Settings.enemySenseHidingDistance[level];
-                    this.STARTING_CANDLES = startingCandles;
-                    this.CURRENT_CANDLES = this.STARTING_CANDLES;
-                    this.CURRENT_TIME = this.TIME_PER_CANDLE;
                 },
                 preload: function () {
                     //  Note tile asset IDs do not match because 0 represents no tile
                     //  So in tiled - a tile will be asset id 535
                     //  In json file it will be 536
                     //  When remapping images from one to another you would need to say 536 -> 535
-                    this.load.tilemap('act1tilemaps', 'assets/tilemaps/act1tilemaps.json', null, Phaser.Tilemap.TILED_JSON);
 
                     //  TODO - actual art
                     //  TODO - physics for art
                     //  https://code.google.com/p/box2d-editor/
                     //  http://phaser.io/examples/v2/p2-physics/load-polygon-1
-                    //  TODO - real boundary layer ?
                     //  TODO - music
-                    this.load.spritesheet('hyptosis_tile-art-batch-1', 'images/hyptosis_tile-art-batch-1.png', 32, 32);
                     this.load.image('player', 'images/HB_Dwarf05.png');
-                    this.load.image('playerHiding', 'images/HB_Dwarf05Hiding.png');
                     this.load.image('demon', 'images/DemonMinorFighter.png');
                 },
                 create: function () {
-                    this.PLAYER_LIGHT_RADIUS = this.PLAYER_MOVING_LIGHT_RADIUS;
-                    this.DEMON_MAX_SIGHT = this.ENEMY_MAX_SIGHT_PLAYER_MOVING;
                     this.game.ending = false;
 
-                    var map = this.createTileMap();
+                    this.game.world.resize(6000, 600);
 
-                    this.game.physics.startSystem(Phaser.Physics.P2JS);
-                    this.game.physics.p2.convertTilemap(map, this.blockLayer);
-                    this.game.physics.p2.setBoundsToWorld(true, true, true, true, false);
-                    this.createMaterials();
+                    this.game.physics.startSystem(Phaser.Physics.ARCADE);
+                    this.game.physics.arcade.setBoundsToWorld(true, true, true, true, false);
                     this.createPlayer();
-                    this.createFinishArea(map);
-                    this.createMovableObjects(map);
-                    this.createEnemies(map);
+                    /*
+                     this.createMaterials();
+                     this.createFinishArea(map);
+                     this.createMovableObjects(map);
+                     this.createEnemies(map);
+                     this.initializeWorldShadowing();
+                     this.initializeCandleTracker();
+                     */
                     this.initializeKeyboard();
-                    this.initializeWorldShadowing();
                     this.game.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;
-                    this.initializeCandleTracker();
                 },
                 update: function () {
-                    this.player.body.setZeroVelocity();
+//                    this.player.body.setZeroVelocity();
 
                     if (!this.game.ending) {
-                        this.enemyGroup.forEach(function (enemy) {
-                            this.checkIfEnemyWillChasePlayer(enemy);
-                            if (enemy.isChasing) {
-                                this.enemyChasingPlayerMovement(enemy);
-                            } else {
-                                this.enemyRandomlyMoving(enemy);
-                            }
-                        }, this);
+                        /*
+                         this.enemyGroup.forEach(function (enemy) {
+                         this.checkIfEnemyWillChasePlayer(enemy);
+                         if (enemy.isChasing) {
+                         this.enemyChasingPlayerMovement(enemy);
+                         } else {
+                         this.enemyRandomlyMoving(enemy);
+                         }
+                         }, this);
+                         */
                         this.handlePlayerMovement();
-                    } else {
-                        this.enemyGroup.forEach(function (enemy) {
-                            enemy.body.setZeroVelocity();
-                        });
+                        /*
+                         } else {
+                         this.enemyGroup.forEach(function (enemy) {
+                         enemy.body.setZeroVelocity();
+                         });
+                         */
                     }
-                    this.updateWorldShadowAndLights();
+                    //this.updateWorldShadowAndLights();
                 },
                 render: function () {
                     if (this.DEBUG) {
-                        this.game.debug.cameraInfo(this.game.camera, 0, 0);
-                        this.game.debug.spriteInfo(this.player, 400, 0);
-                        angular.forEach(this.enemyGroup.children, function (child, index) {
-                            this.game.debug.spriteInfo(child, index * 350, 100);
+                        this.game.debug.cameraInfo(this.game.camera, 10, 20);
+                        angular.forEach(this.player, function(p, index) {
+                            this.game.debug.spriteInfo(p, index * 350, 100);
+                            this.game.debug.body(p);
                         }, this);
-                        angular.forEach(this.movableGroup.children, function (child, index) {
-                            this.game.debug.spriteInfo(child, index * 350, 200);
-                        }, this);
+//                        angular.forEach(this.enemyGroup.children, function (child, index) {
+//                            this.game.debug.spriteInfo(child, index * 350, 100);
+//                        }, this);
+//                        angular.forEach(this.movableGroup.children, function (child, index) {
+//                            this.game.debug.spriteInfo(child, index * 350, 200);
+//                        }, this);
                     }
                 },
                 //  Phaser state functions - end
@@ -117,7 +126,6 @@ angular.module('uiApp').factory('Act1MazeState',
 
                     map.createLayer('Path Layer ' + this.LEVEL);
                     this.blockLayer = map.createLayer('Block Layer ' + this.LEVEL);
-                    this.blockLayer.debug = this.DEBUG;
                     this.blockLayer.resizeWorld();
                     var tileIds = [];
                     this.blockLayer.layer.data.forEach(function (layerRow) {
@@ -175,22 +183,21 @@ angular.module('uiApp').factory('Act1MazeState',
                     });
                 },
                 createPlayer: function () {
-                    this.player = this.game.add.sprite(this.PLAYER_START_X, this.PLAYER_START_Y, 'player');
-                    this.game.physics.p2.enable(this.player);
-                    this.player.body.collideWorldBounds = true;
-                    this.player.body.fixedRotation = true;
-                    this.player.body.debug = this.DEBUG;
-                    this.player.body.setMaterial(this.playerMaterial);
-                    this.player.height = 32;
-                    this.player.width = 32;
-                    this.player.body.setCircle(10);
-                    this.player.body.mass = this.PLAYER_MASS;
-                    this.player.isHiding = false;
-                    this.game.camera.follow(this.player);
-                    this.player.body.onBeginContact.add(this.collisionCheck, this);
-
+                    this.player = [];
+                    for (var i = 0; i < this.PLAYER_HELPERS; ++i ) {
+                        // TODO - real height
+                        var player = this.game.add.sprite(this.PLAYER_START_X, this.PLAYER_START_Y + (32 * i), 'player');
+                        this.game.physics.arcade.enable(player);
+                        player.body.collideWorldBounds = true;
+                        player.body.debug = this.DEBUG;
+                        player.height = 32;
+                        player.width = 32;
+                        this.player.push(player);
+                    }
+                    this.game.camera.follow(this.player[(this.PLAYER_HELPERS / 2 + 0.5)]);
+                    //  TODO
+                    //this.player.body.onBeginContact.add(this.collisionCheck, this);
                 },
-
                 createFinishArea: function (map) {
                     this.finishGroup = this.game.add.physicsGroup(Phaser.Physics.P2JS);
                     map.createFromObjects('Object Layer ' + this.LEVEL, 742, 'hyptosis_tile-art-batch-1', 741, true, false, this.finishGroup);
@@ -207,7 +214,6 @@ angular.module('uiApp').factory('Act1MazeState',
                         finish.body.debug = this.DEBUG;
                     }, this);
                 },
-
                 createMovableObjects: function (map) {
                     //  TODO - custom class for logic?
                     this.movableGroup = this.game.add.physicsGroup(Phaser.Physics.P2JS);
@@ -226,7 +232,6 @@ angular.module('uiApp').factory('Act1MazeState',
                         movable.body.setRectangle(movable.width, movable.width, 0, 0);
                     }, this);
                 },
-
                 createEnemies: function (map) {
                     this.enemyGroup = this.game.add.physicsGroup(Phaser.Physics.P2JS);
                     //  TODO - custom class for logic?
@@ -254,19 +259,16 @@ angular.module('uiApp').factory('Act1MazeState',
                         enemy.body.setMaterial(this.enemyMaterial);
                     }, this);
                 },
-
                 initializeWorldShadowing: function () {
                     this.shadowTexture = this.game.add.bitmapData(this.game.world.width, this.game.world.height);
                     this.lightSprite = this.game.add.image(this.game.camera.x, this.game.camera.y, this.shadowTexture);
                     this.lightSprite.blendMode = Phaser.blendModes.MULTIPLY;
                 },
-
                 initializeKeyboard: function () {
                     this.cursors = this.game.input.keyboard.createCursorKeys();
                     this.coverKey = this.game.input.keyboard.addKey(Phaser.Keyboard.C);
                     this.coverKey.onUp.add(this.switchTakingCover, this);
                 },
-
                 initializeCandleTracker: function () {
                     if (this.STARTING_CANDLES > 0) {
                         var textStyle = {
@@ -357,32 +359,28 @@ angular.module('uiApp').factory('Act1MazeState',
                     }
                 },
                 switchTakingCover: function () {
-                    this.player.isHiding = !this.player.isHiding;
-                    if (this.player.isHiding) {
-                        this.PLAYER_LIGHT_RADIUS = this.PLAYER_HIDING_LIGHT_RADIUS;
-                        this.DEMON_MAX_SIGHT = this.ENEMY_MAX_SIGHT_PLAYER_HIDING;
-                        this.player.loadTexture('playerHiding');
-                    } else {
-                        this.PLAYER_LIGHT_RADIUS = this.PLAYER_MOVING_LIGHT_RADIUS;
-                        this.DEMON_MAX_SIGHT = this.ENEMY_MAX_SIGHT_PLAYER_MOVING;
-                        this.player.loadTexture('player');
-                    }
                 },
-
                 handlePlayerMovement: function () {
-                    if (!this.player.isHiding) {
-                        if (this.cursors.up.isDown) {
-                            this.player.body.moveUp(this.PLAYER_MOVE_SPEED);
-                        }
-                        if (this.cursors.down.isDown) {
-                            this.player.body.moveDown(this.PLAYER_MOVE_SPEED);
-                        }
-                        if (this.cursors.left.isDown) {
-                            this.player.body.moveLeft(this.PLAYER_MOVE_SPEED);
-                        }
-                        if (this.cursors.right.isDown) {
-                            this.player.body.moveRight(this.PLAYER_MOVE_SPEED);
-                        }
+                    //  TODO - prevent bunch up at boundaries
+                    if (this.cursors.up.isDown) {
+                        angular.forEach(this.player, function(p) {
+                            p.y -= this.PLAYER_MOVE_SPEED;
+                        }, this)
+                    }
+                    if (this.cursors.down.isDown) {
+                        angular.forEach(this.player, function(p) {
+                            p.y += this.PLAYER_MOVE_SPEED;
+                        }, this)
+                    }
+                    if (this.cursors.left.isDown) {
+                        angular.forEach(this.player, function(p) {
+                            p.x -= this.PLAYER_MOVE_SPEED;
+                        }, this)
+                    }
+                    if (this.cursors.right.isDown) {
+                        angular.forEach(this.player, function(p) {
+                            p.x += this.PLAYER_MOVE_SPEED;
+                        }, this)
                     }
                 },
                 //  Player action and movement - end
@@ -429,14 +427,12 @@ angular.module('uiApp').factory('Act1MazeState',
                         }
                     }
                 },
-
                 enemyChasingPlayerMovement: function (enemy) {
                     //  TODO - smarter pathing logic - see easystar perhaps
                     var angle = Math.atan2(this.player.y - enemy.y, this.player.x - enemy.x);
                     enemy.body.velocity.x = Math.cos(angle) * this.ENEMY_CHASE_SPEED;
                     enemy.body.velocity.y = Math.sin(angle) * this.ENEMY_CHASE_SPEED;
                 },
-
                 enemyRandomlyMoving: function (enemy) {
                     var compareX = Math.round(enemy.x * 100) / 100;
                     var compareY = Math.round(enemy.y * 100) / 100;
@@ -483,7 +479,6 @@ angular.module('uiApp').factory('Act1MazeState',
                         this.game.state.start(this.state.current, true, false, this.LEVEL + 1, this.CURRENT_CANDLES + Act1Settings.addsCandlesAtEnd[this.LEVEL]);
                     }, this);
                 }
-
             };
         }
     ]

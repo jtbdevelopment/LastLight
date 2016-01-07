@@ -2,15 +2,12 @@
 
 angular.module('uiApp').factory('TitleScreenState',
     [function () {
-        var TitleScreenState = {
+        return {
             create: function () {
                 //  TODO
                 //this.game.state.start('Act1', true, false, 0, 0);
             }
         };
-
-
-        return TitleScreenState;
     }
     ]
 );
