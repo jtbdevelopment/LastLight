@@ -1,7 +1,8 @@
 'use strict';
 
 var VERTICAL_FORMATION = 1;
-var HORIZONTAL_FORMATION = 2;
+var WEDGE_FORMATION = 2;
+var BLOCK_FORMATION = 3;
 var UP_DOWN_FORMATION = 3;
 var LEFT_RIGHT_FORMATION = 4;
 
@@ -38,7 +39,7 @@ angular.module('uiApp').factory('Act3ScrollingState',
                     this.LEVEL = level;
                     this.ARROWS_REMAINING = arrowsRemaining;
                     //  TODO
-                    this.CURRENT_FORMATION = VERTICAL_FORMATION;
+                    this.CURRENT_FORMATION = BLOCK_FORMATION;
                     this.PLAYER_START_X = 0;
                     this.PLAYER_START_Y = 0;
                     this.PLAYER_HIDING_LIGHT_RADIUS = Act1Settings.playerHidingLightRadius[level];
@@ -105,7 +106,7 @@ angular.module('uiApp').factory('Act3ScrollingState',
                 render: function () {
                     if (this.DEBUG) {
                         this.game.debug.cameraInfo(this.game.camera, 10, 20);
-                        angular.forEach(this.player, function(p, index) {
+                        angular.forEach(this.player, function (p, index) {
                             this.game.debug.spriteInfo(p, index * 350, 100);
                             this.game.debug.body(p);
                         }, this);
@@ -184,19 +185,22 @@ angular.module('uiApp').factory('Act3ScrollingState',
                 },
                 createPlayer: function () {
                     this.player = [];
-                    for (var i = 0; i < this.PLAYER_HELPERS; ++i ) {
+                    this.playerTween = [];
+                    for (var i = 0; i < this.PLAYER_HELPERS; ++i) {
                         // TODO - real height
-                        var player = this.game.add.sprite(this.PLAYER_START_X, this.PLAYER_START_Y + (32 * i), 'player');
+                        var player = this.game.add.sprite(this.PLAYER_START_X, this.PLAYER_START_Y, 'player');
                         this.game.physics.arcade.enable(player);
                         player.body.collideWorldBounds = true;
                         player.body.debug = this.DEBUG;
                         player.height = 32;
                         player.width = 32;
                         this.player.push(player);
+                        this.playerTween.push(undefined);
                     }
-                    this.game.camera.follow(this.player[(this.PLAYER_HELPERS / 2 + 0.5)]);
+                    this.game.camera.follow(this.player[0]);
                     //  TODO
                     //this.player.body.onBeginContact.add(this.collisionCheck, this);
+                    this.moveHelpers();
                 },
                 createFinishArea: function (map) {
                     this.finishGroup = this.game.add.physicsGroup(Phaser.Physics.P2JS);
@@ -362,26 +366,78 @@ angular.module('uiApp').factory('Act3ScrollingState',
                 },
                 handlePlayerMovement: function () {
                     //  TODO - prevent bunch up at boundaries
+                    var moved = false;
                     if (this.cursors.up.isDown) {
-                        angular.forEach(this.player, function(p) {
-                            p.y -= this.PLAYER_MOVE_SPEED;
-                        }, this)
+                        this.player[0].y -= this.PLAYER_MOVE_SPEED;
+                        moved = true;
                     }
                     if (this.cursors.down.isDown) {
-                        angular.forEach(this.player, function(p) {
-                            p.y += this.PLAYER_MOVE_SPEED;
-                        }, this)
+                        this.player[0].y += this.PLAYER_MOVE_SPEED;
+                        moved = true;
                     }
                     if (this.cursors.left.isDown) {
-                        angular.forEach(this.player, function(p) {
-                            p.x -= this.PLAYER_MOVE_SPEED;
-                        }, this)
+                        this.player[0].x -= this.PLAYER_MOVE_SPEED;
+                        moved = true;
                     }
                     if (this.cursors.right.isDown) {
-                        angular.forEach(this.player, function(p) {
-                            p.x += this.PLAYER_MOVE_SPEED;
-                        }, this)
+                        this.player[0].x += this.PLAYER_MOVE_SPEED;
+                        moved = true;
                     }
+                    if (moved) {
+                        this.moveHelpers();
+                    }
+                },
+                moveHelpers: function () {
+                    angular.forEach(this.player, function (p, index) {
+                        if (index > 0) {
+                            var x = 0, y = 0;
+                            switch (this.CURRENT_FORMATION) {
+                                case VERTICAL_FORMATION:
+                                    x = this.player[0].x;
+                                    y = this.player[0].y + (index * p.height);
+                                    break;
+                                case BLOCK_FORMATION:
+                                    switch (index) {
+                                        case 1:
+                                            x = this.player[0].x + (2 * p.width);
+                                            y = this.player[0].y;
+                                            break;
+                                        case 2:
+                                            x = this.player[0].x + (1 * p.width);
+                                            y = this.player[0].y + (p.height / 2);
+                                            break;
+                                        case 3:
+                                            x = this.player[0].x;
+                                            y = this.player[0].y + (p.height);
+                                            break;
+                                        case 4:
+                                            x = this.player[0].x + (2 * p.width);
+                                            y = this.player[0].y + (p.height);
+                                            break;
+                                    }
+                                    break;
+                                case WEDGE_FORMATION:
+                                    switch (index) {
+                                        case 1:
+                                        case 2:
+                                            x = this.player[0].x + (index * p.width);
+                                            y = this.player[0].y + (index * p.height);
+                                            break;
+                                        case 3:
+                                        case 4:
+                                            x = this.player[0].x + ((4 - index) * p.width);
+                                            y = this.player[0].y + (index * p.height);
+                                            break;
+                                    }
+                                    break;
+                            }
+                            this.playerTween[index] = this.game.add.tween(p);
+                            this.playerTween[index].to({
+                                x: Math.min(x, this.game.width - p.width),
+                                y: Math.min(y, this.game.height - p.height)
+                            }, 10, null, true);
+                        }
+                    }, this)
                 },
                 //  Player action and movement - end
 
