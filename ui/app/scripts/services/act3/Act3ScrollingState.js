@@ -485,7 +485,7 @@ angular.module('uiApp').factory('Act3ScrollingState',
                             tween.to({
                                 x: x,
                                 y: y
-                            }, 10 * distanceFactor, null, true);
+                            }, 8 * distanceFactor, null, true);
                         }
                     }, this)
                 },
