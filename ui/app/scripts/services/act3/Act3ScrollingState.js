@@ -16,7 +16,7 @@ angular.module('uiApp').factory('Act3ScrollingState',
                 state: undefined,
 
                 PLAYER_HELPERS: 5,
-                PLAYER_MOVE_SPEED: 2,
+                PLAYER_MOVE_SPEED: 3,
                 //PLAYER_MASS: 10,
 
                 //MOVABLE_MASS: 200,
@@ -39,7 +39,7 @@ angular.module('uiApp').factory('Act3ScrollingState',
                     this.LEVEL = level;
                     this.ARROWS_REMAINING = arrowsRemaining;
                     //  TODO
-                    this.CURRENT_FORMATION = BLOCK_FORMATION;
+                    this.CURRENT_FORMATION = VERTICAL_FORMATION;
                     this.PLAYER_START_X = 0;
                     this.PLAYER_START_Y = 0;
                     this.PLAYER_HIDING_LIGHT_RADIUS = Act1Settings.playerHidingLightRadius[level];
@@ -195,7 +195,7 @@ angular.module('uiApp').factory('Act3ScrollingState',
                         player.height = 32;
                         player.width = 32;
                         this.player.push(player);
-                        this.playerTween.push(undefined);
+                        this.playerTween.push(this.game.add.tween(player));
                     }
                     this.game.camera.follow(this.player[0]);
                     //  TODO
@@ -270,8 +270,13 @@ angular.module('uiApp').factory('Act3ScrollingState',
                 },
                 initializeKeyboard: function () {
                     this.cursors = this.game.input.keyboard.createCursorKeys();
-                    this.coverKey = this.game.input.keyboard.addKey(Phaser.Keyboard.C);
-                    this.coverKey.onUp.add(this.switchTakingCover, this);
+                    this.formationKeys = [];
+                    this.formationKeys.push(this.game.input.keyboard.addKey(Phaser.Keyboard.ONE));
+                    this.formationKeys.push(this.game.input.keyboard.addKey(Phaser.Keyboard.TWO));
+                    this.formationKeys.push(this.game.input.keyboard.addKey(Phaser.Keyboard.THREE));
+                    angular.forEach(this.formationKeys, function (key, index) {
+                        key.onUp.add(this.switchFormation, this, 100, index + 1);
+                    }, this);
                 },
                 initializeCandleTracker: function () {
                     if (this.STARTING_CANDLES > 0) {
@@ -362,34 +367,70 @@ angular.module('uiApp').factory('Act3ScrollingState',
                         }
                     }
                 },
+                switchFormation: function (event, formation) {
+                    console.log('switching to formation ' + formation);
+                    this.CURRENT_FORMATION = formation;
+                    this.moveHelpers();
+                },
                 switchTakingCover: function () {
                 },
                 handlePlayerMovement: function () {
-                    //  TODO - prevent bunch up at boundaries
                     var moved = false;
-                    if (this.cursors.up.isDown) {
-                        this.player[0].y -= this.PLAYER_MOVE_SPEED;
-                        moved = true;
+                    //  This gives time for tweens to run
+                    if(angular.isUndefined(this.movedLast)) {
+                        this.movedLast = false;
                     }
-                    if (this.cursors.down.isDown) {
-                        this.player[0].y += this.PLAYER_MOVE_SPEED;
-                        moved = true;
-                    }
-                    if (this.cursors.left.isDown) {
-                        this.player[0].x -= this.PLAYER_MOVE_SPEED;
-                        moved = true;
-                    }
-                    if (this.cursors.right.isDown) {
-                        this.player[0].x += this.PLAYER_MOVE_SPEED;
-                        moved = true;
-                    }
-                    if (moved) {
-                        this.moveHelpers();
+                    if(!this.movedLast) {
+                        if (this.cursors.up.isDown) {
+                            this.player[0].y -= this.PLAYER_MOVE_SPEED;
+                            moved = true;
+                        }
+                        if (this.cursors.down.isDown) {
+                            this.player[0].y += this.PLAYER_MOVE_SPEED;
+                            moved = true;
+                        }
+                        if (this.cursors.left.isDown) {
+                            this.player[0].x -= this.PLAYER_MOVE_SPEED;
+                            moved = true;
+                        }
+                        if (this.cursors.right.isDown) {
+                            this.player[0].x += this.PLAYER_MOVE_SPEED;
+                            moved = true;
+                        }
+                        if (moved) {
+                            this.moveHelpers();
+                            this.movedLast = true;
+                        }
+                    } else {
+                        this.movedLast = false;
                     }
                 },
                 moveHelpers: function () {
                     angular.forEach(this.player, function (p, index) {
-                        if (index > 0) {
+                        if(index == 0) {
+                            var maxX = 0, maxY = 0;
+                            switch (this.CURRENT_FORMATION) {
+                                case VERTICAL_FORMATION:
+                                    maxX = this.game.width - p.width;
+                                    maxY = this.game.height - (p.height * this.player.length);
+                                    break;
+                                case BLOCK_FORMATION:
+                                    maxX = this.game.width - (p.width * 3);
+                                    maxY = this.game.height - (p.height * 2);
+                                    break;
+                                case WEDGE_FORMATION:
+                                    maxX = this.game.width - (p.width * 3);
+                                    maxY = this.game.height - (p.height * this.player.length);
+                                    break;
+                            }
+                            if(p.x > maxX) {
+                                p.x = maxX;
+                            }
+                            if(p.y > maxY) {
+                                p.y = maxY;
+                            }
+                        }
+                        else {
                             var x = 0, y = 0;
                             switch (this.CURRENT_FORMATION) {
                                 case VERTICAL_FORMATION:
@@ -431,11 +472,20 @@ angular.module('uiApp').factory('Act3ScrollingState',
                                     }
                                     break;
                             }
-                            this.playerTween[index] = this.game.add.tween(p);
-                            this.playerTween[index].to({
-                                x: Math.min(x, this.game.width - p.width),
-                                y: Math.min(y, this.game.height - p.height)
-                            }, 10, null, true);
+
+                            x = Math.min(x, this.game.width - p.width);
+                            y = Math.min(y, this.game.height - p.height);
+                            var x2 = (this.player[index].x - x) * (this.player[index].x - x);
+                            var y2 = (this.player[index].y - y) * (this.player[index].y - y);
+                            var distanceFactor = Math.floor(Math.sqrt(x2 + y2) / this.PLAYER_MOVE_SPEED);
+                            var tween = this.playerTween[index];
+                            tween.stop();
+                            tween = this.game.add.tween(this.player[index]);
+                            this.playerTween[index] = tween;
+                            tween.to({
+                                x: x,
+                                y: y
+                            }, 10 * distanceFactor, null, true);
                         }
                     }, this)
                 },
