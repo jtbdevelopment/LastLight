@@ -18,6 +18,7 @@ angular.module('uiApp').factory('Act3ScrollingState',
                 PLAYER_HELPERS: 5,
                 PLAYER_MOVE_SPEED: 3,
                 PLAYER_FIRE_FREQUENCY: 500,
+                PLAYER_ARROW_VELOCITY: 300,
 
                 //PLAYER_MASS: 10,
 
@@ -67,11 +68,11 @@ angular.module('uiApp').factory('Act3ScrollingState',
                 create: function () {
                     this.game.ending = false;
 
-                    this.game.world.resize(6000, 600);
+                    this.game.world.resize(600, 600);
 
                     this.game.physics.startSystem(Phaser.Physics.ARCADE);
                     this.game.physics.arcade.setBoundsToWorld(true, true, true, true, false);
-                    this.createPlayer();
+                    this.createPlayerGroup();
                     this.createArrowGroup();
                     /*
                      this.createMaterials();
@@ -79,13 +80,15 @@ angular.module('uiApp').factory('Act3ScrollingState',
                      this.createMovableObjects(map);
                      this.createEnemies(map);
                      this.initializeWorldShadowing();
-                     this.initializeCandleTracker();
                      */
+                    this.initializeArrowTracker();
                     this.initializeKeyboard();
                     this.game.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;
                 },
                 update: function () {
 //                    this.player.body.setZeroVelocity();
+
+                    //  TODO - periodically replace a fallen player helper
 
                     if (!this.game.ending) {
                         /*
@@ -99,6 +102,10 @@ angular.module('uiApp').factory('Act3ScrollingState',
                          }, this);
                          */
                         this.handlePlayerMovement();
+                        // this.game.physics.arcade.overlap(this.arrows, this.players, function () {
+                        //     console.log('collision');
+                        // }, null, this);
+
                         /*
                          } else {
                          this.enemyGroup.forEach(function (enemy) {
@@ -111,9 +118,12 @@ angular.module('uiApp').factory('Act3ScrollingState',
                 render: function () {
                     if (this.DEBUG) {
                         this.game.debug.cameraInfo(this.game.camera, 10, 20);
-                        angular.forEach(this.player, function (p, index) {
+                        angular.forEach(this.players.children, function (p, index) {
                             this.game.debug.spriteInfo(p, index * 350, 100);
                             this.game.debug.body(p);
+                        }, this);
+                        angular.forEach(this.arrows.children, function (a, index) {
+                            this.game.debug.body(a);
                         }, this);
 //                        angular.forEach(this.enemyGroup.children, function (child, index) {
 //                            this.game.debug.spriteInfo(child, index * 350, 100);
@@ -188,35 +198,43 @@ angular.module('uiApp').factory('Act3ScrollingState',
                         surfaceVelocity: 0
                     });
                 },
-                createPlayer: function () {
+                createPlayerHelper: function (x, y) {
+                    var player = this.players.create(x, y, 'player');
+                    player.body.collideWorldBounds = true;
+                    player.body.debug = this.DEBUG;
+                    // TODO - real height
+                    player.height = 32;
+                    player.width = 32;
+                    this.playerTween.push(this.game.add.tween(player));
+                    return player;
+                },
+                createPlayerGroup: function () {
                     this.playerTween = [];
                     this.players = this.game.add.group();
                     this.players.enableBody = true;
                     this.players.physicsBodyType = Phaser.Physics.ARCADE;
+                    var x = this.PLAYER_START_X;
+                    var y = this.PLAYER_START_Y;
                     for (var i = 0; i < this.PLAYER_HELPERS; ++i) {
-                        var player = this.players.create(this.PLAYER_START_X, this.PLAYER_START_Y, 'player');
-                        player.body.collideWorldBounds = true;
-                        player.body.debug = this.DEBUG;
-                        // TODO - real height
-                        //player.height = 32;
-                        //player.width = 32;
-                        this.playerTween.push(this.game.add.tween(player));
+                        this.createPlayerHelper(x, y);
                     }
-                    this.players.setAll('width', 32);
-                    this.players.setAll('height', 32);
-                    this.players.setAll('body.debug', this.DEBUG);
-                    this.players.setAll('body.collideWorldBounds', true);
-                    this.players.setAll('x', this.PLAYER_START_X);
-                    this.players.setAll('y', this.PLAYER_START_Y);
                     this.game.camera.follow(this.players.children[0]);
                     //  TODO
                     //this.player.body.onBeginContact.add(this.collisionCheck, this);
-                    this.moveHelpers();
+                    this.switchFormation(undefined, this.CURRENT_FORMATION);
                 },
                 createArrowGroup: function () {
                     this.arrows = this.game.add.group();
                     this.arrows.enableBody = true;
                     this.arrows.physicsBodyType = Phaser.Physics.ARCADE;
+                    this.arrows.createMultiple(50, 'arrow');
+                    this.arrows.setAll('checkWorldBounds', true);
+                    this.arrows.setAll('body.debug', this.DEBUG);
+                    this.arrows.setAll('anchor.x', 0.5);
+                    this.arrows.setAll('anchor.y', 1.0);
+                    this.arrows.setAll('outOfBoundsKill', true);
+                    this.arrows.setAll('height', 5);
+                    this.arrows.setAll('width', 5);
                 },
                 createFinishArea: function (map) {
                     this.finishGroup = this.game.add.physicsGroup(Phaser.Physics.P2JS);
@@ -295,48 +313,23 @@ angular.module('uiApp').factory('Act3ScrollingState',
                     }, this);
                     this.game.input.keyboard.addKey(Phaser.Keyboard.SPACEBAR).onUp.add(this.fireArrows, this);
                 },
-                initializeCandleTracker: function () {
-                    if (this.STARTING_CANDLES > 0) {
+                initializeArrowTracker: function () {
+                    if (this.ARROWS_REMAINING > 0) {
                         var textStyle = {
                             font: '10px Arial',
                             fill: '#FF9329',
                             align: 'left'
                         };
-                        this.candleText = this.game.add.text(0, 0, this.makeCandleText(), textStyle);
-                        this.candleText.fixedToCamera = true;
-                        this.candleText.cameraOffset.setTo(0, 0);
-                        $timeout(this.candleTimeoutHandler, 1000, true, this);
+                        this.arrowText = this.game.add.text(0, 0, this.makeArrowText(), textStyle);
+                        this.arrowText.fixedToCamera = true;
+                        this.arrowText.cameraOffset.setTo(0, 0);
                     }
                 },
                 //  Creation functions - end
 
-                //  Candle related - begin
-                makeCandleText: function () {
-                    return 'Candles: ' + this.CURRENT_CANDLES + ', Time: ' + this.CURRENT_TIME;
-                },
-
-                candleTimeoutHandler: function (state) {
-                    if (state.game.ending) {
-                        return;
-                    }
-                    state.CURRENT_TIME -= 1;
-                    if (state.CURRENT_TIME === 0) {
-                        if (state.CURRENT_CANDLES > 1) {
-                            if (state.player.isHiding) {
-                                state.deathEnding();
-                            } else {
-                                //  TODO - play match type sound?
-                                state.CURRENT_CANDLES -= 1;
-                                state.CURRENT_TIME = state.TIME_PER_CANDLE;
-                            }
-                        }
-                    }
-                    state.candleText.text = state.makeCandleText();
-                    if (state.CURRENT_CANDLES > 0 || state.CURRENT_TIME > 0) {
-                        $timeout(state.candleTimeoutHandler, 1000, true, state);
-                    } else {
-                        state.deathEnding();
-                    }
+                //  Arrow related - begin
+                makeArrowText: function () {
+                    return 'Arrows: ' + this.ARROWS_REMAINING;
                 },
 
                 drawCircleOfLight: function (sprite, lightRadius) {
@@ -376,7 +369,7 @@ angular.module('uiApp').factory('Act3ScrollingState',
                         angular.isDefined(body.sprite.key)) {
                         switch (body.sprite.parent) {
                             case this.enemyGroup:
-                                this.deathEnding();
+                                this.failure();
                                 break;
                             case this.finishGroup:
                                 this.winEnding();
@@ -384,16 +377,67 @@ angular.module('uiApp').factory('Act3ScrollingState',
                         }
                     }
                 },
-                fireArrows: function (event) {
+                fireArrows: function () {
                     if (this.game.time.now > this.NEXT_FIRE_TIME) {
                         if (this.ARROWS_REMAINING > 0) {
                             if (angular.isDefined(this.NEXT_FIRE_TIME))
-                                console.log('firing arrows');
-                            angular.forEach(this.players.children, function (p, index) {
+                                angular.forEach(this.players.children, function (p, index) {
+                                    var arrow = this.arrows.getFirstExists(false);
+                                    var x = 0, y = 0, velX = 0, velY = 0;
 
-                            }, this);
-                            this.ARROWS_REMAINING -= 1;
+                                    switch (this.CURRENT_FORMATION) {
+                                        case VERTICAL_FORMATION:
+                                            switch(index) {
+                                                case 1:
+                                                case 3:
+                                                    x = p.x;
+                                                    y = p.y + (p.height / 2);
+                                                    velX = -this.PLAYER_ARROW_VELOCITY;
+                                                    break;
+                                                default:
+                                                    x = p.x + p.width;
+                                                    y = p.y + (p.height / 2);
+                                                    velX = this.PLAYER_ARROW_VELOCITY;
+                                                    break;
+                                            }
+                                            break;
+                                        case WEDGE_FORMATION:
+                                            x = p.x + p.width;
+                                            y = p.y + (p.height / 2);
+                                            velX = this.PLAYER_ARROW_VELOCITY;
+                                            break;
+                                        case BLOCK_FORMATION:
+                                            switch (index) {
+                                                case 0:
+                                                case 1:
+                                                    x = p.x + (p.width / 2);
+                                                    y = p.y;
+                                                    velY = -this.PLAYER_ARROW_VELOCITY;
+                                                    break;
+                                                case 2:
+                                                    x = p.x + p.width;
+                                                    y = p.y + (p.height / 2);
+                                                    velX = this.PLAYER_ARROW_VELOCITY;
+                                                    break;
+                                                case 3:
+                                                case 4:
+                                                    x = p.x + (p.width / 2);
+                                                    y = p.y;
+                                                    velY = this.PLAYER_ARROW_VELOCITY;
+                                                    break;
+                                            }
+                                            break;
+                                    }
+                                    arrow.reset(x, y);
+                                    arrow.body.velocity.x = velX;
+                                    arrow.body.velocity.y = velY;
+                                }, this);
+                            this.ARROWS_REMAINING = this.ARROWS_REMAINING - 1;
                             this.NEXT_FIRE_TIME = this.game.time.now += this.PLAYER_FIRE_FREQUENCY;
+                            this.arrowText.text = this.makeArrowText();
+                            if (this.ARROWS_REMAINING === 0) {
+                                this.failure();
+                            }
                         } else {
                             // TODO
                         }
@@ -401,6 +445,7 @@ angular.module('uiApp').factory('Act3ScrollingState',
                 },
                 switchFormation: function (event, formation) {
                     this.CURRENT_FORMATION = formation;
+                    //  ROTATE PLAYERS?
                     this.moveHelpers();
                 },
                 switchTakingCover: function () {
@@ -591,7 +636,7 @@ angular.module('uiApp').factory('Act3ScrollingState',
                 //  Enemy movement - end
 
                 //  Ending related
-                deathEnding: function () {
+                failure: function () {
                     this.game.ending = true;
                     var deathTween = this.game.add.tween(this);
                     deathTween.to({PLAYER_LIGHT_RADIUS: 0}, 1000, Phaser.Easing.Power1, true);
