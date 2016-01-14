@@ -17,6 +17,8 @@ angular.module('uiApp').factory('Act3ScrollingState',
 
                 PLAYER_HELPERS: 5,
                 PLAYER_MOVE_SPEED: 3,
+                PLAYER_FIRE_FREQUENCY: 500,
+
                 //PLAYER_MASS: 10,
 
                 //MOVABLE_MASS: 200,
@@ -45,6 +47,7 @@ angular.module('uiApp').factory('Act3ScrollingState',
                     this.PLAYER_HIDING_LIGHT_RADIUS = Act1Settings.playerHidingLightRadius[level];
                     this.PLAYER_MOVING_LIGHT_RADIUS = Act1Settings.playerMovingLightRadius[level];
                     this.ENEMY_MAX_SIGHT_PLAYER_HIDING = Act1Settings.enemySenseHidingDistance[level];
+                    this.NEXT_FIRE_TIME = 0;
                 },
                 preload: function () {
                     //  Note tile asset IDs do not match because 0 represents no tile
@@ -59,6 +62,7 @@ angular.module('uiApp').factory('Act3ScrollingState',
                     //  TODO - music
                     this.load.image('player', 'images/HB_Dwarf05.png');
                     this.load.image('demon', 'images/DemonMinorFighter.png');
+                    this.load.image('arrow', 'images/enemy-bullet.png')
                 },
                 create: function () {
                     this.game.ending = false;
@@ -68,6 +72,7 @@ angular.module('uiApp').factory('Act3ScrollingState',
                     this.game.physics.startSystem(Phaser.Physics.ARCADE);
                     this.game.physics.arcade.setBoundsToWorld(true, true, true, true, false);
                     this.createPlayer();
+                    this.createArrowGroup();
                     /*
                      this.createMaterials();
                      this.createFinishArea(map);
@@ -184,23 +189,34 @@ angular.module('uiApp').factory('Act3ScrollingState',
                     });
                 },
                 createPlayer: function () {
-                    this.player = [];
                     this.playerTween = [];
+                    this.players = this.game.add.group();
+                    this.players.enableBody = true;
+                    this.players.physicsBodyType = Phaser.Physics.ARCADE;
                     for (var i = 0; i < this.PLAYER_HELPERS; ++i) {
-                        // TODO - real height
-                        var player = this.game.add.sprite(this.PLAYER_START_X, this.PLAYER_START_Y, 'player');
-                        this.game.physics.arcade.enable(player);
+                        var player = this.players.create(this.PLAYER_START_X, this.PLAYER_START_Y, 'player');
                         player.body.collideWorldBounds = true;
                         player.body.debug = this.DEBUG;
-                        player.height = 32;
-                        player.width = 32;
-                        this.player.push(player);
+                        // TODO - real height
+                        //player.height = 32;
+                        //player.width = 32;
                         this.playerTween.push(this.game.add.tween(player));
                     }
-                    this.game.camera.follow(this.player[0]);
+                    this.players.setAll('width', 32);
+                    this.players.setAll('height', 32);
+                    this.players.setAll('body.debug', this.DEBUG);
+                    this.players.setAll('body.collideWorldBounds', true);
+                    this.players.setAll('x', this.PLAYER_START_X);
+                    this.players.setAll('y', this.PLAYER_START_Y);
+                    this.game.camera.follow(this.players.children[0]);
                     //  TODO
                     //this.player.body.onBeginContact.add(this.collisionCheck, this);
                     this.moveHelpers();
+                },
+                createArrowGroup: function () {
+                    this.arrows = this.game.add.group();
+                    this.arrows.enableBody = true;
+                    this.arrows.physicsBodyType = Phaser.Physics.ARCADE;
                 },
                 createFinishArea: function (map) {
                     this.finishGroup = this.game.add.physicsGroup(Phaser.Physics.P2JS);
@@ -277,6 +293,7 @@ angular.module('uiApp').factory('Act3ScrollingState',
                     angular.forEach(this.formationKeys, function (key, index) {
                         key.onUp.add(this.switchFormation, this, 100, index + 1);
                     }, this);
+                    this.game.input.keyboard.addKey(Phaser.Keyboard.SPACEBAR).onUp.add(this.fireArrows, this);
                 },
                 initializeCandleTracker: function () {
                     if (this.STARTING_CANDLES > 0) {
@@ -367,8 +384,22 @@ angular.module('uiApp').factory('Act3ScrollingState',
                         }
                     }
                 },
+                fireArrows: function (event) {
+                    if (this.game.time.now > this.NEXT_FIRE_TIME) {
+                        if (this.ARROWS_REMAINING > 0) {
+                            if (angular.isDefined(this.NEXT_FIRE_TIME))
+                                console.log('firing arrows');
+                            angular.forEach(this.players.children, function (p, index) {
+
+                            }, this);
+                            this.ARROWS_REMAINING -= 1;
+                            this.NEXT_FIRE_TIME = this.game.time.now += this.PLAYER_FIRE_FREQUENCY;
+                        } else {
+                            // TODO
+                        }
+                    }
+                },
                 switchFormation: function (event, formation) {
-                    console.log('switching to formation ' + formation);
                     this.CURRENT_FORMATION = formation;
                     this.moveHelpers();
                 },
@@ -377,24 +408,24 @@ angular.module('uiApp').factory('Act3ScrollingState',
                 handlePlayerMovement: function () {
                     var moved = false;
                     //  This gives time for tweens to run
-                    if(angular.isUndefined(this.movedLast)) {
+                    if (angular.isUndefined(this.movedLast)) {
                         this.movedLast = false;
                     }
-                    if(!this.movedLast) {
+                    if (!this.movedLast) {
                         if (this.cursors.up.isDown) {
-                            this.player[0].y -= this.PLAYER_MOVE_SPEED;
+                            this.players.children[0].y -= this.PLAYER_MOVE_SPEED;
                             moved = true;
                         }
                         if (this.cursors.down.isDown) {
-                            this.player[0].y += this.PLAYER_MOVE_SPEED;
+                            this.players.children[0].y += this.PLAYER_MOVE_SPEED;
                             moved = true;
                         }
                         if (this.cursors.left.isDown) {
-                            this.player[0].x -= this.PLAYER_MOVE_SPEED;
+                            this.players.children[0].x -= this.PLAYER_MOVE_SPEED;
                             moved = true;
                         }
                         if (this.cursors.right.isDown) {
-                            this.player[0].x += this.PLAYER_MOVE_SPEED;
+                            this.players.children[0].x += this.PLAYER_MOVE_SPEED;
                             moved = true;
                         }
                         if (moved) {
@@ -406,13 +437,13 @@ angular.module('uiApp').factory('Act3ScrollingState',
                     }
                 },
                 moveHelpers: function () {
-                    angular.forEach(this.player, function (p, index) {
-                        if(index == 0) {
+                    angular.forEach(this.players.children, function (p, index) {
+                        if (index == 0) {
                             var maxX = 0, maxY = 0;
                             switch (this.CURRENT_FORMATION) {
                                 case VERTICAL_FORMATION:
                                     maxX = this.game.width - p.width;
-                                    maxY = this.game.height - (p.height * this.player.length);
+                                    maxY = this.game.height - (p.height * this.players.children.length);
                                     break;
                                 case BLOCK_FORMATION:
                                     maxX = this.game.width - (p.width * 3);
@@ -420,13 +451,13 @@ angular.module('uiApp').factory('Act3ScrollingState',
                                     break;
                                 case WEDGE_FORMATION:
                                     maxX = this.game.width - (p.width * 3);
-                                    maxY = this.game.height - (p.height * this.player.length);
+                                    maxY = this.game.height - (p.height * this.players.children.length);
                                     break;
                             }
-                            if(p.x > maxX) {
+                            if (p.x > maxX) {
                                 p.x = maxX;
                             }
-                            if(p.y > maxY) {
+                            if (p.y > maxY) {
                                 p.y = maxY;
                             }
                         }
@@ -434,26 +465,26 @@ angular.module('uiApp').factory('Act3ScrollingState',
                             var x = 0, y = 0;
                             switch (this.CURRENT_FORMATION) {
                                 case VERTICAL_FORMATION:
-                                    x = this.player[0].x;
-                                    y = this.player[0].y + (index * p.height);
+                                    x = this.players.children[0].x;
+                                    y = this.players.children[0].y + (index * p.height);
                                     break;
                                 case BLOCK_FORMATION:
                                     switch (index) {
                                         case 1:
-                                            x = this.player[0].x + (2 * p.width);
-                                            y = this.player[0].y;
+                                            x = this.players.children[0].x + (2 * p.width);
+                                            y = this.players.children[0].y;
                                             break;
                                         case 2:
-                                            x = this.player[0].x + (1 * p.width);
-                                            y = this.player[0].y + (p.height / 2);
+                                            x = this.players.children[0].x + (1 * p.width);
+                                            y = this.players.children[0].y + (p.height / 2);
                                             break;
                                         case 3:
-                                            x = this.player[0].x;
-                                            y = this.player[0].y + (p.height);
+                                            x = this.players.children[0].x;
+                                            y = this.players.children[0].y + (p.height);
                                             break;
                                         case 4:
-                                            x = this.player[0].x + (2 * p.width);
-                                            y = this.player[0].y + (p.height);
+                                            x = this.players.children[0].x + (2 * p.width);
+                                            y = this.players.children[0].y + (p.height);
                                             break;
                                     }
                                     break;
@@ -461,13 +492,13 @@ angular.module('uiApp').factory('Act3ScrollingState',
                                     switch (index) {
                                         case 1:
                                         case 2:
-                                            x = this.player[0].x + (index * p.width);
-                                            y = this.player[0].y + (index * p.height);
+                                            x = this.players.children[0].x + (index * p.width);
+                                            y = this.players.children[0].y + (index * p.height);
                                             break;
                                         case 3:
                                         case 4:
-                                            x = this.player[0].x + ((4 - index) * p.width);
-                                            y = this.player[0].y + (index * p.height);
+                                            x = this.players.children[0].x + ((4 - index) * p.width);
+                                            y = this.players.children[0].y + (index * p.height);
                                             break;
                                     }
                                     break;
@@ -475,12 +506,12 @@ angular.module('uiApp').factory('Act3ScrollingState',
 
                             x = Math.min(x, this.game.width - p.width);
                             y = Math.min(y, this.game.height - p.height);
-                            var x2 = (this.player[index].x - x) * (this.player[index].x - x);
-                            var y2 = (this.player[index].y - y) * (this.player[index].y - y);
+                            var x2 = (p.x - x) * (p.x - x);
+                            var y2 = (p.y - y) * (p.y - y);
                             var distanceFactor = Math.floor(Math.sqrt(x2 + y2) / this.PLAYER_MOVE_SPEED);
                             var tween = this.playerTween[index];
                             tween.stop();
-                            tween = this.game.add.tween(this.player[index]);
+                            tween = this.game.add.tween(p);
                             this.playerTween[index] = tween;
                             tween.to({
                                 x: x,
