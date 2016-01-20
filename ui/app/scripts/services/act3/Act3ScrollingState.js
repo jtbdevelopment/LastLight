@@ -16,7 +16,7 @@ angular.module('uiApp').factory('Act3ScrollingState',
                 state: undefined,
 
                 PLAYER_HELPERS: 5,
-                PLAYER_MOVE_SPEED: 3,
+                PLAYER_MOVE_SPEED: 4,
                 PLAYER_FIRE_FREQUENCY: 500,
                 PLAYER_ARROW_VELOCITY: 300,
 
@@ -116,7 +116,7 @@ angular.module('uiApp').factory('Act3ScrollingState',
                     if (this.enemies.getFirstExists(true) == null || !angular.isDefined(this.enemies.getFirstExists(true))) {
                         for (var i = 0; i < 5; ++i) {
                             var enemy = this.enemies.getFirstExists(false);
-                            var x = this.game.width + (enemy.width * i), y = this.game.height - enemy.height, velX = -200, velY = 0;
+                            var x = this.game.width + (enemy.width * i), y = this.game.height - enemy.height, velX = -130, velY = 0;
 
                             enemy.reset(x, y);
                             enemy.body.velocity.x = velX;
@@ -136,6 +136,8 @@ angular.module('uiApp').factory('Act3ScrollingState',
 
                         }
                     }, this);
+                    this.game.physics.arcade.overlap(this.arrows, this.enemies, this.arrowHitsEnemy, null, this);
+                    this.game.physics.arcade.overlap(this.players, this.enemies, this.enemyHitsPlayer, null, this);
                     //this.updateWorldShadowAndLights();
                 },
                 render: function () {
@@ -550,6 +552,16 @@ angular.module('uiApp').factory('Act3ScrollingState',
                 },
                 //  Player action and movement - end
 
+                //  collision handlers
+                arrowHitsEnemy: function(arrow, enemy) {
+                    arrow.kill();
+                    enemy.kill();
+                },
+                enemyHitsPlayer: function(player) {
+                    player.kill();
+                    //  TODO - death tween
+                    //  TODO - all players dead
+                },
                 //  Enemy movement - begin
                 checkIfEnemyWillChasePlayer: function (enemy) {
                     //  TODO - Play sound while chasing or play sound when chase begins?
