@@ -74,11 +74,11 @@ angular.module('uiApp').factory('Act3ScrollingState',
                     this.game.physics.arcade.setBoundsToWorld(true, true, true, true, false);
                     this.createPlayerGroup();
                     this.createArrowGroup();
+                    this.createEnemies();
                     /*
                      this.createMaterials();
                      this.createFinishArea(map);
                      this.createMovableObjects(map);
-                     this.createEnemies(map);
                      this.initializeWorldShadowing();
                      */
                     this.initializeArrowTracker();
@@ -113,6 +113,29 @@ angular.module('uiApp').factory('Act3ScrollingState',
                          });
                          */
                     }
+                    if (this.enemies.getFirstExists(true) == null || !angular.isDefined(this.enemies.getFirstExists(true))) {
+                        for (var i = 0; i < 5; ++i) {
+                            var enemy = this.enemies.getFirstExists(false);
+                            var x = this.game.width + (enemy.width * i), y = this.game.height - enemy.height, velX = -200, velY = 0;
+
+                            enemy.reset(x, y);
+                            enemy.body.velocity.x = velX;
+                            enemy.body.velocity.y = velY;
+                            enemy.body.collideWorldBounds = false;
+                        }
+                    }
+                    this.enemies.forEachExists(function (e) {
+                        if (!e.body.collideWorldBounds) {
+                            if (e.x >= 0 &&
+                                e.x <= (this.game.width - e.width) &&
+                                e.y >= 0 &&
+                                e.y <= (this.game.height - e.height)
+                            ) {
+                                e.body.collideWorldBounds = true;
+                            }
+
+                        }
+                    }, this);
                     //this.updateWorldShadowAndLights();
                 },
                 render: function () {
@@ -123,6 +146,9 @@ angular.module('uiApp').factory('Act3ScrollingState',
                             this.game.debug.body(p);
                         }, this);
                         angular.forEach(this.arrows.children, function (a, index) {
+                            this.game.debug.body(a);
+                        }, this);
+                        angular.forEach(this.enemies.children, function (a, index) {
                             this.game.debug.body(a);
                         }, this);
 //                        angular.forEach(this.enemyGroup.children, function (child, index) {
@@ -236,66 +262,23 @@ angular.module('uiApp').factory('Act3ScrollingState',
                     this.arrows.setAll('height', 5);
                     this.arrows.setAll('width', 5);
                 },
-                createFinishArea: function (map) {
-                    this.finishGroup = this.game.add.physicsGroup(Phaser.Physics.P2JS);
-                    map.createFromObjects('Object Layer ' + this.LEVEL, 742, 'hyptosis_tile-art-batch-1', 741, true, false, this.finishGroup);
-                    map.createFromObjects('Object Layer ' + this.LEVEL, 772, 'hyptosis_tile-art-batch-1', 771, true, false, this.finishGroup);
-                    this.finishGroup.forEach(function (finish) {
-                        finish.body.debug = this.DEBUG;
-                        finish.height = 32;
-                        finish.width = 32;
-                        finish.anchor.setTo(0.5);
-                        finish.body.x += finish.width / 2;
-                        finish.body.y += finish.height / 2;
-                        finish.body.setRectangle(finish.width, finish.height, 0, 0);
-                        finish.body.static = true;
-                        finish.body.debug = this.DEBUG;
-                    }, this);
-                },
-                createMovableObjects: function (map) {
-                    //  TODO - custom class for logic?
-                    this.movableGroup = this.game.add.physicsGroup(Phaser.Physics.P2JS);
-                    map.createFromObjects('Object Layer ' + this.LEVEL, 214, 'hyptosis_tile-art-batch-1', 214, true, false, this.movableGroup);
-                    this.movableGroup.forEach(function (movable) {
-                        movable.body.setMaterial(this.movableMaterial);
-                        movable.body.collideWorldBounds = true;
-                        movable.body.mass = this.MOVABLE_MASS;
-                        movable.body.damping = 0.95;
-                        movable.body.angularDamping = 0.85;
-                        movable.body.debug = this.DEBUG;
-                        movable.height = 30;
-                        movable.width = 30;
-                        movable.body.x += movable.width / 2;
-                        movable.body.y += movable.height / 2;
-                        movable.body.setRectangle(movable.width, movable.width, 0, 0);
-                    }, this);
-                },
-                createEnemies: function (map) {
-                    this.enemyGroup = this.game.add.physicsGroup(Phaser.Physics.P2JS);
-                    //  TODO - custom class for logic?
-                    map.createFromObjects('Object Layer ' + this.LEVEL, 782, 'demon', 0, true, false, this.enemyGroup);
-                    this.enemyGroup.forEach(function (enemy) {
-                        enemy.height = 32;
-                        enemy.width = 32;
-                        enemy.body.setCircle(11);
-                        enemy.x += 16;
-                        enemy.y += 16;
-                        enemy.initialX = enemy.x;
-                        enemy.initialY = enemy.y;
-                        enemy.minX = enemy.initialX - this.ENEMY_PATROL_RANGE;
-                        enemy.maxX = enemy.initialX + this.ENEMY_PATROL_RANGE;
-                        enemy.minY = enemy.initialY - this.ENEMY_PATROL_RANGE;
-                        enemy.maxY = enemy.initialY + this.ENEMY_PATROL_RANGE;
-                        enemy.isChasing = false;
-                        enemy.stopChasingCount = 0;
-                        enemy.body.debug = this.DEBUG;
-                        enemy.body.collideWorldBounds = true;
-                        enemy.body.fixedRotation = true;
-                        enemy.body.velocity.x = this.ENEMY_PATROL_SPEED;
-                        enemy.body.velocity.y = this.ENEMY_PATROL_SPEED;
-                        enemy.body.setZeroDamping();
-                        enemy.body.setMaterial(this.enemyMaterial);
-                    }, this);
+                createEnemies: function () {
+                    this.enemies = this.game.add.group();
+                    this.enemies.enableBody = true;
+                    this.enemies.physicsBodyType = Phaser.Physics.ARCADE;
+                    this.enemies.createMultiple(50, 'demon');
+                    this.enemies.setAll('checkWorldBounds', false);
+                    this.enemies.setAll('body.debug', this.DEBUG);
+                    this.enemies.setAll('anchor.x', 0.5);
+                    this.enemies.setAll('anchor.y', 1.0);
+                    this.enemies.setAll('outOfBoundsKill', false);
+                    this.enemies.setAll('height', 32);
+                    this.enemies.setAll('width', 32);
+                    this.enemies.setAll('body.height', 32);
+                    this.enemies.setAll('body.width', 32);
+                    this.enemies.setAll('body.collideWorldBounds', false);
+                    this.enemies.setAll('body.bounce.x', 1);
+                    this.enemies.setAll('body.bounce.y', 1);
                 },
                 initializeWorldShadowing: function () {
                     this.shadowTexture = this.game.add.bitmapData(this.game.world.width, this.game.world.height);
@@ -387,7 +370,7 @@ angular.module('uiApp').factory('Act3ScrollingState',
 
                                     switch (this.CURRENT_FORMATION) {
                                         case VERTICAL_FORMATION:
-                                            switch(index) {
+                                            switch (index) {
                                                 case 1:
                                                 case 3:
                                                     x = p.x;
