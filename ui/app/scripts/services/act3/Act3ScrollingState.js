@@ -15,7 +15,7 @@ angular.module('uiApp').factory('Act3ScrollingState',
                 data: undefined,
                 state: undefined,
 
-                PLAYER_HELPERS: 5,
+                PLAYER_HELPERS: 6,
                 PLAYER_MOVE_SPEED: 4,
                 PLAYER_FIRE_FREQUENCY: 500,
                 PLAYER_ARROW_VELOCITY: 300,
@@ -372,18 +372,14 @@ angular.module('uiApp').factory('Act3ScrollingState',
 
                                     switch (this.CURRENT_FORMATION) {
                                         case VERTICAL_FORMATION:
-                                            switch (index) {
-                                                case 1:
-                                                case 3:
-                                                    x = p.x;
-                                                    y = p.y + (p.height / 2);
-                                                    velX = -this.PLAYER_ARROW_VELOCITY;
-                                                    break;
-                                                default:
-                                                    x = p.x + p.width;
-                                                    y = p.y + (p.height / 2);
-                                                    velX = this.PLAYER_ARROW_VELOCITY;
-                                                    break;
+                                            if (index < 3) {
+                                                x = p.x;
+                                                y = p.y + (p.height / 2);
+                                                velX = -this.PLAYER_ARROW_VELOCITY;
+                                            } else {
+                                                x = p.x + p.width;
+                                                y = p.y + (p.height / 2);
+                                                velX = this.PLAYER_ARROW_VELOCITY;
                                             }
                                             break;
                                         case WEDGE_FORMATION:
@@ -394,18 +390,23 @@ angular.module('uiApp').factory('Act3ScrollingState',
                                         case BLOCK_FORMATION:
                                             switch (index) {
                                                 case 0:
-                                                case 1:
+                                                case 3:
                                                     x = p.x + (p.width / 2);
                                                     y = p.y;
                                                     velY = -this.PLAYER_ARROW_VELOCITY;
                                                     break;
-                                                case 2:
+                                                case 4:
                                                     x = p.x + p.width;
                                                     y = p.y + (p.height / 2);
                                                     velX = this.PLAYER_ARROW_VELOCITY;
                                                     break;
-                                                case 3:
-                                                case 4:
+                                                case 1:
+                                                    x = p.x;
+                                                    y = p.y + (p.height / 2);
+                                                    velX = -this.PLAYER_ARROW_VELOCITY;
+                                                    break;
+                                                case 2:
+                                                case 5:
                                                     x = p.x + (p.width / 2);
                                                     y = p.y;
                                                     velY = this.PLAYER_ARROW_VELOCITY;
@@ -433,8 +434,6 @@ angular.module('uiApp').factory('Act3ScrollingState',
                     //  ROTATE PLAYERS?
                     this.moveHelpers();
                 },
-                switchTakingCover: function () {
-                },
                 handlePlayerMovement: function () {
                     var moved = false;
                     //  This gives time for tweens to run
@@ -443,19 +442,32 @@ angular.module('uiApp').factory('Act3ScrollingState',
                     }
                     if (!this.movedLast) {
                         if (this.cursors.up.isDown) {
-                            this.players.children[0].y -= this.PLAYER_MOVE_SPEED;
+                            angular.forEach(this.players.children, function (player) {
+                                player.y -= this.PLAYER_MOVE_SPEED;
+                            }, this);
+                            //this.players.children[0].y -= this.PLAYER_MOVE_SPEED;
                             moved = true;
                         }
                         if (this.cursors.down.isDown) {
-                            this.players.children[0].y += this.PLAYER_MOVE_SPEED;
+                            angular.forEach(this.players.children, function (player) {
+                                player.y += this.PLAYER_MOVE_SPEED;
+                            }, this);
+                            //this.players.children[0].y += this.PLAYER_MOVE_SPEED;
                             moved = true;
                         }
                         if (this.cursors.left.isDown) {
-                            this.players.children[0].x -= this.PLAYER_MOVE_SPEED;
+                            angular.forEach(this.players.children, function (player) {
+                                player.x -= this.PLAYER_MOVE_SPEED;
+                            }, this);
+
+                            //this.players.children[0].x -= this.PLAYER_MOVE_SPEED;
                             moved = true;
                         }
                         if (this.cursors.right.isDown) {
-                            this.players.children[0].x += this.PLAYER_MOVE_SPEED;
+                            angular.forEach(this.players.children, function (player) {
+                                player.x += this.PLAYER_MOVE_SPEED;
+                            }, this);
+                            //this.players.children[0].x += this.PLAYER_MOVE_SPEED;
                             moved = true;
                         }
                         if (moved) {
@@ -468,101 +480,111 @@ angular.module('uiApp').factory('Act3ScrollingState',
                 },
                 moveHelpers: function () {
                     angular.forEach(this.players.children, function (p, index) {
-                        if (index == 0) {
+                            var x = this.players.children[0].x, y = this.players.children[0].y;
                             var maxX = 0, maxY = 0;
                             switch (this.CURRENT_FORMATION) {
                                 case VERTICAL_FORMATION:
-                                    maxX = this.game.width - p.width;
-                                    maxY = this.game.height - (p.height * this.players.children.length);
-                                    break;
-                                case BLOCK_FORMATION:
-                                    maxX = this.game.width - (p.width * 3);
-                                    maxY = this.game.height - (p.height * 2);
-                                    break;
-                                case WEDGE_FORMATION:
-                                    maxX = this.game.width - (p.width * 3);
-                                    maxY = this.game.height - (p.height * this.players.children.length);
-                                    break;
-                            }
-                            if (p.x > maxX) {
-                                p.x = maxX;
-                            }
-                            if (p.y > maxY) {
-                                p.y = maxY;
-                            }
-                        }
-                        else {
-                            var x = 0, y = 0;
-                            switch (this.CURRENT_FORMATION) {
-                                case VERTICAL_FORMATION:
-                                    x = this.players.children[0].x;
-                                    y = this.players.children[0].y + (index * p.height);
+                                    if (index < 3) {
+                                        y += (index * p.height);
+                                    } else {
+                                        x += p.width;
+                                        y += ((index - 3) * p.height);
+                                    }
                                     break;
                                 case BLOCK_FORMATION:
                                     switch (index) {
-                                        case 1:
-                                            x = this.players.children[0].x + (2 * p.width);
-                                            y = this.players.children[0].y;
+                                        case 0:   //  upper left
                                             break;
-                                        case 2:
-                                            x = this.players.children[0].x + (1 * p.width);
-                                            y = this.players.children[0].y + (p.height / 2);
+                                        case 1:   //mid left
+                                            y += (p.height / 2);
+                                            x += p.width;
                                             break;
-                                        case 3:
-                                            x = this.players.children[0].x;
-                                            y = this.players.children[0].y + (p.height);
+                                        case 2:   // lower left
+                                            y += p.height;
                                             break;
-                                        case 4:
-                                            x = this.players.children[0].x + (2 * p.width);
-                                            y = this.players.children[0].y + (p.height);
+                                        case 3:  // upper right
+                                            x += (p.width * 3);
+                                            break;
+                                        case 4:  // mid right
+                                            y += (p.height / 2);
+                                            x += (p.width * 2);
+                                            break;
+                                        case 5:  // lower right
+                                            y += p.height;
+                                            x += (p.width * 3);
                                             break;
                                     }
                                     break;
                                 case WEDGE_FORMATION:
                                     switch (index) {
-                                        case 1:
-                                        case 2:
-                                            x = this.players.children[0].x + (index * p.width);
-                                            y = this.players.children[0].y + (index * p.height);
+                                        case 0:   //  upper left
                                             break;
-                                        case 3:
-                                        case 4:
-                                            x = this.players.children[0].x + ((4 - index) * p.width);
-                                            y = this.players.children[0].y + (index * p.height);
+                                        case 1:   //  back left
+                                            y += (p.height * 2);
+                                            break;
+                                        case 2:   //  lower left
+                                            y += (p.height * 4);
+                                            break;
+                                        case 3:   //  mid upper
+                                            x += p.width;
+                                            y += p.height;
+                                            break;
+                                        case 4:   // wedge point
+                                            y += (p.height * 2);
+                                            x += (p.width * 2);
+                                            break;
+                                        case 5:   // mid lower
+                                            y += (p.height * 3);
+                                            x += p.width;
                                             break;
                                     }
                                     break;
                             }
 
-                            x = Math.min(x, this.game.width - p.width);
-                            y = Math.min(y, this.game.height - p.height);
-                            var x2 = (p.x - x) * (p.x - x);
-                            var y2 = (p.y - y) * (p.y - y);
-                            var distanceFactor = Math.floor(Math.sqrt(x2 + y2) / this.PLAYER_MOVE_SPEED);
-                            var tween = this.playerTween[index];
-                            tween.stop();
-                            tween = this.game.add.tween(p);
-                            this.playerTween[index] = tween;
-                            tween.to({
-                                x: x,
-                                y: y
-                            }, 8 * distanceFactor, null, true);
-                        }
-                    }, this)
+                            if (p.alive) {
+                                var adjustX = 0, adjustY = 0;
+                                if((x + p.width) > this.game.width) {
+                                    adjustX = this.game.width - x - p.width;
+                                }
+                                if((y + p.height) > this.game.height) {
+                                    adjustY = this.game.height - y - p.height;
+                                }
+                                if(adjustX !== 0 || adjustY !== 0) {
+                                    this.players.children[0].x += adjustX;
+                                    this.players.children[0].y += adjustY;
+                                    this.moveHelpers();
+                                } else {
+                                    var x2 = Math.pow((p.x - x), 2);
+                                    var y2 = Math.pow((p.y - y), 2);
+                                    var distanceFactor = Math.floor(Math.sqrt(x2 + y2) / this.PLAYER_MOVE_SPEED);
+                                    var tween = this.playerTween[index];
+                                    tween.stop();
+                                    tween = this.game.add.tween(p);
+                                    this.playerTween[index] = tween;
+                                    tween.to({
+                                        x: x,
+                                        y: y
+                                    }, 8 * distanceFactor, null, true);
+                                }
+                            }
+                        }, this
+                    )
                 },
-                //  Player action and movement - end
+//  Player action and movement - end
 
-                //  collision handlers
-                arrowHitsEnemy: function(arrow, enemy) {
+//  collision handlers
+                arrowHitsEnemy: function (arrow, enemy) {
                     arrow.kill();
                     enemy.kill();
-                },
-                enemyHitsPlayer: function(player) {
+                }
+                ,
+                enemyHitsPlayer: function (player) {
                     player.kill();
                     //  TODO - death tween
                     //  TODO - all players dead
-                },
-                //  Enemy movement - begin
+                }
+                ,
+//  Enemy movement - begin
                 checkIfEnemyWillChasePlayer: function (enemy) {
                     //  TODO - Play sound while chasing or play sound when chase begins?
                     var ray = new Phaser.Line(enemy.x, enemy.y, this.player.x, this.player.y);
@@ -603,13 +625,15 @@ angular.module('uiApp').factory('Act3ScrollingState',
                             enemy.stopChasingCount = 0;
                         }
                     }
-                },
+                }
+                ,
                 enemyChasingPlayerMovement: function (enemy) {
                     //  TODO - smarter pathing logic - see easystar perhaps
                     var angle = Math.atan2(this.player.y - enemy.y, this.player.x - enemy.x);
                     enemy.body.velocity.x = Math.cos(angle) * this.ENEMY_CHASE_SPEED;
                     enemy.body.velocity.y = Math.sin(angle) * this.ENEMY_CHASE_SPEED;
-                },
+                }
+                ,
                 enemyRandomlyMoving: function (enemy) {
                     var compareX = Math.round(enemy.x * 100) / 100;
                     var compareY = Math.round(enemy.y * 100) / 100;
@@ -627,10 +651,11 @@ angular.module('uiApp').factory('Act3ScrollingState',
                     if (Math.abs(enemy.body.velocity.y) < this.ENEMY_PATROL_SPEED / 5) {
                         enemy.body.velocity.y = Math.sign(enemy.body.velocity.y) * -1 * this.ENEMY_PATROL_SPEED;
                     }
-                },
-                //  Enemy movement - end
+                }
+                ,
+//  Enemy movement - end
 
-                //  Ending related
+//  Ending related
                 failure: function () {
                     this.game.ending = true;
                     var deathTween = this.game.add.tween(this);
@@ -643,7 +668,8 @@ angular.module('uiApp').factory('Act3ScrollingState',
                         //  TODO - retry move on option
                         this.game.state.start(this.state.current, true, false, this.LEVEL, this.STARTING_CANDLES);
                     }, this);
-                },
+                }
+                ,
 
                 winEnding: function () {
                     this.game.ending = true;
@@ -656,7 +682,9 @@ angular.module('uiApp').factory('Act3ScrollingState',
                         this.game.state.start(this.state.current, true, false, this.LEVEL + 1, this.CURRENT_CANDLES + Act1Settings.addsCandlesAtEnd[this.LEVEL]);
                     }, this);
                 }
-            };
+            }
+                ;
         }
     ]
-);
+)
+;
