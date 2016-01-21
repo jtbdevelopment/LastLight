@@ -481,7 +481,6 @@ angular.module('uiApp').factory('Act3ScrollingState',
                 moveHelpers: function () {
                     angular.forEach(this.players.children, function (p, index) {
                             var x = this.players.children[0].x, y = this.players.children[0].y;
-                            var maxX = 0, maxY = 0;
                             switch (this.CURRENT_FORMATION) {
                                 case VERTICAL_FORMATION:
                                     if (index < 3) {
