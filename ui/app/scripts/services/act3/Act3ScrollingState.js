@@ -228,7 +228,7 @@ angular.module('uiApp').factory('Act3ScrollingState',
                 },
                 createPlayerHelper: function (x, y) {
                     var player = this.players.create(x, y, 'player');
-                    player.body.collideWorldBounds = true;
+                    player.body.collideWorldBounds = false;  // compute it instead for consistent formation
                     player.body.debug = this.DEBUG;
                     // TODO - real height
                     player.height = 32;
@@ -367,56 +367,58 @@ angular.module('uiApp').factory('Act3ScrollingState',
                         if (this.ARROWS_REMAINING > 0) {
                             if (angular.isDefined(this.NEXT_FIRE_TIME))
                                 angular.forEach(this.players.children, function (p, index) {
-                                    var arrow = this.arrows.getFirstExists(false);
-                                    var x = 0, y = 0, velX = 0, velY = 0;
+                                    if (p.alive) {
+                                        var arrow = this.arrows.getFirstExists(false);
+                                        var x = 0, y = 0, velX = 0, velY = 0;
 
-                                    switch (this.CURRENT_FORMATION) {
-                                        case VERTICAL_FORMATION:
-                                            if (index < 3) {
-                                                x = p.x;
-                                                y = p.y + (p.height / 2);
-                                                velX = -this.PLAYER_ARROW_VELOCITY;
-                                            } else {
-                                                x = p.x + p.width;
-                                                y = p.y + (p.height / 2);
-                                                velX = this.PLAYER_ARROW_VELOCITY;
-                                            }
-                                            break;
-                                        case WEDGE_FORMATION:
-                                            x = p.x + p.width;
-                                            y = p.y + (p.height / 2);
-                                            velX = this.PLAYER_ARROW_VELOCITY;
-                                            break;
-                                        case BLOCK_FORMATION:
-                                            switch (index) {
-                                                case 0:
-                                                case 3:
-                                                    x = p.x + (p.width / 2);
-                                                    y = p.y;
-                                                    velY = -this.PLAYER_ARROW_VELOCITY;
-                                                    break;
-                                                case 4:
-                                                    x = p.x + p.width;
-                                                    y = p.y + (p.height / 2);
-                                                    velX = this.PLAYER_ARROW_VELOCITY;
-                                                    break;
-                                                case 1:
+                                        switch (this.CURRENT_FORMATION) {
+                                            case VERTICAL_FORMATION:
+                                                if (index < 3) {
                                                     x = p.x;
                                                     y = p.y + (p.height / 2);
                                                     velX = -this.PLAYER_ARROW_VELOCITY;
-                                                    break;
-                                                case 2:
-                                                case 5:
-                                                    x = p.x + (p.width / 2);
-                                                    y = p.y;
-                                                    velY = this.PLAYER_ARROW_VELOCITY;
-                                                    break;
-                                            }
-                                            break;
+                                                } else {
+                                                    x = p.x + p.width;
+                                                    y = p.y + (p.height / 2);
+                                                    velX = this.PLAYER_ARROW_VELOCITY;
+                                                }
+                                                break;
+                                            case WEDGE_FORMATION:
+                                                x = p.x + p.width;
+                                                y = p.y + (p.height / 2);
+                                                velX = this.PLAYER_ARROW_VELOCITY;
+                                                break;
+                                            case BLOCK_FORMATION:
+                                                switch (index) {
+                                                    case 0:
+                                                    case 3:
+                                                        x = p.x + (p.width / 2);
+                                                        y = p.y;
+                                                        velY = -this.PLAYER_ARROW_VELOCITY;
+                                                        break;
+                                                    case 4:
+                                                        x = p.x + p.width;
+                                                        y = p.y + (p.height / 2);
+                                                        velX = this.PLAYER_ARROW_VELOCITY;
+                                                        break;
+                                                    case 1:
+                                                        x = p.x;
+                                                        y = p.y + (p.height / 2);
+                                                        velX = -this.PLAYER_ARROW_VELOCITY;
+                                                        break;
+                                                    case 2:
+                                                    case 5:
+                                                        x = p.x + (p.width / 2);
+                                                        y = p.y;
+                                                        velY = this.PLAYER_ARROW_VELOCITY;
+                                                        break;
+                                                }
+                                                break;
+                                        }
+                                        arrow.reset(x, y);
+                                        arrow.body.velocity.x = velX;
+                                        arrow.body.velocity.y = velY;
                                     }
-                                    arrow.reset(x, y);
-                                    arrow.body.velocity.x = velX;
-                                    arrow.body.velocity.y = velY;
                                 }, this);
                             this.ARROWS_REMAINING = this.ARROWS_REMAINING - 1;
                             this.NEXT_FIRE_TIME = this.game.time.now += this.PLAYER_FIRE_FREQUENCY;
@@ -479,76 +481,81 @@ angular.module('uiApp').factory('Act3ScrollingState',
                     }
                 },
                 moveHelpers: function () {
-                    angular.forEach(this.players.children, function (p, index) {
-                            var x = this.players.children[0].x, y = this.players.children[0].y;
-                            switch (this.CURRENT_FORMATION) {
-                                case VERTICAL_FORMATION:
-                                    if (index < 3) {
-                                        y += (index * p.height);
-                                    } else {
-                                        x += p.width;
-                                        y += ((index - 3) * p.height);
-                                    }
-                                    break;
-                                case BLOCK_FORMATION:
-                                    switch (index) {
-                                        case 0:   //  upper left
-                                            break;
-                                        case 1:   //mid left
-                                            y += (p.height / 2);
-                                            x += p.width;
-                                            break;
-                                        case 2:   // lower left
-                                            y += p.height;
-                                            break;
-                                        case 3:  // upper right
-                                            x += (p.width * 3);
-                                            break;
-                                        case 4:  // mid right
-                                            y += (p.height / 2);
-                                            x += (p.width * 2);
-                                            break;
-                                        case 5:  // lower right
-                                            y += p.height;
-                                            x += (p.width * 3);
-                                            break;
-                                    }
-                                    break;
-                                case WEDGE_FORMATION:
-                                    switch (index) {
-                                        case 0:   //  upper left
-                                            break;
-                                        case 1:   //  back left
-                                            y += (p.height * 2);
-                                            break;
-                                        case 2:   //  lower left
-                                            y += (p.height * 4);
-                                            break;
-                                        case 3:   //  mid upper
-                                            x += p.width;
-                                            y += p.height;
-                                            break;
-                                        case 4:   // wedge point
-                                            y += (p.height * 2);
-                                            x += (p.width * 2);
-                                            break;
-                                        case 5:   // mid lower
-                                            y += (p.height * 3);
-                                            x += p.width;
-                                            break;
-                                    }
-                                    break;
-                            }
-
+                    angular.forEach(this.players.children,
+                        function (p, index) {
                             if (p.alive) {
+                                var x = this.players.children[0].x, y = this.players.children[0].y;
+                                switch (this.CURRENT_FORMATION) {
+                                    case VERTICAL_FORMATION:
+                                        if (index < 3) {
+                                            y += (index * p.height);
+                                        } else {
+                                            x += p.width;
+                                            y += ((index - 3) * p.height);
+                                        }
+                                        break;
+                                    case BLOCK_FORMATION:
+                                        switch (index) {
+                                            case 0:   //  upper left
+                                                break;
+                                            case 1:   //mid left
+                                                y += (p.height / 2);
+                                                x += p.width;
+                                                break;
+                                            case 2:   // lower left
+                                                y += p.height;
+                                                break;
+                                            case 3:  // upper right
+                                                x += (p.width * 3);
+                                                break;
+                                            case 4:  // mid right
+                                                y += (p.height / 2);
+                                                x += (p.width * 2);
+                                                break;
+                                            case 5:  // lower right
+                                                y += p.height;
+                                                x += (p.width * 3);
+                                                break;
+                                        }
+                                        break;
+                                    case WEDGE_FORMATION:
+                                        switch (index) {
+                                            case 0:   //  upper left
+                                                break;
+                                            case 1:   //  back left
+                                                y += (p.height * 2);
+                                                break;
+                                            case 2:   //  lower left
+                                                y += (p.height * 4);
+                                                break;
+                                            case 3:   //  mid upper
+                                                x += p.width;
+                                                y += p.height;
+                                                break;
+                                            case 4:   // wedge point
+                                                y += (p.height * 2);
+                                                x += (p.width * 2);
+                                                break;
+                                            case 5:   // mid lower
+                                                y += (p.height * 3);
+                                                x += p.width;
+                                                break;
+                                        }
+                                        break;
+                                }
+
                                 var adjustX = 0, adjustY = 0;
-                                if((x + p.width) > this.game.width) {
+                                if (x < 0) {
+                                    adjustX = -x;
+                                } else if ((x + p.width) > this.game.width) {
                                     adjustX = this.game.width - x - p.width;
                                 }
-                                if((y + p.height) > this.game.height) {
+                                if (y < 0) {
+                                    adjustY = -y;
+                                } else if ((y + p.height) > this.game.height) {
                                     adjustY = this.game.height - y - p.height;
                                 }
-                                if(adjustX !== 0 || adjustY !== 0) {
+                                if (adjustX !== 0 || adjustY !== 0) {
                                     this.players.children[0].x += adjustX;
                                     this.players.children[0].y += adjustY;
                                     this.moveHelpers();
@@ -566,8 +573,7 @@ angular.module('uiApp').factory('Act3ScrollingState',
                                     }, 8 * distanceFactor, null, true);
                                 }
                             }
-                        }, this
-                    )
+                        }, this)
                 },
 //  Player action and movement - end
 
