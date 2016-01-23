@@ -6,8 +6,8 @@ var WEDGE_FORMATION = 3;
 var BLOCK_FORMATION = 4;
 
 angular.module('uiApp').factory('Act3ScrollingState',
-    ['$timeout',
-        function ($timeout) {
+    ['$timeout', 'Act3Settings',
+        function ($timeout, Act3Settings) {
             return {
                 game: undefined,
                 load: undefined,
@@ -22,7 +22,7 @@ angular.module('uiApp').factory('Act3ScrollingState',
                 PLAYER_REVIVE_RATE: 30 * 1000,
                 PLAYER_INVULNERABLE_RATE: 10 * 1000,
 
-                PLAYER_LIGHT_RADIUS: 100,
+                PLAYER_LIGHT_RADIUS: 75,
 
                 DEBUG: false,
                 tileHits: [],
@@ -31,11 +31,11 @@ angular.module('uiApp').factory('Act3ScrollingState',
                 init: function (level, arrowsRemaining) {
                     this.LEVEL = level;
                     this.ARROWS_REMAINING = arrowsRemaining;
+                    this.NEXT_FIRE_TIME = 0;
                     //  TODO
                     this.CURRENT_FORMATION = VERTICAL_FORMATION;
-                    this.PLAYER_START_X = 0;
-                    this.PLAYER_START_Y = 0;
-                    this.NEXT_FIRE_TIME = 0;
+                    this.PLAYER_START_X = Act3Settings.startingXPositions[this.LEVEL];
+                    this.PLAYER_START_Y = Act3Settings.startingYPositions[this.LEVEL];
                 },
                 preload: function () {
                     //  Note tile asset IDs do not match because 0 represents no tile
@@ -55,9 +55,10 @@ angular.module('uiApp').factory('Act3ScrollingState',
                 create: function () {
                     this.game.ending = false;
 
-                    this.game.world.resize(600, 600);
 
                     this.game.physics.startSystem(Phaser.Physics.ARCADE);
+                    this.game.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;
+                    this.game.world.resize(this.game.width, this.game.height);
                     this.game.physics.arcade.setBoundsToWorld(true, true, true, true, false);
                     this.createPlayerGroup();
                     this.createArrowGroup();
@@ -65,26 +66,25 @@ angular.module('uiApp').factory('Act3ScrollingState',
                     this.initializeWorldShadowing();
                     this.initializeArrowTracker();
                     this.initializeKeyboard();
-                    this.game.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;
                     $timeout(this.revivePlayer, this.PLAYER_REVIVE_RATE, true, this);
                 },
                 update: function () {
                     if (!this.game.ending) {
                         this.handlePlayerMovement();
-                    }
-                    //  TODO - move this out
-                    if (this.enemies.getFirstExists(true) == null || !angular.isDefined(this.enemies.getFirstExists(true))) {
-                        for (var i = 0; i < 5; ++i) {
-                            var enemy = this.enemies.getFirstExists(false);
-                            var x = this.game.width + (enemy.width * i), y = this.game.height - enemy.height, velX = -130, velY = 0;
+                        //  TODO - move this out
+                        if (this.enemies.getFirstExists(true) == null || !angular.isDefined(this.enemies.getFirstExists(true))) {
+                            for (var i = 0; i < 5; ++i) {
+                                var enemy = this.enemies.getFirstExists(false);
+                                var x = this.game.width + (enemy.width * i), y = this.game.height - enemy.height, velX = -130, velY = 0;
 
-                            enemy.reset(x, y);
-                            enemy.body.velocity.x = velX;
-                            enemy.body.velocity.y = velY;
-                            enemy.body.collideWorldBounds = false;
+                                enemy.reset(x, y);
+                                enemy.body.velocity.x = velX;
+                                enemy.body.velocity.y = velY;
+                                enemy.body.collideWorldBounds = false;
+                            }
                         }
                     }
-                    this.enemies.forEachExists(function (e) {
+                    this.enemies.forEachAlive(function (e) {
                         if (!e.body.collideWorldBounds) {
                             if (e.x >= 0 &&
                                 e.x <= (this.game.width - e.width) &&
@@ -511,6 +511,7 @@ angular.module('uiApp').factory('Act3ScrollingState',
 //  collision handlers
                 arrowHitsEnemy: function (arrow, enemy) {
                     arrow.kill();
+                    //  TODO - kill tween
                     enemy.kill();
                 }
                 ,
@@ -518,12 +519,17 @@ angular.module('uiApp').factory('Act3ScrollingState',
                     if (!player.invulnerable) {
                         player.kill();
                         //  TODO - death tween
-                        //  TODO - all players dead
+                        if (this.players.countLiving() === 0) {
+                            this.failure();
+                        }
                     }
                 },
 //  Ending related
                 failure: function () {
                     this.game.ending = true;
+                    this.enemies.forEachAlive(function (enemy) {
+                        enemy.kill();
+                    });
                     var deathTween = this.game.add.tween(this);
                     deathTween.to({PLAYER_LIGHT_RADIUS: 0}, 1000, Phaser.Easing.Power1, true);
                 },
@@ -537,7 +543,7 @@ angular.module('uiApp').factory('Act3ScrollingState',
                         //  TODO - interludes
                         //  TODO - retry move on option
                         //  TODO - add arrows?
-                        this.game.state.start(this.state.current, true, false, this.LEVEL + 1, this.ARROWS_REMAINING);
+                        this.game.state.start(this.state.current, true, false, this.LEVEL + 1, this.ARROWS_REMAINING + Act3Settings.addsArrowsAtEnd[this.LEVEL]);
                     }, this);
                 }
             }
