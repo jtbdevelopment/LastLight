@@ -25,24 +25,21 @@ angular.module('uiApp').factory('Act3ScrollingState',
                 PLAYER_LIGHT_RADIUS: 75,
 
                 DEBUG: false,
-                tileHits: [],
 
                 //  Phaser state functions - begin
                 init: function (level, arrowsRemaining) {
                     this.LEVEL = level;
                     this.ARROWS_REMAINING = arrowsRemaining;
                     this.NEXT_FIRE_TIME = 0;
+                    this.TIMER_COUNTER = 0;
+                    this.ENEMY_SPAWNS = Act3Settings.enemySpawns[this.LEVEL];
+                    this.MAX_TIMER = this.ENEMY_SPAWNS.times.length;
                     //  TODO
                     this.CURRENT_FORMATION = VERTICAL_FORMATION;
                     this.PLAYER_START_X = Act3Settings.startingXPositions[this.LEVEL];
                     this.PLAYER_START_Y = Act3Settings.startingYPositions[this.LEVEL];
                 },
                 preload: function () {
-                    //  Note tile asset IDs do not match because 0 represents no tile
-                    //  So in tiled - a tile will be asset id 535
-                    //  In json file it will be 536
-                    //  When remapping images from one to another you would need to say 536 -> 535
-
                     //  TODO - actual art
                     //  TODO - physics for art
                     //  https://code.google.com/p/box2d-editor/
@@ -67,22 +64,11 @@ angular.module('uiApp').factory('Act3ScrollingState',
                     this.initializeArrowTracker();
                     this.initializeKeyboard();
                     $timeout(this.revivePlayer, this.PLAYER_REVIVE_RATE, true, this);
+                    $timeout(this.nextEnemyWave, this.ENEMY_SPAWNS.times[this.TIMER_COUNTER] * 1000, true, this);
                 },
                 update: function () {
                     if (!this.game.ending) {
                         this.handlePlayerMovement();
-                        //  TODO - move this out
-                        if (this.enemies.getFirstExists(true) == null || !angular.isDefined(this.enemies.getFirstExists(true))) {
-                            for (var i = 0; i < 5; ++i) {
-                                var enemy = this.enemies.getFirstExists(false);
-                                var x = this.game.width + (enemy.width * i), y = this.game.height - enemy.height, velX = -130, velY = 0;
-
-                                enemy.reset(x, y);
-                                enemy.body.velocity.x = velX;
-                                enemy.body.velocity.y = velY;
-                                enemy.body.collideWorldBounds = false;
-                            }
-                        }
                     }
                     this.enemies.forEachAlive(function (e) {
                         if (!e.body.collideWorldBounds) {
@@ -226,7 +212,7 @@ angular.module('uiApp').factory('Act3ScrollingState',
                 updateWorldShadowAndLights: function () {
                     //  TODO - make a gamma slider  (10, 20,50)
 
-                    this.shadowTexture.context.fillStyle = 'rgb(60, 80, 110)';
+                    this.shadowTexture.context.fillStyle = 'rgb(100, 120, 150)';
                     this.shadowTexture.context.fillRect(0, 0, this.game.world.width, this.game.world.height);
 
                     angular.forEach(this.players.children, function (p) {
@@ -234,9 +220,50 @@ angular.module('uiApp').factory('Act3ScrollingState',
                     }, this);
                     this.shadowTexture.dirty = true;
                 },
-                //  Candle related -end
+                //  Arrow related -end
+
+                nextEnemyWave: function (state) {
+                    //  TODO - move this out
+                    var denom = -state.ENEMY_SPAWNS.speed;
+                    var velX = state.ENEMY_SPAWNS.xVels[state.TIMER_COUNTER];
+                    var xAdjust = velX / denom;
+                    var velY = state.ENEMY_SPAWNS.yVels[state.TIMER_COUNTER];
+                    var yAdjust = velY / -denom;
+                    var startX = state.ENEMY_SPAWNS.xSpawns[state.TIMER_COUNTER];
+                    var startY = state.ENEMY_SPAWNS.ySpawns[state.TIMER_COUNTER];
+                    var enemies = state.ENEMY_SPAWNS.spawnCount[state.TIMER_COUNTER];
+                    for (var i = 0; i < enemies; ++i) {
+                        var enemy = state.enemies.getFirstExists(false, true);
+                        var x = startX + (enemy.width * i * xAdjust),
+                            y = startY - (enemy.height * i * yAdjust);
+
+                        enemy.reset(x, y);
+                        enemy.body.velocity.x = velX;
+                        enemy.body.velocity.y = velY;
+                        enemy.body.collideWorldBounds = false;
+                    }
+                    state.TIMER_COUNTER += 1;
+                    if (state.TIMER_COUNTER < state.MAX_TIMER) {
+                        $timeout(state.nextEnemyWave, state.ENEMY_SPAWNS.times[state.TIMER_COUNTER] * 1000, true, state);
+                    }
+                },
 
                 //  Player action and movement - begin
+                makeVulnerable: function (player) {
+                    //  TODO - show
+                    player.invulnerable = false;
+                },
+                revivePlayer: function (state) {
+                    var dead = state.players.getFirstDead();
+                    if (dead !== null && angular.isDefined(dead)) {
+                        dead.reset(0, 0);
+                        dead.invulnerable = true;
+                        //  TODO - sound, make invulnerable visible
+                        $timeout(state.makeVulnerable, state.PLAYER_INVULNERABLE_RATE, true, dead);
+                        state.moveHelpers();
+                    }
+                    $timeout(state.revivePlayer, state.PLAYER_REVIVE_RATE, true, state);
+                },
                 fireArrows: function () {
                     if (this.game.time.now > this.NEXT_FIRE_TIME) {
                         if (this.ARROWS_REMAINING > 0) {
@@ -328,21 +355,6 @@ angular.module('uiApp').factory('Act3ScrollingState',
                     this.CURRENT_FORMATION = formation;
                     //  TODO - ROTATE PLAYERS?
                     this.moveHelpers();
-                },
-                revivePlayer: function (state) {
-                    var dead = state.players.getFirstDead();
-                    if (dead !== null && angular.isDefined(dead)) {
-                        dead.reset(0, 0);
-                        dead.invulnerable = true;
-                        //  TODO - sound, make invulnerable visible
-                        $timeout(state.makeVulnerable, state.PLAYER_INVULNERABLE_RATE, true, dead);
-                        state.moveHelpers();
-                    }
-                    $timeout(state.revivePlayer, state.PLAYER_REVIVE_RATE, true, state);
-                },
-                makeVulnerable: function (player) {
-                    //  TODO - show
-                    player.invulnerable = false;
                 },
                 handlePlayerMovement: function () {
                     var moved = false;
@@ -454,21 +466,21 @@ angular.module('uiApp').factory('Act3ScrollingState',
                                             case 0:   //  upper left
                                                 break;
                                             case 1:   //  back left
-                                                y += (p.height * 2);
+                                                y += (p.height * 1);
                                                 break;
                                             case 2:   //  lower left
-                                                y += (p.height * 4);
+                                                y += (p.height * 2);
                                                 break;
                                             case 3:   //  mid upper
                                                 x += p.width;
-                                                y += p.height;
+                                                y += (p.height / 2);
                                                 break;
                                             case 4:   // wedge point
-                                                y += (p.height * 2);
+                                                y += (p.height * 1);
                                                 x += (p.width * 2);
                                                 break;
                                             case 5:   // mid lower
-                                                y += (p.height * 3);
+                                                y += (p.height * 1.5);
                                                 x += p.width;
                                                 break;
                                         }
@@ -513,11 +525,19 @@ angular.module('uiApp').factory('Act3ScrollingState',
                     arrow.kill();
                     //  TODO - kill tween
                     enemy.kill();
+                    if (this.enemies.countLiving() === 0) {
+                        console.log(this.TIMER_COUNTER + ' ' + this.MAX_TIMER);
+                        if (this.TIMER_COUNTER === this.MAX_TIMER) {
+                            this.winEnding();
+                        }
+                    }
                 }
                 ,
                 enemyHitsPlayer: function (player) {
                     if (!player.invulnerable) {
                         player.kill();
+                        this.players.remove(player, false);
+                        this.players.add(player);
                         //  TODO - death tween
                         if (this.players.countLiving() === 0) {
                             this.failure();
@@ -546,9 +566,7 @@ angular.module('uiApp').factory('Act3ScrollingState',
                         this.game.state.start(this.state.current, true, false, this.LEVEL + 1, this.ARROWS_REMAINING + Act3Settings.addsArrowsAtEnd[this.LEVEL]);
                     }, this);
                 }
-            }
-                ;
+            };
         }
     ]
-)
-;
+);
