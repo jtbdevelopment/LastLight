@@ -232,12 +232,14 @@ angular.module('uiApp').factory('Act3ScrollingState',
                     var startX = state.ENEMY_SPAWNS.xSpawns[state.TIMER_COUNTER];
                     var startY = state.ENEMY_SPAWNS.ySpawns[state.TIMER_COUNTER];
                     var enemies = state.ENEMY_SPAWNS.spawnCount[state.TIMER_COUNTER];
+                    var health = state.ENEMY_SPAWNS.health[state.TIMER_COUNTER];
                     for (var i = 0; i < enemies; ++i) {
                         var enemy = state.enemies.getFirstExists(false, true);
                         var x = startX + (enemy.width * i * xAdjust),
                             y = startY - (enemy.height * i * yAdjust);
 
                         enemy.reset(x, y);
+                        enemy.health = health;
                         enemy.body.velocity.x = velX;
                         enemy.body.velocity.y = velY;
                         enemy.body.collideWorldBounds = false;
@@ -524,11 +526,14 @@ angular.module('uiApp').factory('Act3ScrollingState',
                 arrowHitsEnemy: function (arrow, enemy) {
                     arrow.kill();
                     //  TODO - kill tween
-                    enemy.kill();
-                    if (this.enemies.countLiving() === 0) {
-                        console.log(this.TIMER_COUNTER + ' ' + this.MAX_TIMER);
-                        if (this.TIMER_COUNTER === this.MAX_TIMER) {
-                            this.winEnding();
+                    enemy.health -= 1;
+                    if (enemy.health <= 0) {
+                        enemy.kill();
+                        if (this.enemies.countLiving() === 0) {
+                            console.log(this.TIMER_COUNTER + ' ' + this.MAX_TIMER);
+                            if (this.TIMER_COUNTER === this.MAX_TIMER) {
+                                this.winEnding();
+                            }
                         }
                     }
                 }
@@ -541,6 +546,8 @@ angular.module('uiApp').factory('Act3ScrollingState',
                         //  TODO - death tween
                         if (this.players.countLiving() === 0) {
                             this.failure();
+                        } else {
+                            this.moveHelpers();
                         }
                     }
                 },
