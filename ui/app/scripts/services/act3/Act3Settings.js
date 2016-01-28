@@ -3,6 +3,7 @@
 angular.module('uiApp').factory('Act3Settings',
     [function () {
         var act3Data = {
+            healthLevels: [1, 2, 5, 10],
             startingXPositions: [],
             startingYPositions: [],
             addsArrowsAtEnd: [],
