@@ -9,7 +9,7 @@
  */
 angular.module('uiApp')
     .controller('Act3Ctrl', ['$scope', 'GameFactory', function ($scope, GameFactory) {
-        $scope.helpText = 'Use arrow keys to move.  Press 1, 2, 3, 4 for different formations.  Space to fire.';
+        $scope.helpText = 'Use arrow keys to move.  Press 1, 2, 3, 4 for different formations.  Space to fire.  Bigger enemies need more hits.';
         GameFactory.state.start('Act3', true, false, 0, 1000);
     }]);
 
