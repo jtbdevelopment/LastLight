@@ -14,6 +14,8 @@ angular.module('uiApp').factory('Act3ScrollingState',
                 data: undefined,
                 state: undefined,
 
+                bossUpdateFunction: undefined,
+
                 PLAYER_HELPERS: 6,
                 PLAYER_MOVE_SPEED: 4,
                 PLAYER_FIRE_FREQUENCY: 500,
@@ -28,6 +30,7 @@ angular.module('uiApp').factory('Act3ScrollingState',
 
                 //  Phaser state functions - begin
                 init: function (level, arrowsRemaining) {
+                    this.bossUpdateFunction = undefined,
                     this.LEVEL = level;
                     this.ARROWS_REMAINING = arrowsRemaining;
                     this.NEXT_FIRE_TIME = 0;
@@ -47,7 +50,9 @@ angular.module('uiApp').factory('Act3ScrollingState',
                     //  TODO - music
                     this.load.image('player', 'images/HB_Dwarf05.png');
                     this.load.image('demon', 'images/DemonMinorFighter.png');
-                    this.load.image('arrow', 'images/enemy-bullet.png')
+                    this.load.image('arrow', 'images/enemy-bullet.png');
+
+                    this.load.image('bossFire1', 'images/bullet.png');
                 },
                 create: function () {
                     this.game.ending = false;
@@ -60,6 +65,7 @@ angular.module('uiApp').factory('Act3ScrollingState',
                     this.createPlayerGroup();
                     this.createArrowGroup();
                     this.createEnemies();
+                    this.createBoss();
                     this.initializeWorldShadowing();
                     this.initializeArrowTracker();
                     this.initializeKeyboard();
@@ -84,6 +90,9 @@ angular.module('uiApp').factory('Act3ScrollingState',
                     }, this);
                     this.game.physics.arcade.overlap(this.arrows, this.enemies, this.arrowHitsEnemy, null, this);
                     this.game.physics.arcade.overlap(this.players, this.enemies, this.enemyHitsPlayer, null, this);
+                    if(angular.isDefined(this.bossUpdateFunction)) {
+                        this.bossUpdateFunction.call();
+                    }
                     this.updateWorldShadowAndLights();
                 },
                 render: function () {
@@ -170,6 +179,29 @@ angular.module('uiApp').factory('Act3ScrollingState',
                         group.setAll('body.bounce.y', 1);
                         this.enemyHealthGroups[healthLevel] = group;
                     }
+                },
+                createBoss: function() {
+                    this.boss = this.game.add.group();
+                    this.boss.enableBody = true;
+                    this.boss.physicsBodyType = Phaser.Physics.ARCADE;
+                    this.boss.classType = this.ENEMY_SPAWNS.boss.type;
+                    this.boss.createMultiple(1, 'demon');
+                    this.boss.setAll('checkWorldBounds', false);
+                    this.boss.setAll('body.debug', this.DEBUG);
+                    this.boss.setAll('anchor.x', 0.5);
+                    this.boss.setAll('anchor.y', 0.5);
+                    this.boss.setAll('outOfBoundsKill', false);
+                    this.boss.setAll('height', this.ENEMY_SPAWNS.boss.height);
+                    this.boss.setAll('width', this.ENEMY_SPAWNS.boss.width);
+                    this.boss.setAll('body.height', this.ENEMY_SPAWNS.boss.height);
+                    this.boss.setAll('body.width', this.ENEMY_SPAWNS.boss.width);
+                    this.boss.setAll('body.collideWorldBounds', true);
+                    this.boss.setAll('body.bounce.x', 1);
+                    this.boss.setAll('body.bounce.y', 1);
+                    this.boss.setAll('state', this);
+
+                    var boss = this.boss.getFirstExists(false);
+                    boss.health = this.ENEMY_SPAWNS.boss.health;
                 },
                 initializeWorldShadowing: function () {
                     this.shadowTexture = this.game.add.bitmapData(this.game.world.width * 2, this.game.world.height * 2);
@@ -261,7 +293,19 @@ angular.module('uiApp').factory('Act3ScrollingState',
                     state.TIMER_COUNTER += 1;
                     if (state.TIMER_COUNTER < state.MAX_TIMER) {
                         $timeout(state.nextEnemyWave, state.ENEMY_SPAWNS.times[state.TIMER_COUNTER] * 1000, true, state);
+                    } else if(state.TIMER_COUNTER === state.MAX_TIMER) {
+                        //  TODO - timer config
+                        $timeout(state.spawnBoss, 5 * 1000, true, state);
                     }
+                },
+                spawnBoss: function(state) {
+                    var boss = state.boss.getFirstExists(false);
+                    state.bossUpdateFunction = boss.updateFunction;
+                    boss.reset(state.ENEMY_SPAWNS.boss.x, state.ENEMY_SPAWNS.boss.y);
+                    state.enemies.add(boss);
+                    boss.health = state.ENEMY_SPAWNS.boss.health;
+                    boss.timeout = $timeout;
+                    boss.bossLoaded();
                 },
 
                 //  Player action and movement - begin
@@ -544,7 +588,9 @@ angular.module('uiApp').factory('Act3ScrollingState',
                     if (enemy.health <= 0) {
                         enemy.kill();
                         this.enemies.remove(enemy);
-                        this.enemyHealthGroups[enemy.initialHealth].add(enemy);
+                        if(angular.isDefined(enemy.initialHealth)) {
+                            this.enemyHealthGroups[enemy.initialHealth].add(enemy);
+                        }
                         if (this.enemies.countLiving() === 0) {
                             if (this.TIMER_COUNTER === this.MAX_TIMER) {
                                 this.winEnding();
