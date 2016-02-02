@@ -30,7 +30,7 @@ angular.module('uiApp').factory('Act3ScrollingState',
 
                 //  Phaser state functions - begin
                 init: function (level, arrowsRemaining) {
-                    this.bossUpdateFunction = undefined,
+                    this.bossUpdateFunction = undefined;
                     this.LEVEL = level;
                     this.ARROWS_REMAINING = arrowsRemaining;
                     this.NEXT_FIRE_TIME = 0;
@@ -56,8 +56,6 @@ angular.module('uiApp').factory('Act3ScrollingState',
                 },
                 create: function () {
                     this.game.ending = false;
-
-
                     this.game.physics.startSystem(Phaser.Physics.ARCADE);
                     this.game.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;
                     this.game.world.resize(this.game.width, this.game.height);
@@ -90,8 +88,8 @@ angular.module('uiApp').factory('Act3ScrollingState',
                     }, this);
                     this.game.physics.arcade.overlap(this.arrows, this.enemies, this.arrowHitsEnemy, null, this);
                     this.game.physics.arcade.overlap(this.players, this.enemies, this.enemyHitsPlayer, null, this);
-                    if(angular.isDefined(this.bossUpdateFunction)) {
-                        this.bossUpdateFunction.call();
+                    if (angular.isDefined(this.bossUpdateFunction)) {
+                        this.bossUpdateFunction.call(this.boss);
                     }
                     this.updateWorldShadowAndLights();
                 },
@@ -145,8 +143,8 @@ angular.module('uiApp').factory('Act3ScrollingState',
                     this.arrows.createMultiple(50, 'arrow');
                     this.arrows.setAll('checkWorldBounds', true);
                     this.arrows.setAll('body.debug', this.DEBUG);
-                    this.arrows.setAll('anchor.x', 0.5);
-                    this.arrows.setAll('anchor.y', 1.0);
+                    this.arrows.setAll('anchor.x', 0.0);
+                    this.arrows.setAll('anchor.y', 0.0);
                     this.arrows.setAll('outOfBoundsKill', true);
                     this.arrows.setAll('height', 5);
                     this.arrows.setAll('width', 5);
@@ -165,8 +163,8 @@ angular.module('uiApp').factory('Act3ScrollingState',
                         group.createMultiple(50, 'demon');
                         group.setAll('checkWorldBounds', false);
                         group.setAll('body.debug', this.DEBUG);
-                        group.setAll('anchor.x', 0.5);
-                        group.setAll('anchor.y', 1.0);
+                        group.setAll('anchor.x', 0.0);
+                        group.setAll('anchor.y', 0.0);
                         group.setAll('outOfBoundsKill', false);
                         var height = 24 + Math.floor(healthLevel / maxHealth * 16);
                         var width = 24 + Math.floor(healthLevel / maxHealth * 16);
@@ -180,7 +178,7 @@ angular.module('uiApp').factory('Act3ScrollingState',
                         this.enemyHealthGroups[healthLevel] = group;
                     }
                 },
-                createBoss: function() {
+                createBoss: function () {
                     this.boss = this.game.add.group();
                     this.boss.enableBody = true;
                     this.boss.physicsBodyType = Phaser.Physics.ARCADE;
@@ -188,8 +186,8 @@ angular.module('uiApp').factory('Act3ScrollingState',
                     this.boss.createMultiple(1, 'demon');
                     this.boss.setAll('checkWorldBounds', false);
                     this.boss.setAll('body.debug', this.DEBUG);
-                    this.boss.setAll('anchor.x', 0.5);
-                    this.boss.setAll('anchor.y', 0.5);
+                    this.boss.setAll('anchor.x', 0.0);
+                    this.boss.setAll('anchor.y', 0.0);
                     this.boss.setAll('outOfBoundsKill', false);
                     this.boss.setAll('height', this.ENEMY_SPAWNS.boss.height);
                     this.boss.setAll('width', this.ENEMY_SPAWNS.boss.width);
@@ -266,7 +264,9 @@ angular.module('uiApp').factory('Act3ScrollingState',
                 //  Arrow related -end
 
                 nextEnemyWave: function (state) {
-                    //  TODO - move this out
+                    if(state.game.ending) {
+                        return;
+                    }
                     var denom = -state.ENEMY_SPAWNS.speed;
                     var velX = state.ENEMY_SPAWNS.xVels[state.TIMER_COUNTER];
                     var xAdjust = velX / denom;
@@ -283,22 +283,22 @@ angular.module('uiApp').factory('Act3ScrollingState',
                         var x = startX + (enemy.width * i * xAdjust),
                             y = startY - (enemy.height * i * yAdjust);
 
+                        enemy.body.collideWorldBounds = false;
                         enemy.reset(x, y);
                         enemy.initialHealth = health;
                         enemy.health = enemy.initialHealth;
                         enemy.body.velocity.x = velX;
                         enemy.body.velocity.y = velY;
-                        enemy.body.collideWorldBounds = false;
                     }
                     state.TIMER_COUNTER += 1;
                     if (state.TIMER_COUNTER < state.MAX_TIMER) {
                         $timeout(state.nextEnemyWave, state.ENEMY_SPAWNS.times[state.TIMER_COUNTER] * 1000, true, state);
-                    } else if(state.TIMER_COUNTER === state.MAX_TIMER) {
+                    } else if (state.TIMER_COUNTER === state.MAX_TIMER) {
                         //  TODO - timer config
                         $timeout(state.spawnBoss, 5 * 1000, true, state);
                     }
                 },
-                spawnBoss: function(state) {
+                spawnBoss: function (state) {
                     var boss = state.boss.getFirstExists(false);
                     state.bossUpdateFunction = boss.updateFunction;
                     boss.reset(state.ENEMY_SPAWNS.boss.x, state.ENEMY_SPAWNS.boss.y);
@@ -306,6 +306,7 @@ angular.module('uiApp').factory('Act3ScrollingState',
                     boss.health = state.ENEMY_SPAWNS.boss.health;
                     boss.timeout = $timeout;
                     boss.bossLoaded();
+                    state.boss = boss;
                 },
 
                 //  Player action and movement - begin
@@ -325,81 +326,80 @@ angular.module('uiApp').factory('Act3ScrollingState',
                     $timeout(state.revivePlayer, state.PLAYER_REVIVE_RATE, true, state);
                 },
                 fireArrows: function () {
-                    if (this.game.time.now > this.NEXT_FIRE_TIME) {
+                    if (angular.isDefined(this.NEXT_FIRE_TIME) && this.game.time.now > this.NEXT_FIRE_TIME) {
                         if (this.ARROWS_REMAINING > 0) {
-                            if (angular.isDefined(this.NEXT_FIRE_TIME))
-                                angular.forEach(this.players.children, function (p, index) {
-                                    if (p.alive) {
-                                        var arrow = this.arrows.getFirstExists(false);
-                                        var x = 0, y = 0, velX = 0, velY = 0;
+                            angular.forEach(this.players.children, function (p, index) {
+                                if (p.alive) {
+                                    var arrow = this.arrows.getFirstExists(false);
+                                    var x = 0, y = 0, velX = 0, velY = 0;
 
-                                        switch (this.CURRENT_FORMATION) {
-                                            case VERTICAL_FORMATION:
-                                                if (index < 3) {
-                                                    x = p.x;
-                                                    y = p.y + (p.height / 2);
-                                                    velX = -this.PLAYER_ARROW_VELOCITY;
-                                                } else {
-                                                    x = p.x + p.width;
-                                                    y = p.y + (p.height / 2);
-                                                    velX = this.PLAYER_ARROW_VELOCITY;
-                                                }
-                                                break;
-                                            case HORIZONTAL_FORMATION:
-                                                switch (index) {
-                                                    case 0:
-                                                    case 3:
-                                                    case 4:
-                                                        x = p.x + (p.width / 2);
-                                                        y = p.y;
-                                                        velY = -this.PLAYER_ARROW_VELOCITY;
-                                                        break;
-                                                    case 1:
-                                                    case 2:
-                                                    case 5:
-                                                        x = p.x + (p.width / 2);
-                                                        y = p.y + p.height;
-                                                        velY = this.PLAYER_ARROW_VELOCITY;
-                                                        break;
-                                                }
-                                                break;
-                                            case WEDGE_FORMATION:
+                                    switch (this.CURRENT_FORMATION) {
+                                        case VERTICAL_FORMATION:
+                                            if (index < 3) {
+                                                x = p.x;
+                                                y = p.y + (p.height / 2);
+                                                velX = -this.PLAYER_ARROW_VELOCITY;
+                                            } else {
                                                 x = p.x + p.width;
                                                 y = p.y + (p.height / 2);
                                                 velX = this.PLAYER_ARROW_VELOCITY;
-                                                break;
-                                            case BLOCK_FORMATION:
-                                                switch (index) {
-                                                    case 0:
-                                                    case 3:
-                                                        x = p.x + (p.width / 2);
-                                                        y = p.y;
-                                                        velY = -this.PLAYER_ARROW_VELOCITY;
-                                                        break;
-                                                    case 4:
-                                                        x = p.x + p.width;
-                                                        y = p.y + (p.height / 2);
-                                                        velX = this.PLAYER_ARROW_VELOCITY;
-                                                        break;
-                                                    case 1:
-                                                        x = p.x;
-                                                        y = p.y + (p.height / 2);
-                                                        velX = -this.PLAYER_ARROW_VELOCITY;
-                                                        break;
-                                                    case 2:
-                                                    case 5:
-                                                        x = p.x + (p.width / 2);
-                                                        y = p.y;
-                                                        velY = this.PLAYER_ARROW_VELOCITY;
-                                                        break;
-                                                }
-                                                break;
-                                        }
-                                        arrow.reset(x, y);
-                                        arrow.body.velocity.x = velX;
-                                        arrow.body.velocity.y = velY;
+                                            }
+                                            break;
+                                        case HORIZONTAL_FORMATION:
+                                            switch (index) {
+                                                case 0:
+                                                case 3:
+                                                case 4:
+                                                    x = p.x + (p.width / 2);
+                                                    y = p.y;
+                                                    velY = -this.PLAYER_ARROW_VELOCITY;
+                                                    break;
+                                                case 1:
+                                                case 2:
+                                                case 5:
+                                                    x = p.x + (p.width / 2);
+                                                    y = p.y + p.height;
+                                                    velY = this.PLAYER_ARROW_VELOCITY;
+                                                    break;
+                                            }
+                                            break;
+                                        case WEDGE_FORMATION:
+                                            x = p.x + p.width;
+                                            y = p.y + (p.height / 2);
+                                            velX = this.PLAYER_ARROW_VELOCITY;
+                                            break;
+                                        case BLOCK_FORMATION:
+                                            switch (index) {
+                                                case 0:
+                                                case 3:
+                                                    x = p.x + (p.width / 2);
+                                                    y = p.y;
+                                                    velY = -this.PLAYER_ARROW_VELOCITY;
+                                                    break;
+                                                case 4:
+                                                    x = p.x + p.width;
+                                                    y = p.y + (p.height / 2);
+                                                    velX = this.PLAYER_ARROW_VELOCITY;
+                                                    break;
+                                                case 1:
+                                                    x = p.x;
+                                                    y = p.y + (p.height / 2);
+                                                    velX = -this.PLAYER_ARROW_VELOCITY;
+                                                    break;
+                                                case 2:
+                                                case 5:
+                                                    x = p.x + (p.width / 2);
+                                                    y = p.y;
+                                                    velY = this.PLAYER_ARROW_VELOCITY;
+                                                    break;
+                                            }
+                                            break;
                                     }
-                                }, this);
+                                    arrow.reset(x, y);
+                                    arrow.body.velocity.x = velX;
+                                    arrow.body.velocity.y = velY;
+                                }
+                            }, this);
                             this.ARROWS_REMAINING = this.ARROWS_REMAINING - 1;
                             this.NEXT_FIRE_TIME = this.game.time.now += this.PLAYER_FIRE_FREQUENCY;
                             this.arrowText.text = this.makeArrowText();
@@ -588,7 +588,7 @@ angular.module('uiApp').factory('Act3ScrollingState',
                     if (enemy.health <= 0) {
                         enemy.kill();
                         this.enemies.remove(enemy);
-                        if(angular.isDefined(enemy.initialHealth)) {
+                        if (angular.isDefined(enemy.initialHealth)) {
                             this.enemyHealthGroups[enemy.initialHealth].add(enemy);
                         }
                         if (this.enemies.countLiving() === 0) {
@@ -597,8 +597,7 @@ angular.module('uiApp').factory('Act3ScrollingState',
                             }
                         }
                     }
-                }
-                ,
+                },
                 enemyHitsPlayer: function (player) {
                     if (!player.invulnerable) {
                         player.kill();
