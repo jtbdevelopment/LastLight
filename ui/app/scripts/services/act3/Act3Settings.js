@@ -17,7 +17,7 @@ angular.module('uiApp').factory('Act3Settings',
                     ySpawns: [325, 0, 0, 350, 0, 350, 0, 350, 175 - (24 + 16) / 2],
                     xSpeeds: [-100, -100, 0, 0, 23, -23, 50, -50, -100],
                     ySpeeds: [0, 0, 100, -100, 77, -77, 50, -50, 0],
-                    spawnCount: [8, 8, 8, 8, 8, 8, 8, 8, 8],
+                    spawnCount: [10, 10, 8, 8, 8, 8, 6, 6, 5],
                     health: [1, 1, 1, 1, 2, 2, 2, 2, 5],
                     boss: {
                         type: SimpleFiringBoss,
