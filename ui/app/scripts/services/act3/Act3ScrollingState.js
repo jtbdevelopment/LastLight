@@ -279,11 +279,11 @@ angular.module('uiApp').factory('Act3ScrollingState',
                     if (state.game.ending) {
                         return;
                     }
-                    var denom = -state.ENEMY_SPAWNS.speed;
-                    var velX = state.ENEMY_SPAWNS.xVels[state.TIMER_COUNTER];
-                    var xAdjust = velX / denom;
-                    var velY = state.ENEMY_SPAWNS.yVels[state.TIMER_COUNTER];
-                    var yAdjust = velY / -denom;
+                    var speed = state.ENEMY_SPAWNS.speed;
+                    var velX = state.ENEMY_SPAWNS.xSpeeds[state.TIMER_COUNTER] * speed / 100;
+                    var xAdjust = velX / -speed;
+                    var velY = state.ENEMY_SPAWNS.ySpeeds[state.TIMER_COUNTER] * speed / 100;
+                    var yAdjust = velY / speed;
                     var startX = state.ENEMY_SPAWNS.xSpawns[state.TIMER_COUNTER];
                     var startY = state.ENEMY_SPAWNS.ySpawns[state.TIMER_COUNTER];
                     var enemies = state.ENEMY_SPAWNS.spawnCount[state.TIMER_COUNTER];

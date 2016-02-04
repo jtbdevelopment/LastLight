@@ -10,13 +10,13 @@ angular.module('uiApp').factory('Act3Settings',
             addsArrowsAtEnd: [],
             enemySpawns: [
                 {
-                    speed: 130,
-                    adjustSpeed: 0.75,
+                    speed: 100,
+                    adjustSpeed: 0.5,
                     times: [0, 0, 5, 5, 5, 5, 5, 5, 5],
                     xSpawns: [800, 0, 750, 710, 400, 450, 400, 450, 800],
                     ySpawns: [325, 0, 0, 350, 0, 350, 0, 350, 175 - (24 + 16) / 2],
-                    xVels: [-130, 130, 0, 0, 30, -30, 65, -65, -130],
-                    yVels: [0, 0, 130, -130, 100, -100, 65, -65, 0],
+                    xSpeeds: [-100, 100, 0, 0, 23, -23, 50, -50, -100],
+                    ySpeeds: [0, 0, 100, -100, 77, -77, 50, -50, 0],
                     spawnCount: [8, 8, 8, 8, 8, 8, 8, 8, 8],
                     health: [1, 1, 1, 1, 2, 2, 2, 2, 5],
                     boss: {
