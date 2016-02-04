@@ -1,3 +1,4 @@
+/* globals SimpleFiringBoss: false */
 'use strict';
 
 angular.module('uiApp').factory('Act3Settings',
@@ -10,6 +11,7 @@ angular.module('uiApp').factory('Act3Settings',
             enemySpawns: [
                 {
                     speed: 130,
+                    adjustSpeed: 0.75,
                     times: [0, 0, 5, 5, 5, 5, 5, 5, 5],
                     xSpawns: [800, 0, 750, 710, 400, 450, 400, 450, 800],
                     ySpawns: [325, 0, 0, 350, 0, 350, 0, 350, 175 - (24 + 16) / 2],

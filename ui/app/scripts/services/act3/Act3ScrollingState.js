@@ -1,3 +1,4 @@
+/* globals Phaser: true */
 'use strict';
 
 var VERTICAL_FORMATION = 1;
@@ -73,25 +74,36 @@ angular.module('uiApp').factory('Act3ScrollingState',
                 update: function () {
                     if (!this.game.ending) {
                         this.handlePlayerMovement();
-                    }
-                    this.enemies.forEachAlive(function (e) {
-                        if (!e.body.collideWorldBounds) {
-                            if (e.x >= 0 &&
-                                e.x <= (this.game.width - e.width) &&
-                                e.y >= 0 &&
-                                e.y <= (this.game.height - e.height)
-                            ) {
-                                e.body.collideWorldBounds = true;
-                            }
+                        this.enemies.forEachAlive(function (e) {
+                            if (!e.body.collideWorldBounds) {
+                                if (e.x >= 0 &&
+                                    e.x <= (this.game.width - e.width) &&
+                                    e.y >= 0 &&
+                                    e.y <= (this.game.height - e.height)
+                                ) {
+                                    e.body.collideWorldBounds = true;
+                                }
 
+                            } else {
+                                var playerCenter = this.calcPlayerGroupCenter();
+                                if (playerCenter.count > 0) {
+                                    var speed = (Math.abs(e.body.velocity.x) + Math.abs(e.body.velocity.y));
+                                    var distance = this.calcDistance(playerCenter, e.x + e.width / 2, e.y + e.height / 2);
+                                    e.body.velocity.x += this.ENEMY_SPAWNS.adjustSpeed * distance.distanceX / distance.distanceFactor;
+                                    e.body.velocity.y += this.ENEMY_SPAWNS.adjustSpeed * distance.distanceY / distance.distanceFactor;
+                                    var total = speed / (Math.abs(e.body.velocity.x) + Math.abs(e.body.velocity.y));
+                                    e.body.velocity.x *= total;
+                                    e.body.velocity.y *= total;
+                                }
+                            }
+                        }, this);
+                        this.game.physics.arcade.overlap(this.arrows, this.enemies, this.arrowHitsEnemy, null, this);
+                        this.game.physics.arcade.overlap(this.players, this.enemies, this.enemyHitsPlayer, null, this);
+                        if (angular.isDefined(this.bossUpdateFunction)) {
+                            this.bossUpdateFunction.call(this.boss);
                         }
-                    }, this);
-                    this.game.physics.arcade.overlap(this.arrows, this.enemies, this.arrowHitsEnemy, null, this);
-                    this.game.physics.arcade.overlap(this.players, this.enemies, this.enemyHitsPlayer, null, this);
-                    if (angular.isDefined(this.bossUpdateFunction)) {
-                        this.bossUpdateFunction.call(this.boss);
+                        this.updateWorldShadowAndLights();
                     }
-                    this.updateWorldShadowAndLights();
                 },
                 render: function () {
                     if (this.DEBUG) {
@@ -264,7 +276,7 @@ angular.module('uiApp').factory('Act3ScrollingState',
                 //  Arrow related -end
 
                 nextEnemyWave: function (state) {
-                    if(state.game.ending) {
+                    if (state.game.ending) {
                         return;
                     }
                     var denom = -state.ENEMY_SPAWNS.speed;
@@ -415,6 +427,30 @@ angular.module('uiApp').factory('Act3ScrollingState',
                     this.CURRENT_FORMATION = formation;
                     //  TODO - ROTATE PLAYERS?
                     this.moveHelpers();
+                },
+                calcDistance: function (playerCenter, x, y) {
+                    var distanceX = (playerCenter.attackX - x);
+                    var x2 = Math.pow(distanceX, 2);
+                    var distanceY = (playerCenter.attackY - y);
+                    var y2 = Math.pow(distanceY, 2);
+                    var distanceFactor = Math.floor(Math.sqrt(x2 + y2));
+                    return {distanceX: distanceX, distanceY: distanceY, distanceFactor: distanceFactor};
+                },
+                calcPlayerGroupCenter: function () {
+                    var attackX = 0, attackY = 0, count = 0;
+                    angular.forEach(this.players.children, function (p) {
+                        if (p.alive) {
+                            count += 1;
+                            attackX += p.x + p.width / 2;
+                            attackY += p.y + p.height / 2;
+                        }
+
+                    }, this);
+                    if (count > 0) {
+                        attackX = attackX / count;
+                        attackY = attackY / count;
+                    }
+                    return {attackX: attackX, attackY: attackY, count: count};
                 },
                 handlePlayerMovement: function () {
                     var moved = false;
@@ -576,7 +612,7 @@ angular.module('uiApp').factory('Act3ScrollingState',
                                     }, 8 * distanceFactor, null, true);
                                 }
                             }
-                        }, this)
+                        }, this);
                 },
 //  Player action and movement - end
 
