@@ -3,8 +3,48 @@
 
 angular.module('uiApp').factory('Act3Settings',
     [function () {
+        // TODO - real height
+        var PLAYER_HEIGHT = 32;
+        var PLAYER_WIDTH = 32;
+        var VERTICAL_FORMATION = 1;
+        var HORIZONTAL_FORMATION = 2;
+        var WEDGE_FORMATION = 3;
+        var BLOCK_FORMATION = 4;
         var act3Data = {
-            healthLevels: [1, 2, 5, 10],
+            VERTICAL_FORMATION: VERTICAL_FORMATION,
+            HORIZONTAL_FORMATION: HORIZONTAL_FORMATION,
+            WEDGE_FORMATION: WEDGE_FORMATION,
+            BLOCK_FORMATION: BLOCK_FORMATION,
+
+            PLAYER_HEIGHT: PLAYER_HEIGHT,
+            PLAYER_WIDTH: PLAYER_WIDTH,
+
+            baseSpawnSize: 20,
+            scaleSpawnSize: 24,
+            spawnHealthLevels: [1, 2, 5, 10],
+
+            levelData: [
+                {
+                    startingX: PLAYER_WIDTH,
+                    startingY: 175 - PLAYER_HEIGHT * 1.5,
+                    startingFormation: 3,
+
+                    enemySpeed: 100,
+                    enemyTurnRate: 0.5,
+                    boss: {
+                        type: SimpleFiringBoss,
+                        image: 'demon',
+                        weapon: 'bossFire1',
+                        hitsMultiple: true,
+                        x: 725,
+                        y: 200,
+                        health: 50,
+                        height: 50,
+                        width: 50
+                    },
+                    addArrowsAtEnd: 100
+                }
+            ],
             startingXPositions: [],
             startingYPositions: [],
             addsArrowsAtEnd: [],
@@ -30,7 +70,8 @@ angular.module('uiApp').factory('Act3Settings',
                 }
             ]
         };
-        act3Data.levels = 3;
+        act3Data.levels = act3Data.levelData.length;
+        act3Data.maxSpawnHealthLevel = act3Data.spawnHealthLevels[act3Data.spawnHealthLevels.length - 1];
         for (var i = 0; i < act3Data.levels; ++i) {
             act3Data.startingXPositions.push(32);
             act3Data.startingYPositions.push(175 - 32 - 16);

@@ -33,15 +33,14 @@ angular.module('uiApp').factory('Act3ScrollingState',
                 init: function (level, arrowsRemaining) {
                     this.bossUpdateFunction = undefined;
                     this.LEVEL = level;
-                    this.ARROWS_REMAINING = arrowsRemaining;
-                    this.NEXT_FIRE_TIME = 0;
-                    this.TIMER_COUNTER = 0;
+                    this.arrowsRemaining = arrowsRemaining;
+                    this.nextEligibleFiringTime = 0;
+                    this.waveSpawnCounter = 0;
+                    this.levelData = Act3Settings.levelData[this.LEVEL];
                     this.ENEMY_SPAWNS = Act3Settings.enemySpawns[this.LEVEL];
                     this.MAX_TIMER = this.ENEMY_SPAWNS.times.length;
                     //  TODO
-                    this.CURRENT_FORMATION = VERTICAL_FORMATION;
-                    this.PLAYER_START_X = Act3Settings.startingXPositions[this.LEVEL];
-                    this.PLAYER_START_Y = Act3Settings.startingYPositions[this.LEVEL];
+                    this.currentPlayerFormation = this.levelData.startingFormation;
                 },
                 preload: function () {
                     //  TODO - actual art
@@ -69,7 +68,7 @@ angular.module('uiApp').factory('Act3ScrollingState',
                     this.initializeArrowTracker();
                     this.initializeKeyboard();
                     $timeout(this.revivePlayer, this.PLAYER_REVIVE_RATE, true, this);
-                    $timeout(this.nextEnemyWave, this.ENEMY_SPAWNS.times[this.TIMER_COUNTER] * 1000, true, this);
+                    $timeout(this.nextEnemyWave, this.ENEMY_SPAWNS.times[this.waveSpawnCounter] * 1000, true, this);
                 },
                 update: function () {
                     if (!this.game.ending) {
@@ -128,8 +127,8 @@ angular.module('uiApp').factory('Act3ScrollingState',
                     player.body.collideWorldBounds = false;  // compute it instead for consistent formation
                     player.body.debug = this.DEBUG;
                     // TODO - real height
-                    player.height = 32;
-                    player.width = 32;
+                    player.height = Act3Settings.PLAYER_HEIGHT;
+                    player.width = Act3Settings.PLAYER_WIDTH;
                     player.invulnerable = false;
                     this.playerTween.push(this.game.add.tween(player));
                     return player;
@@ -139,14 +138,14 @@ angular.module('uiApp').factory('Act3ScrollingState',
                     this.players = this.game.add.group();
                     this.players.enableBody = true;
                     this.players.physicsBodyType = Phaser.Physics.ARCADE;
-                    var x = this.PLAYER_START_X;
-                    var y = this.PLAYER_START_Y;
+                    var x = this.levelData.startingX;
+                    var y = this.levelData.startingY;
                     for (var i = 0; i < this.PLAYER_HELPERS; ++i) {
                         this.createPlayerHelper(x, y);
                     }
                     this.game.camera.follow(this.players.children[0]);
                     //  TODO
-                    this.switchFormation(undefined, this.CURRENT_FORMATION);
+                    this.switchFormation(undefined, this.currentPlayerFormation);
                 },
                 createArrowGroup: function () {
                     this.arrows = this.game.add.group();
@@ -166,9 +165,7 @@ angular.module('uiApp').factory('Act3ScrollingState',
                     this.enemies.enableBody = true;
                     this.enemies.physicsBodyType = Phaser.Physics.ARCADE;
                     this.enemyHealthGroups = {};
-                    var maxHealth = Act3Settings.healthLevels[Act3Settings.healthLevels.length - 1];
-                    for (var i = 0; i < Act3Settings.healthLevels.length; ++i) {
-                        var healthLevel = Act3Settings.healthLevels[i];
+                    angular.forEach(Act3Settings.spawnHealthLevels, function(healthLevel) {
                         var group = this.game.add.group();
                         group.enableBody = true;
                         group.physicsBodyType = Phaser.Physics.ARCADE;
@@ -178,8 +175,8 @@ angular.module('uiApp').factory('Act3ScrollingState',
                         group.setAll('anchor.x', 0.0);
                         group.setAll('anchor.y', 0.0);
                         group.setAll('outOfBoundsKill', false);
-                        var height = 24 + Math.floor(healthLevel / maxHealth * 16);
-                        var width = 24 + Math.floor(healthLevel / maxHealth * 16);
+                        var height = Act3Settings.baseSpawnSize + Math.floor(healthLevel / Act3Settings.maxSpawnHealthLevel * Act3Settings.scaleSpawnSize);
+                        var width = Act3Settings.baseSpawnSize + Math.floor(healthLevel / Act3Settings.maxSpawnHealthLevel * Act3Settings.scaleSpawnSize);
                         group.setAll('height', height);
                         group.setAll('width', width);
                         group.setAll('body.height', height);
@@ -188,7 +185,7 @@ angular.module('uiApp').factory('Act3ScrollingState',
                         group.setAll('body.bounce.x', 1);
                         group.setAll('body.bounce.y', 1);
                         this.enemyHealthGroups[healthLevel] = group;
-                    }
+                    }, this);
                 },
                 createBoss: function () {
                     this.boss = this.game.add.group();
@@ -231,7 +228,7 @@ angular.module('uiApp').factory('Act3ScrollingState',
                     this.game.input.keyboard.addKey(Phaser.Keyboard.SPACEBAR).onUp.add(this.fireArrows, this);
                 },
                 initializeArrowTracker: function () {
-                    if (this.ARROWS_REMAINING > 0) {
+                    if (this.arrowsRemaining > 0) {
                         var textStyle = {
                             font: '10px Arial',
                             fill: '#FF9329',
@@ -246,7 +243,7 @@ angular.module('uiApp').factory('Act3ScrollingState',
 
                 //  Arrow related - begin
                 makeArrowText: function () {
-                    return 'Arrows: ' + this.ARROWS_REMAINING;
+                    return 'Arrows: ' + this.arrowsRemaining;
                 },
 
                 drawCircleOfLight: function (sprite, lightRadius) {
@@ -280,14 +277,14 @@ angular.module('uiApp').factory('Act3ScrollingState',
                         return;
                     }
                     var speed = state.ENEMY_SPAWNS.speed;
-                    var velX = state.ENEMY_SPAWNS.xSpeeds[state.TIMER_COUNTER] * speed / 100;
+                    var velX = state.ENEMY_SPAWNS.xSpeeds[state.waveSpawnCounter] * speed / 100;
                     var xAdjust = velX / -speed;
-                    var velY = state.ENEMY_SPAWNS.ySpeeds[state.TIMER_COUNTER] * speed / 100;
+                    var velY = state.ENEMY_SPAWNS.ySpeeds[state.waveSpawnCounter] * speed / 100;
                     var yAdjust = velY / speed;
-                    var startX = state.ENEMY_SPAWNS.xSpawns[state.TIMER_COUNTER];
-                    var startY = state.ENEMY_SPAWNS.ySpawns[state.TIMER_COUNTER];
-                    var enemies = state.ENEMY_SPAWNS.spawnCount[state.TIMER_COUNTER];
-                    var health = state.ENEMY_SPAWNS.health[state.TIMER_COUNTER];
+                    var startX = state.ENEMY_SPAWNS.xSpawns[state.waveSpawnCounter];
+                    var startY = state.ENEMY_SPAWNS.ySpawns[state.waveSpawnCounter];
+                    var enemies = state.ENEMY_SPAWNS.spawnCount[state.waveSpawnCounter];
+                    var health = state.ENEMY_SPAWNS.health[state.waveSpawnCounter];
                     for (var i = 0; i < enemies; ++i) {
                         var enemy = state.enemyHealthGroups[health].getFirstExists(false);
                         state.enemyHealthGroups[health].remove(enemy);
@@ -302,10 +299,10 @@ angular.module('uiApp').factory('Act3ScrollingState',
                         enemy.body.velocity.x = velX;
                         enemy.body.velocity.y = velY;
                     }
-                    state.TIMER_COUNTER += 1;
-                    if (state.TIMER_COUNTER < state.MAX_TIMER) {
-                        $timeout(state.nextEnemyWave, state.ENEMY_SPAWNS.times[state.TIMER_COUNTER] * 1000, true, state);
-                    } else if (state.TIMER_COUNTER === state.MAX_TIMER) {
+                    state.waveSpawnCounter += 1;
+                    if (state.waveSpawnCounter < state.MAX_TIMER) {
+                        $timeout(state.nextEnemyWave, state.ENEMY_SPAWNS.times[state.waveSpawnCounter] * 1000, true, state);
+                    } else if (state.waveSpawnCounter === state.MAX_TIMER) {
                         //  TODO - timer config
                         $timeout(state.spawnBoss, 5 * 1000, true, state);
                     }
@@ -338,14 +335,14 @@ angular.module('uiApp').factory('Act3ScrollingState',
                     $timeout(state.revivePlayer, state.PLAYER_REVIVE_RATE, true, state);
                 },
                 fireArrows: function () {
-                    if (angular.isDefined(this.NEXT_FIRE_TIME) && this.game.time.now > this.NEXT_FIRE_TIME) {
-                        if (this.ARROWS_REMAINING > 0) {
+                    if (angular.isDefined(this.nextEligibleFiringTime) && this.game.time.now > this.nextEligibleFiringTime) {
+                        if (this.arrowsRemaining > 0) {
                             angular.forEach(this.players.children, function (p, index) {
                                 if (p.alive) {
                                     var arrow = this.arrows.getFirstExists(false);
                                     var x = 0, y = 0, velX = 0, velY = 0;
 
-                                    switch (this.CURRENT_FORMATION) {
+                                    switch (this.currentPlayerFormation) {
                                         case VERTICAL_FORMATION:
                                             if (index < 3) {
                                                 x = p.x;
@@ -412,10 +409,10 @@ angular.module('uiApp').factory('Act3ScrollingState',
                                     arrow.body.velocity.y = velY;
                                 }
                             }, this);
-                            this.ARROWS_REMAINING = this.ARROWS_REMAINING - 1;
-                            this.NEXT_FIRE_TIME = this.game.time.now += this.PLAYER_FIRE_FREQUENCY;
+                            this.arrowsRemaining = this.arrowsRemaining - 1;
+                            this.nextEligibleFiringTime = this.game.time.now += this.PLAYER_FIRE_FREQUENCY;
                             this.arrowText.text = this.makeArrowText();
-                            if (this.ARROWS_REMAINING === 0) {
+                            if (this.arrowsRemaining === 0) {
                                 this.failure();
                             }
                         } else {
@@ -424,7 +421,7 @@ angular.module('uiApp').factory('Act3ScrollingState',
                     }
                 },
                 switchFormation: function (event, formation) {
-                    this.CURRENT_FORMATION = formation;
+                    this.currentPlayerFormation = formation;
                     //  TODO - ROTATE PLAYERS?
                     this.moveHelpers();
                 },
@@ -501,7 +498,7 @@ angular.module('uiApp').factory('Act3ScrollingState',
                         function (p, index) {
                             if (p.alive) {
                                 var x = this.players.children[0].x, y = this.players.children[0].y;
-                                switch (this.CURRENT_FORMATION) {
+                                switch (this.currentPlayerFormation) {
                                     case VERTICAL_FORMATION:
                                         if (index < 3) {
                                             y += (index * p.height);
@@ -628,7 +625,7 @@ angular.module('uiApp').factory('Act3ScrollingState',
                             this.enemyHealthGroups[enemy.initialHealth].add(enemy);
                         }
                         if (this.enemies.countLiving() === 0) {
-                            if (this.TIMER_COUNTER === this.MAX_TIMER) {
+                            if (this.waveSpawnCounter === this.MAX_TIMER) {
                                 this.winEnding();
                             }
                         }
@@ -666,7 +663,7 @@ angular.module('uiApp').factory('Act3ScrollingState',
                         //  TODO - interludes
                         //  TODO - retry move on option
                         //  TODO - add arrows?
-                        this.game.state.start(this.state.current, true, false, this.LEVEL + 1, this.ARROWS_REMAINING + Act3Settings.addsArrowsAtEnd[this.LEVEL]);
+                        this.game.state.start(this.state.current, true, false, this.LEVEL + 1, this.arrowsRemaining + Act3Settings.addsArrowsAtEnd[this.LEVEL]);
                     }, this);
                 }
             };
