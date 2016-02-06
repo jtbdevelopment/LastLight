@@ -88,8 +88,8 @@ angular.module('uiApp').factory('Act3ScrollingState',
                                 if (playerCenter.count > 0) {
                                     var speed = (Math.abs(e.body.velocity.x) + Math.abs(e.body.velocity.y));
                                     var distance = this.calcDistance(playerCenter, e.x + e.width / 2, e.y + e.height / 2);
-                                    e.body.velocity.x += this.ENEMY_SPAWNS.adjustSpeed * distance.distanceX / distance.distanceFactor;
-                                    e.body.velocity.y += this.ENEMY_SPAWNS.adjustSpeed * distance.distanceY / distance.distanceFactor;
+                                    e.body.velocity.x += this.levelData.enemyTurnRate * distance.distanceX / distance.distanceFactor;
+                                    e.body.velocity.y += this.levelData.enemyTurnRate * distance.distanceY / distance.distanceFactor;
                                     var total = speed / (Math.abs(e.body.velocity.x) + Math.abs(e.body.velocity.y));
                                     e.body.velocity.x *= total;
                                     e.body.velocity.y *= total;
@@ -191,24 +191,24 @@ angular.module('uiApp').factory('Act3ScrollingState',
                     this.boss = this.game.add.group();
                     this.boss.enableBody = true;
                     this.boss.physicsBodyType = Phaser.Physics.ARCADE;
-                    this.boss.classType = this.ENEMY_SPAWNS.boss.type;
-                    this.boss.createMultiple(1, 'demon');
+                    this.boss.classType = this.levelData.boss.type;
+                    this.boss.createMultiple(1, this.levelData.boss.image);
                     this.boss.setAll('checkWorldBounds', false);
                     this.boss.setAll('body.debug', this.DEBUG);
                     this.boss.setAll('anchor.x', 0.0);
                     this.boss.setAll('anchor.y', 0.0);
                     this.boss.setAll('outOfBoundsKill', false);
-                    this.boss.setAll('height', this.ENEMY_SPAWNS.boss.height);
-                    this.boss.setAll('width', this.ENEMY_SPAWNS.boss.width);
-                    this.boss.setAll('body.height', this.ENEMY_SPAWNS.boss.height);
-                    this.boss.setAll('body.width', this.ENEMY_SPAWNS.boss.width);
+                    this.boss.setAll('height', this.levelData.boss.height);
+                    this.boss.setAll('width', this.levelData.boss.width);
+                    this.boss.setAll('body.height', this.levelData.boss.height);
+                    this.boss.setAll('body.width', this.levelData.boss.width);
                     this.boss.setAll('body.collideWorldBounds', true);
                     this.boss.setAll('body.bounce.x', 1);
                     this.boss.setAll('body.bounce.y', 1);
                     this.boss.setAll('state', this);
 
                     var boss = this.boss.getFirstExists(false);
-                    boss.health = this.ENEMY_SPAWNS.boss.health;
+                    boss.health = this.levelData.boss.health;
                 },
                 initializeWorldShadowing: function () {
                     this.shadowTexture = this.game.add.bitmapData(this.game.world.width * 2, this.game.world.height * 2);
@@ -276,7 +276,7 @@ angular.module('uiApp').factory('Act3ScrollingState',
                     if (state.game.ending) {
                         return;
                     }
-                    var speed = state.ENEMY_SPAWNS.speed;
+                    var speed = state.levelData.enemySpeed;
                     var velX = state.ENEMY_SPAWNS.xSpeeds[state.waveSpawnCounter] * speed / 100;
                     var xAdjust = velX / -speed;
                     var velY = state.ENEMY_SPAWNS.ySpeeds[state.waveSpawnCounter] * speed / 100;
@@ -310,9 +310,9 @@ angular.module('uiApp').factory('Act3ScrollingState',
                 spawnBoss: function (state) {
                     var boss = state.boss.getFirstExists(false);
                     state.bossUpdateFunction = boss.updateFunction;
-                    boss.reset(state.ENEMY_SPAWNS.boss.x, state.ENEMY_SPAWNS.boss.y);
+                    boss.reset(state.levelData.boss.x, state.levelData.boss.y);
                     state.enemies.add(boss);
-                    boss.health = state.ENEMY_SPAWNS.boss.health;
+                    boss.health = state.levelData.boss.health;
                     boss.timeout = $timeout;
                     boss.bossLoaded();
                     state.boss = boss;
@@ -663,7 +663,7 @@ angular.module('uiApp').factory('Act3ScrollingState',
                         //  TODO - interludes
                         //  TODO - retry move on option
                         //  TODO - add arrows?
-                        this.game.state.start(this.state.current, true, false, this.LEVEL + 1, this.arrowsRemaining + Act3Settings.addsArrowsAtEnd[this.LEVEL]);
+                        this.game.state.start(this.state.current, true, false, this.LEVEL + 1, this.arrowsRemaining + this.levelData.addArrowsAtEnd);
                     }, this);
                 }
             };
