@@ -3,7 +3,7 @@
 
 angular.module('uiApp').factory('Act3Settings',
     [function () {
-        // TODO - real height
+        // TODO - real height/width
         var PLAYER_HEIGHT = 32;
         var PLAYER_WIDTH = 32;
         var VERTICAL_FORMATION = 1;

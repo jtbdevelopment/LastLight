@@ -1,11 +1,6 @@
 /* globals Phaser: true */
 'use strict';
 
-var VERTICAL_FORMATION = 1;
-var HORIZONTAL_FORMATION = 2;
-var WEDGE_FORMATION = 3;
-var BLOCK_FORMATION = 4;
-
 angular.module('uiApp').factory('Act3ScrollingState',
     ['$timeout', 'Act3Settings',
         function ($timeout, Act3Settings) {
@@ -39,7 +34,6 @@ angular.module('uiApp').factory('Act3ScrollingState',
                     this.levelData = Act3Settings.levelData[this.LEVEL];
                     this.ENEMY_SPAWNS = Act3Settings.enemySpawns[this.LEVEL];
                     this.MAX_TIMER = this.ENEMY_SPAWNS.times.length;
-                    //  TODO
                     this.currentPlayerFormation = this.levelData.startingFormation;
                 },
                 preload: function () {
@@ -343,7 +337,7 @@ angular.module('uiApp').factory('Act3ScrollingState',
                                     var x = 0, y = 0, velX = 0, velY = 0;
 
                                     switch (this.currentPlayerFormation) {
-                                        case VERTICAL_FORMATION:
+                                        case Act3Settings.VERTICAL_FORMATION:
                                             if (index < 3) {
                                                 x = p.x;
                                                 y = p.y + (p.height / 2);
@@ -354,7 +348,7 @@ angular.module('uiApp').factory('Act3ScrollingState',
                                                 velX = this.PLAYER_ARROW_VELOCITY;
                                             }
                                             break;
-                                        case HORIZONTAL_FORMATION:
+                                        case Act3Settings.HORIZONTAL_FORMATION:
                                             switch (index) {
                                                 case 0:
                                                 case 3:
@@ -372,12 +366,12 @@ angular.module('uiApp').factory('Act3ScrollingState',
                                                     break;
                                             }
                                             break;
-                                        case WEDGE_FORMATION:
+                                        case Act3Settings.WEDGE_FORMATION:
                                             x = p.x + p.width;
                                             y = p.y + (p.height / 2);
                                             velX = this.PLAYER_ARROW_VELOCITY;
                                             break;
-                                        case BLOCK_FORMATION:
+                                        case Act3Settings.BLOCK_FORMATION:
                                             switch (index) {
                                                 case 0:
                                                 case 3:
@@ -499,7 +493,7 @@ angular.module('uiApp').factory('Act3ScrollingState',
                             if (p.alive) {
                                 var x = this.players.children[0].x, y = this.players.children[0].y;
                                 switch (this.currentPlayerFormation) {
-                                    case VERTICAL_FORMATION:
+                                    case Act3Settings.VERTICAL_FORMATION:
                                         if (index < 3) {
                                             y += (index * p.height);
                                         } else {
@@ -507,7 +501,7 @@ angular.module('uiApp').factory('Act3ScrollingState',
                                             y += ((index - 3) * p.height);
                                         }
                                         break;
-                                    case HORIZONTAL_FORMATION:
+                                    case Act3Settings.HORIZONTAL_FORMATION:
                                         switch (index) {
                                             case 0:
                                                 break;
@@ -530,7 +524,7 @@ angular.module('uiApp').factory('Act3ScrollingState',
                                                 break;
                                         }
                                         break;
-                                    case BLOCK_FORMATION:
+                                    case Act3Settings.BLOCK_FORMATION:
                                         switch (index) {
                                             case 0:   //  upper left
                                                 break;
@@ -554,7 +548,7 @@ angular.module('uiApp').factory('Act3ScrollingState',
                                                 break;
                                         }
                                         break;
-                                    case WEDGE_FORMATION:
+                                    case Act3Settings.WEDGE_FORMATION:
                                         switch (index) {
                                             case 0:   //  upper left
                                                 break;

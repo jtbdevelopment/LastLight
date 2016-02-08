@@ -29,18 +29,7 @@ SimpleFiringBoss.prototype.bossLoaded = function () {
     this.nextFireTime = 0;
     this.alive = true;
     this.attackSpeed = 500;
-
-    this.attacks = this.state.game.add.group();
-    this.attacks.enableBody = true;
-    this.attacks.physicsBodyType = Phaser.Physics.ARCADE;
-    this.attacks.createMultiple(50, 'bossFire1');
-    this.attacks.setAll('checkWorldBounds', true);
-    this.attacks.setAll('body.debug', this.state.DEBUG);
-    this.attacks.setAll('anchor.x', 0.5);
-    this.attacks.setAll('anchor.y', 1.0);
-    this.attacks.setAll('outOfBoundsKill', true);
-    this.attacks.setAll('height', 5);
-    this.attacks.setAll('width', 5);
+    this.hitsMultiple = this.state.levelData.boss.hitsMultiple;
 };
 
 SimpleFiringBoss.prototype.updateFunction = function () {
@@ -63,5 +52,7 @@ SimpleFiringBoss.prototype.updateFunction = function () {
 
 SimpleFiringBoss.prototype.attackHitsPlayer = function (player, attack) {
     this.state.enemyHitsPlayer(player);
-    attack.kill();
+    if(!this.hitsMultiple) {
+        attack.kill();
+    }
 };
