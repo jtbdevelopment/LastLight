@@ -29,6 +29,9 @@ angular.module('uiApp').factory('Act3Settings',
             levelData: [
                 //  Level 1
                 {
+                    additionalImages: {
+                        bossFire: 'images/bullet.png'
+                    },
                     startingX: PLAYER_WIDTH,
                     startingY: 175 - PLAYER_HEIGHT * 1.5,
                     startingFormation: 3,
@@ -123,7 +126,7 @@ angular.module('uiApp').factory('Act3Settings',
                         waitTime: 5,
                         type: SimpleFiringBoss,
                         image: 'demon',
-                        attack: 'bossFire1',
+                        attackImage: 'bossFire',
                         hitsMultiple: false,
                         x: 725,
                         y: 200,

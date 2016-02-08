@@ -15,7 +15,7 @@ SimpleFiringBoss.prototype.bossLoaded = function () {
     this.attacks = this.state.game.add.group();
     this.attacks.enableBody = true;
     this.attacks.physicsBodyType = Phaser.Physics.ARCADE;
-    this.attacks.createMultiple(50, 'bossFire1');
+    this.attacks.createMultiple(50, this.state.levelData.boss.attackImage);
     this.attacks.setAll('checkWorldBounds', true);
     this.attacks.setAll('body.debug', this.DEBUG);
     this.attacks.setAll('anchor.x', 0.5);

@@ -47,7 +47,9 @@ angular.module('uiApp').factory('Act3ScrollingState',
                     this.load.image('demon', 'images/DemonMinorFighter.png');
                     this.load.image('arrow', 'images/enemy-bullet.png');
 
-                    this.load.image('bossFire1', 'images/bullet.png');
+                    angular.forEach(this.levelData.additionalImages, function(value, key) {
+                        this.load.image(key, value);
+                    }, this);
                 },
                 create: function () {
                     this.game.ending = false;
