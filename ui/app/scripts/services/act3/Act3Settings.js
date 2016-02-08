@@ -21,6 +21,9 @@ angular.module('uiApp').factory('Act3Settings',
 
             baseSpawnSize: 20,
             scaleSpawnSize: 24,
+
+            //  TODO - diff images per health?
+            //  TODO - different classes with attacks?
             spawnHealthLevels: [1, 2, 5, 10],
 
             levelData: [
@@ -32,7 +35,91 @@ angular.module('uiApp').factory('Act3Settings',
                     enemySpeed: 100,
                     enemyTurnRate: 0.5,
 
+                    enemyWaves: [
+                        {
+                            waitTime: 0,
+                            x: 800,
+                            y: 325,
+                            xSpeed: -100,
+                            ySpeed: 0,
+                            count: 10,
+                            health: 1
+                        },
+                        {
+                            waitTime: 0,
+                            x: 800,
+                            y: 0,
+                            xSpeed: -100,
+                            ySpeed: 0,
+                            count: 10,
+                            health: 1
+                        },
+                        {
+                            waitTime: 5,
+                            x: 750,
+                            y: 0,
+                            xSpeed: 0,
+                            ySpeed: -100,
+                            count: 8,
+                            health: 1
+                        },
+                        {
+                            waitTime: 0,
+                            x: 710,
+                            y: 350,
+                            xSpeed: 0,
+                            ySpeed: -100,
+                            count: 8,
+                            health: 1
+                        },
+                        {
+                            waitTime: 5,
+                            x: 400,
+                            y: 0,
+                            xSpeed: 23,
+                            ySpeed: 77,
+                            count: 8,
+                            health: 2
+                        },
+                        {
+                            waitTime: 0,
+                            x: 450,
+                            y: 350,
+                            xSpeed: -23,
+                            ySpeed: -77,
+                            count: 8,
+                            health: 2
+                        },
+                        {
+                            waitTime: 5,
+                            x: 400,
+                            y: 0,
+                            xSpeed: 50,
+                            ySpeed: 50,
+                            count: 6,
+                            health: 2
+                        },
+                        {
+                            waitTime: 0,
+                            x: 450,
+                            y: 350,
+                            xSpeed: -50,
+                            ySpeed: -50,
+                            count: 6,
+                            health: 2
+                        },
+                        {
+                            waitTime: 5,
+                            x: 800,
+                            y: 175 - (24 + 16 / 2),
+                            xSpeed: -100,
+                            ySpeed: 0,
+                            count: 5,
+                            health: 5
+                        }
+                    ],
                     boss: {
+                        waitTime: 5,
                         type: SimpleFiringBoss,
                         image: 'demon',
                         attack: 'bossFire1',
@@ -44,17 +131,6 @@ angular.module('uiApp').factory('Act3Settings',
                         width: 50
                     },
                     addArrowsAtEnd: 10
-                }
-            ],
-            enemySpawns: [
-                {
-                    times: [0, 0, 5, 5, 5, 5, 5, 5, 5],
-                    xSpawns: [800, 800, 750, 710, 400, 450, 400, 450, 800],
-                    ySpawns: [325, 0, 0, 350, 0, 350, 0, 350, 175 - (24 + 16) / 2],
-                    xSpeeds: [-100, -100, 0, 0, 23, -23, 50, -50, -100],
-                    ySpeeds: [0, 0, 100, -100, 77, -77, 50, -50, 0],
-                    spawnCount: [10, 10, 8, 8, 8, 8, 6, 6, 5],
-                    health: [1, 1, 1, 1, 2, 2, 2, 2, 5]
                 }
             ]
         };

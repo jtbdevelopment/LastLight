@@ -1,3 +1,4 @@
+/* globals Phaser: true */
 'use strict';
 
 angular.module('uiApp').factory('Act1MazeState',

@@ -27,13 +27,14 @@ angular.module('uiApp').factory('Act3ScrollingState',
                 //  Phaser state functions - begin
                 init: function (level, arrowsRemaining) {
                     this.bossUpdateFunction = undefined;
-                    this.LEVEL = level;
+
+                    this.level = level;
                     this.arrowsRemaining = arrowsRemaining;
                     this.nextEligibleFiringTime = 0;
-                    this.waveSpawnCounter = 0;
-                    this.levelData = Act3Settings.levelData[this.LEVEL];
-                    this.ENEMY_SPAWNS = Act3Settings.enemySpawns[this.LEVEL];
-                    this.MAX_TIMER = this.ENEMY_SPAWNS.times.length;
+                    this.levelData = Act3Settings.levelData[this.level];
+                    this.waveCounter = 0;
+                    this.enemyWaves = this.levelData.enemyWaves;
+                    this.totalWaves = this.enemyWaves.length;
                     this.currentPlayerFormation = this.levelData.startingFormation;
                 },
                 preload: function () {
@@ -62,7 +63,7 @@ angular.module('uiApp').factory('Act3ScrollingState',
                     this.initializeArrowTracker();
                     this.initializeKeyboard();
                     $timeout(this.revivePlayer, this.PLAYER_REVIVE_RATE, true, this);
-                    $timeout(this.nextEnemyWave, this.ENEMY_SPAWNS.times[this.waveSpawnCounter] * 1000, true, this);
+                    $timeout(this.nextEnemyWave, this.enemyWaves[0].waitTime * 1000, true, this);
                 },
                 update: function () {
                     if (!this.game.ending) {
@@ -159,7 +160,7 @@ angular.module('uiApp').factory('Act3ScrollingState',
                     this.enemies.enableBody = true;
                     this.enemies.physicsBodyType = Phaser.Physics.ARCADE;
                     this.enemyHealthGroups = {};
-                    angular.forEach(Act3Settings.spawnHealthLevels, function(healthLevel) {
+                    angular.forEach(Act3Settings.spawnHealthLevels, function (healthLevel) {
                         var group = this.game.add.group();
                         group.enableBody = true;
                         group.physicsBodyType = Phaser.Physics.ARCADE;
@@ -267,49 +268,53 @@ angular.module('uiApp').factory('Act3ScrollingState',
                 //  Arrow related -end
 
                 nextEnemyWave: function (state) {
-                    if (state.game.ending) {
-                        return;
-                    }
-                    var speed = state.levelData.enemySpeed;
-                    var velX = state.ENEMY_SPAWNS.xSpeeds[state.waveSpawnCounter] * speed / 100;
-                    var xAdjust = velX / -speed;
-                    var velY = state.ENEMY_SPAWNS.ySpeeds[state.waveSpawnCounter] * speed / 100;
-                    var yAdjust = velY / speed;
-                    var startX = state.ENEMY_SPAWNS.xSpawns[state.waveSpawnCounter];
-                    var startY = state.ENEMY_SPAWNS.ySpawns[state.waveSpawnCounter];
-                    var enemies = state.ENEMY_SPAWNS.spawnCount[state.waveSpawnCounter];
-                    var health = state.ENEMY_SPAWNS.health[state.waveSpawnCounter];
-                    for (var i = 0; i < enemies; ++i) {
-                        var enemy = state.enemyHealthGroups[health].getFirstExists(false);
-                        state.enemyHealthGroups[health].remove(enemy);
-                        state.enemies.add(enemy);
-                        var x = startX + (enemy.width * i * xAdjust),
-                            y = startY - (enemy.height * i * yAdjust);
+                    if (!state.game.ending) {
 
-                        enemy.body.collideWorldBounds = false;
-                        enemy.reset(x, y);
-                        enemy.initialHealth = health;
-                        enemy.health = enemy.initialHealth;
-                        enemy.body.velocity.x = velX;
-                        enemy.body.velocity.y = velY;
-                    }
-                    state.waveSpawnCounter += 1;
-                    if (state.waveSpawnCounter < state.MAX_TIMER) {
-                        $timeout(state.nextEnemyWave, state.ENEMY_SPAWNS.times[state.waveSpawnCounter] * 1000, true, state);
-                    } else if (state.waveSpawnCounter === state.MAX_TIMER) {
-                        //  TODO - timer config
-                        $timeout(state.spawnBoss, 5 * 1000, true, state);
+                        var waveData = state.enemyWaves[state.waveCounter];
+
+                        var speed = state.levelData.enemySpeed;
+                        var velX = waveData.xSpeed * speed / 100;
+                        var xAdjust = velX / -speed;
+                        var velY = waveData.ySpeed * speed / 100;
+                        var yAdjust = velY / speed;
+                        var startX = waveData.x;
+                        var startY = waveData.y;
+                        var enemies = waveData.count;
+                        var health = waveData.health;
+                        for (var i = 0; i < enemies; ++i) {
+                            var enemy = state.enemyHealthGroups[health].getFirstExists(false);
+                            state.enemyHealthGroups[health].remove(enemy);
+                            state.enemies.add(enemy);
+                            var x = startX + (enemy.width * i * xAdjust),
+                                y = startY - (enemy.height * i * yAdjust);
+
+                            enemy.body.collideWorldBounds = false;
+                            enemy.reset(x, y);
+                            enemy.initialHealth = health;
+                            enemy.health = enemy.initialHealth;
+                            enemy.body.velocity.x = velX;
+                            enemy.body.velocity.y = velY;
+                        }
+                        state.waveCounter += 1;
+                        if (state.waveCounter < state.totalWaves) {
+                            $timeout(state.nextEnemyWave, state.enemyWaves[state.waveCounter].waitTime * 1000, true, state);
+                        } else {
+                            //  TODO - timer config
+                            $timeout(state.spawnBoss, state.levelData.boss.waitTime * 1000, true, state);
+                        }
                     }
                 },
                 spawnBoss: function (state) {
-                    var boss = state.boss.getFirstExists(false);
-                    state.bossUpdateFunction = boss.updateFunction;
-                    boss.reset(state.levelData.boss.x, state.levelData.boss.y);
-                    state.enemies.add(boss);
-                    boss.health = state.levelData.boss.health;
-                    boss.timeout = $timeout;
-                    boss.bossLoaded();
-                    state.boss = boss;
+                    if (!state.game.ending) {
+                        var boss = state.boss.getFirstExists(false);
+                        state.bossUpdateFunction = boss.updateFunction;
+                        boss.reset(state.levelData.boss.x, state.levelData.boss.y);
+                        state.enemies.add(boss);
+                        boss.health = state.levelData.boss.health;
+                        boss.timeout = $timeout;
+                        boss.bossLoaded();
+                        state.boss = boss;
+                    }
                 },
 
                 //  Player action and movement - begin
@@ -318,15 +323,17 @@ angular.module('uiApp').factory('Act3ScrollingState',
                     player.invulnerable = false;
                 },
                 revivePlayer: function (state) {
-                    var dead = state.players.getFirstDead();
-                    if (dead !== null && angular.isDefined(dead)) {
-                        dead.reset(0, 0);
-                        dead.invulnerable = true;
-                        //  TODO - sound, make invulnerable visible
-                        $timeout(state.makeVulnerable, state.PLAYER_INVULNERABLE_RATE, true, dead);
-                        state.moveHelpers();
+                    if(!state.game.ending) {
+                        var dead = state.players.getFirstDead();
+                        if (dead !== null && angular.isDefined(dead)) {
+                            dead.reset(0, 0);
+                            dead.invulnerable = true;
+                            //  TODO - sound, make invulnerable visible
+                            $timeout(state.makeVulnerable, state.PLAYER_INVULNERABLE_RATE, true, dead);
+                            state.moveHelpers();
+                        }
+                        $timeout(state.revivePlayer, state.PLAYER_REVIVE_RATE, true, state);
                     }
-                    $timeout(state.revivePlayer, state.PLAYER_REVIVE_RATE, true, state);
                 },
                 fireArrows: function () {
                     if (angular.isDefined(this.nextEligibleFiringTime) && this.game.time.now > this.nextEligibleFiringTime) {
@@ -657,7 +664,7 @@ angular.module('uiApp').factory('Act3ScrollingState',
                         //  TODO - interludes
                         //  TODO - retry move on option
                         //  TODO - add arrows?
-                        this.game.state.start(this.state.current, true, false, this.LEVEL + 1, this.arrowsRemaining + this.levelData.addArrowsAtEnd);
+                        this.game.state.start(this.state.current, true, false, this.level + 1, this.arrowsRemaining + this.levelData.addArrowsAtEnd);
                     }, this);
                 }
             };
