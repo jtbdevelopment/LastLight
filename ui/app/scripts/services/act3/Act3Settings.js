@@ -27,6 +27,7 @@ angular.module('uiApp').factory('Act3Settings',
             spawnHealthLevels: [1, 2, 5, 10],
 
             levelData: [
+                //  Level 1
                 {
                     startingX: PLAYER_WIDTH,
                     startingY: 175 - PLAYER_HEIGHT * 1.5,
