@@ -1,4 +1,5 @@
 /* globals SimpleFiringBoss: false */
+/* globals SimpleKamikaze: false */
 'use strict';
 
 angular.module('uiApp').factory('Act3Settings',
@@ -140,6 +141,20 @@ angular.module('uiApp').factory('Act3Settings',
         };
         act3Data.levels = act3Data.levelData.length;
         act3Data.maxSpawnHealthLevel = act3Data.spawnHealthLevels[act3Data.spawnHealthLevels.length - 1];
+
+        angular.forEach(act3Data.levelData, function(level) {
+            angular.forEach(level.enemyWaves, function(wave) {
+                if(angular.isUndefined(wave.type)) {
+                    wave.type = SimpleKamikaze;
+                }
+                if(angular.isUndefined(wave.className)) {
+                    wave.className = new wave.type().name;
+                }
+                if(angular.isUndefined(wave.image)) {
+                    wave.image = 'demon';
+                }
+            });
+        });
 
         return act3Data;
     }]

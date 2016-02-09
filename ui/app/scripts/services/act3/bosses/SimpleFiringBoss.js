@@ -1,5 +1,4 @@
 /* globals Phaser: false */
-/* globals SimpleFiringBoss: true */
 'use strict';
 
 var SimpleFiringBoss = function (game, x, y, key, frame) {

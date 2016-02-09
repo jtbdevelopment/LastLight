@@ -47,7 +47,7 @@ angular.module('uiApp').factory('Act3ScrollingState',
                     this.load.image('demon', 'images/DemonMinorFighter.png');
                     this.load.image('arrow', 'images/enemy-bullet.png');
 
-                    angular.forEach(this.levelData.additionalImages, function(value, key) {
+                    angular.forEach(this.levelData.additionalImages, function (value, key) {
                         this.load.image(key, value);
                     }, this);
                 },
@@ -161,27 +161,25 @@ angular.module('uiApp').factory('Act3ScrollingState',
                     this.enemies = this.game.add.group();
                     this.enemies.enableBody = true;
                     this.enemies.physicsBodyType = Phaser.Physics.ARCADE;
-                    this.enemyHealthGroups = {};
-                    angular.forEach(Act3Settings.spawnHealthLevels, function (healthLevel) {
-                        var group = this.game.add.group();
-                        group.enableBody = true;
-                        group.physicsBodyType = Phaser.Physics.ARCADE;
-                        group.createMultiple(50, 'demon');
-                        group.setAll('checkWorldBounds', false);
-                        group.setAll('body.debug', this.DEBUG);
-                        group.setAll('anchor.x', 0.0);
-                        group.setAll('anchor.y', 0.0);
-                        group.setAll('outOfBoundsKill', false);
-                        var height = Act3Settings.baseSpawnSize + Math.floor(healthLevel / Act3Settings.maxSpawnHealthLevel * Act3Settings.scaleSpawnSize);
-                        var width = Act3Settings.baseSpawnSize + Math.floor(healthLevel / Act3Settings.maxSpawnHealthLevel * Act3Settings.scaleSpawnSize);
-                        group.setAll('height', height);
-                        group.setAll('width', width);
-                        group.setAll('body.height', height);
-                        group.setAll('body.width', width);
-                        group.setAll('body.collideWorldBounds', false);
-                        group.setAll('body.bounce.x', 1);
-                        group.setAll('body.bounce.y', 1);
-                        this.enemyHealthGroups[healthLevel] = group;
+                    this.enemyGroups = {};
+                    angular.forEach(this.enemyWaves, function (wave) {
+                        var type = wave.className;
+                        if (angular.isUndefined(this.enemyGroups[type])) {
+                            var group = this.game.add.group();
+                            group.enableBody = true;
+                            group.physicsBodyType = Phaser.Physics.ARCADE;
+                            group.classType = wave.type;
+                            group.createMultiple(50, wave.image);
+                            group.setAll('checkWorldBounds', false);
+                            group.setAll('body.debug', this.DEBUG);
+                            group.setAll('anchor.x', 0.0);
+                            group.setAll('anchor.y', 0.0);
+                            group.setAll('outOfBoundsKill', false);
+                            group.setAll('body.collideWorldBounds', false);
+                            group.setAll('body.bounce.x', 1);
+                            group.setAll('body.bounce.y', 1);
+                            this.enemyGroups[type] = group;
+                        }
                     }, this);
                 },
                 createBoss: function () {
@@ -283,19 +281,25 @@ angular.module('uiApp').factory('Act3ScrollingState',
                         var startY = waveData.y;
                         var enemies = waveData.count;
                         var health = waveData.health;
+                        var className = waveData.className;
+                        var height = Act3Settings.baseSpawnSize + Math.floor(waveData.health / Act3Settings.maxSpawnHealthLevel * Act3Settings.scaleSpawnSize);
+                        var width = Act3Settings.baseSpawnSize + Math.floor(waveData.health / Act3Settings.maxSpawnHealthLevel * Act3Settings.scaleSpawnSize);
                         for (var i = 0; i < enemies; ++i) {
-                            var enemy = state.enemyHealthGroups[health].getFirstExists(false);
-                            state.enemyHealthGroups[health].remove(enemy);
+                            var enemy = state.enemyGroups[className].getFirstExists(false);
+                            state.enemyGroups[className].remove(enemy);
                             state.enemies.add(enemy);
-                            var x = startX + (enemy.width * i * xAdjust),
-                                y = startY - (enemy.height * i * yAdjust);
+                            var x = startX + (width * i * xAdjust),
+                                y = startY - (height * i * yAdjust);
 
                             enemy.body.collideWorldBounds = false;
                             enemy.reset(x, y);
-                            enemy.initialHealth = health;
-                            enemy.health = enemy.initialHealth;
+                            enemy.health = health;
                             enemy.body.velocity.x = velX;
                             enemy.body.velocity.y = velY;
+                            enemy.height = height;
+                            enemy.width = width;
+                            enemy.body.height = height;
+                            enemy.body.width = width;
                         }
                         state.waveCounter += 1;
                         if (state.waveCounter < state.totalWaves) {
@@ -325,7 +329,7 @@ angular.module('uiApp').factory('Act3ScrollingState',
                     player.invulnerable = false;
                 },
                 revivePlayer: function (state) {
-                    if(!state.game.ending) {
+                    if (!state.game.ending) {
                         var dead = state.players.getFirstDead();
                         if (dead !== null && angular.isDefined(dead)) {
                             dead.reset(0, 0);
@@ -463,29 +467,24 @@ angular.module('uiApp').factory('Act3ScrollingState',
                             angular.forEach(this.players.children, function (player) {
                                 player.y -= this.PLAYER_MOVE_SPEED;
                             }, this);
-                            //this.players.children[0].y -= this.PLAYER_MOVE_SPEED;
                             moved = true;
                         }
                         if (this.cursors.down.isDown) {
                             angular.forEach(this.players.children, function (player) {
                                 player.y += this.PLAYER_MOVE_SPEED;
                             }, this);
-                            //this.players.children[0].y += this.PLAYER_MOVE_SPEED;
                             moved = true;
                         }
                         if (this.cursors.left.isDown) {
                             angular.forEach(this.players.children, function (player) {
                                 player.x -= this.PLAYER_MOVE_SPEED;
                             }, this);
-
-                            //this.players.children[0].x -= this.PLAYER_MOVE_SPEED;
                             moved = true;
                         }
                         if (this.cursors.right.isDown) {
                             angular.forEach(this.players.children, function (player) {
                                 player.x += this.PLAYER_MOVE_SPEED;
                             }, this);
-                            //this.players.children[0].x += this.PLAYER_MOVE_SPEED;
                             moved = true;
                         }
                         if (moved) {
@@ -624,11 +623,12 @@ angular.module('uiApp').factory('Act3ScrollingState',
                     if (enemy.health <= 0) {
                         enemy.kill();
                         this.enemies.remove(enemy);
-                        if (angular.isDefined(enemy.initialHealth)) {
-                            this.enemyHealthGroups[enemy.initialHealth].add(enemy);
+                        var enemyType = enemy.name;
+                        if (angular.isDefined(this.enemyGroups[enemyType])) {
+                            this.enemyGroups[enemyType].add(enemy);
                         }
                         if (this.enemies.countLiving() === 0) {
-                            if (this.waveSpawnCounter === this.MAX_TIMER) {
+                            if (this.waveCounter === this.totalWaves) {
                                 this.winEnding();
                             }
                         }
