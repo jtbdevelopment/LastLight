@@ -15,6 +15,15 @@ AbstractEnemy.prototype.activated = function(health) {
     this.health = health;
 };
 
-AbstractEnemy.prototype.update = function () {
+AbstractEnemy.prototype.updateFunction = function () {
+    if (!this.body.collideWorldBounds) {
+        if (this.x >= 0 &&
+            this.x <= (this.game.width - this.width) &&
+            this.y >= 0 &&
+            this.y <= (this.game.height - this.height)
+        ) {
+            this.body.collideWorldBounds = true;
+        }
+    }
 };
 

@@ -31,17 +31,16 @@ SimpleFiringBoss.prototype.bossLoaded = function () {
     this.hitsMultiple = this.state.levelData.boss.hitsMultiple;
 };
 
-SimpleFiringBoss.prototype.updateFunction = function () {
+SimpleFiringBoss.prototype.updateFunction = function (playerCenter) {
     if (this.state.game.time.now > this.nextFireTime && this.alive) {
         this.nextFireTime = this.state.game.time.now + this.firePause;
 
         var attack = this.attacks.getFirstExists(false);
         var x = this.x + this.width / 2;
         var y = this.y + this.height / 2;
-        var playerCenter = this.state.calcPlayerGroupCenter();
         if (playerCenter.count > 0) {
             attack.reset(x, y);
-            var distance = this.state.calcDistance(playerCenter, x, y);
+            var distance = this.state.calculator.calcDistance(playerCenter, this);
             attack.body.velocity.x = this.attackSpeed * distance.distanceX / distance.distanceFactor;
             attack.body.velocity.y = this.attackSpeed * distance.distanceY / distance.distanceFactor;
         }

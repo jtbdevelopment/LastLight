@@ -2,15 +2,14 @@
 'use strict';
 
 angular.module('uiApp').factory('Act3ScrollingState',
-    ['$timeout', 'Act3Settings',
-        function ($timeout, Act3Settings) {
+    ['$timeout', 'Act3Settings', 'Act3Calculator',
+        function ($timeout, Act3Settings, Act3Calculator) {
             return {
                 game: undefined,
                 load: undefined,
                 data: undefined,
                 state: undefined,
-
-                bossUpdateFunction: undefined,
+                calculator: Act3Calculator,
 
                 PLAYER_HELPERS: 6,
                 PLAYER_MOVE_SPEED: 4,
@@ -26,8 +25,6 @@ angular.module('uiApp').factory('Act3ScrollingState',
 
                 //  Phaser state functions - begin
                 init: function (level, arrowsRemaining) {
-                    this.bossUpdateFunction = undefined;
-
                     this.level = level;
                     this.arrowsRemaining = arrowsRemaining;
                     this.nextEligibleFiringTime = 0;
@@ -70,34 +67,12 @@ angular.module('uiApp').factory('Act3ScrollingState',
                 update: function () {
                     if (!this.game.ending) {
                         this.handlePlayerMovement();
+                        var playerCenter = this.calculator.calcPlayerGroupCenter(this);
                         this.enemies.forEachAlive(function (e) {
-                            if (!e.body.collideWorldBounds) {
-                                if (e.x >= 0 &&
-                                    e.x <= (this.game.width - e.width) &&
-                                    e.y >= 0 &&
-                                    e.y <= (this.game.height - e.height)
-                                ) {
-                                    e.body.collideWorldBounds = true;
-                                }
-
-                            } else {
-                                var playerCenter = this.calcPlayerGroupCenter();
-                                if (playerCenter.count > 0) {
-                                    var speed = (Math.abs(e.body.velocity.x) + Math.abs(e.body.velocity.y));
-                                    var distance = this.calcDistance(playerCenter, e.x + e.width / 2, e.y + e.height / 2);
-                                    e.body.velocity.x += this.levelData.enemyTurnRate * distance.distanceX / distance.distanceFactor;
-                                    e.body.velocity.y += this.levelData.enemyTurnRate * distance.distanceY / distance.distanceFactor;
-                                    var total = speed / (Math.abs(e.body.velocity.x) + Math.abs(e.body.velocity.y));
-                                    e.body.velocity.x *= total;
-                                    e.body.velocity.y *= total;
-                                }
-                            }
+                            e.updateFunction(playerCenter);
                         }, this);
                         this.game.physics.arcade.overlap(this.arrows, this.enemies, this.arrowHitsEnemy, null, this);
                         this.game.physics.arcade.overlap(this.players, this.enemies, this.enemyHitsPlayer, null, this);
-                        if (angular.isDefined(this.bossUpdateFunction)) {
-                            this.bossUpdateFunction.call(this.boss);
-                        }
                         this.updateWorldShadowAndLights();
                     }
                 },
@@ -123,6 +98,7 @@ angular.module('uiApp').factory('Act3ScrollingState',
                     var player = this.players.create(x, y, 'player');
                     player.body.collideWorldBounds = false;  // compute it instead for consistent formation
                     player.body.debug = this.DEBUG;
+                    player.alive = true;
                     // TODO - real height
                     player.height = Act3Settings.PLAYER_HEIGHT;
                     player.width = Act3Settings.PLAYER_WIDTH;
@@ -141,7 +117,6 @@ angular.module('uiApp').factory('Act3ScrollingState',
                         this.createPlayerHelper(x, y);
                     }
                     this.game.camera.follow(this.players.children[0]);
-                    //  TODO
                     this.switchFormation(undefined, this.currentPlayerFormation);
                 },
                 createArrowGroup: function () {
@@ -169,7 +144,7 @@ angular.module('uiApp').factory('Act3ScrollingState',
                             group.enableBody = true;
                             group.physicsBodyType = Phaser.Physics.ARCADE;
                             group.classType = wave.type;
-                            group.createMultiple(50, wave.image);
+                            group.createMultiple(100, wave.image);
                             group.setAll('checkWorldBounds', false);
                             group.setAll('body.debug', this.DEBUG);
                             group.setAll('anchor.x', 0.0);
@@ -178,6 +153,7 @@ angular.module('uiApp').factory('Act3ScrollingState',
                             group.setAll('body.collideWorldBounds', false);
                             group.setAll('body.bounce.x', 1);
                             group.setAll('body.bounce.y', 1);
+                            group.setAll('state', this);
                             this.enemyGroups[type] = group;
                         }
                     }, this);
@@ -201,9 +177,7 @@ angular.module('uiApp').factory('Act3ScrollingState',
                     this.boss.setAll('body.bounce.x', 1);
                     this.boss.setAll('body.bounce.y', 1);
                     this.boss.setAll('state', this);
-
-                    var boss = this.boss.getFirstExists(false);
-                    boss.health = this.levelData.boss.health;
+                    this.boss.setAll('health', this.levelData.boss.health);
                 },
                 initializeWorldShadowing: function () {
                     this.shadowTexture = this.game.add.bitmapData(this.game.world.width * 2, this.game.world.height * 2);
@@ -305,7 +279,6 @@ angular.module('uiApp').factory('Act3ScrollingState',
                         if (state.waveCounter < state.totalWaves) {
                             $timeout(state.nextEnemyWave, state.enemyWaves[state.waveCounter].waitTime * 1000, true, state);
                         } else {
-                            //  TODO - timer config
                             $timeout(state.spawnBoss, state.levelData.boss.waitTime * 1000, true, state);
                         }
                     }
@@ -313,7 +286,6 @@ angular.module('uiApp').factory('Act3ScrollingState',
                 spawnBoss: function (state) {
                     if (!state.game.ending) {
                         var boss = state.boss.getFirstExists(false);
-                        state.bossUpdateFunction = boss.updateFunction;
                         boss.reset(state.levelData.boss.x, state.levelData.boss.y);
                         state.enemies.add(boss);
                         boss.health = state.levelData.boss.health;
@@ -410,6 +382,9 @@ angular.module('uiApp').factory('Act3ScrollingState',
                                                     break;
                                             }
                                             break;
+                                        default:
+                                            console.log("ERROR!");
+                                            break;
                                     }
                                     arrow.reset(x, y);
                                     arrow.body.velocity.x = velX;
@@ -431,30 +406,6 @@ angular.module('uiApp').factory('Act3ScrollingState',
                     this.currentPlayerFormation = formation;
                     //  TODO - ROTATE PLAYERS?
                     this.moveHelpers();
-                },
-                calcDistance: function (playerCenter, x, y) {
-                    var distanceX = (playerCenter.attackX - x);
-                    var x2 = Math.pow(distanceX, 2);
-                    var distanceY = (playerCenter.attackY - y);
-                    var y2 = Math.pow(distanceY, 2);
-                    var distanceFactor = Math.floor(Math.sqrt(x2 + y2));
-                    return {distanceX: distanceX, distanceY: distanceY, distanceFactor: distanceFactor};
-                },
-                calcPlayerGroupCenter: function () {
-                    var attackX = 0, attackY = 0, count = 0;
-                    angular.forEach(this.players.children, function (p) {
-                        if (p.alive) {
-                            count += 1;
-                            attackX += p.x + p.width / 2;
-                            attackY += p.y + p.height / 2;
-                        }
-
-                    }, this);
-                    if (count > 0) {
-                        attackX = attackX / count;
-                        attackY = attackY / count;
-                    }
-                    return {attackX: attackX, attackY: attackY, count: count};
                 },
                 handlePlayerMovement: function () {
                     var moved = false;
@@ -580,6 +531,9 @@ angular.module('uiApp').factory('Act3ScrollingState',
                                                 break;
                                         }
                                         break;
+                                    default:
+                                        console.log("ERROR2!");
+                                        break;
                                 }
 
                                 var adjustX = 0, adjustY = 0;
@@ -636,6 +590,7 @@ angular.module('uiApp').factory('Act3ScrollingState',
                 },
                 enemyHitsPlayer: function (player) {
                     if (!player.invulnerable) {
+                        console.log('Kill');
                         player.kill();
                         this.players.remove(player, false);
                         this.players.add(player);
