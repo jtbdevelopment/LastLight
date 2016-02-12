@@ -10,41 +10,22 @@ angular.module('uiApp').factory('Act1MazeState',
                 data: undefined,
                 state: undefined,
 
-                PLAYER_MOVE_SPEED: 75,
-                PLAYER_MASS: 10,
-
-                MOVABLE_MASS: 200,
-
-                ENEMY_PATROL_SPEED: 25,
-                ENEMY_CHASE_SPEED: 90,
-                ENEMY_PATROL_RANGE: 64,
-                ENEMY_MAX_SIGHT_PLAYER_MOVING: 100,
-                ENEMY_STOP_CHASING_AFTER: 10,
-
-                FINISH_LIGHT_RADIUS: 50,
-
-                TIME_PER_CANDLE: 60,    //  seconds
-
                 DEBUG: false,
-                tileHits: [],
                 //  Phaser state functions - begin
                 init: function (level, startingCandles) {
-                    this.LEVEL = level;
-                    this.PLAYER_START_X = Act1Settings.startingXPositions[level];
-                    this.PLAYER_START_Y = Act1Settings.startingYPositions[level];
-                    this.PLAYER_HIDING_LIGHT_RADIUS = Act1Settings.playerHidingLightRadius[level];
-                    this.PLAYER_MOVING_LIGHT_RADIUS = Act1Settings.playerMovingLightRadius[level];
-                    this.ENEMY_MAX_SIGHT_PLAYER_HIDING = Act1Settings.enemySenseHidingDistance[level];
-                    this.STARTING_CANDLES = startingCandles;
-                    this.CURRENT_CANDLES = this.STARTING_CANDLES;
-                    this.CURRENT_TIME = this.TIME_PER_CANDLE;
+                    this.tileHits = [];
+                    this.level = level;
+                    this.levelData = Act1Settings.levelData[level];
+                    this.startingCandles = startingCandles;
+                    this.currentCandles = this.startingCandles;
+                    this.currentCandleTime = Act1Settings.TIME_PER_CANDLE;
                 },
                 preload: function () {
                     //  Note tile asset IDs do not match because 0 represents no tile
                     //  So in tiled - a tile will be asset id 535
                     //  In json file it will be 536
                     //  When remapping images from one to another you would need to say 536 -> 535
-                    this.load.tilemap('act1tilemaps', 'assets/tilemaps/act1tilemaps.json', null, Phaser.Tilemap.TILED_JSON);
+                    this.load.tilemap('tilemap', 'assets/tilemaps/act1level' + (this.level + 1) + '.json', null, Phaser.Tilemap.TILED_JSON);
 
                     //  TODO - actual art
                     //  TODO - physics for art
@@ -58,8 +39,8 @@ angular.module('uiApp').factory('Act1MazeState',
                     this.load.image('demon', 'images/DemonMinorFighter.png');
                 },
                 create: function () {
-                    this.PLAYER_LIGHT_RADIUS = this.PLAYER_MOVING_LIGHT_RADIUS;
-                    this.DEMON_MAX_SIGHT = this.ENEMY_MAX_SIGHT_PLAYER_MOVING;
+                    this.playerLightRadius = this.levelData.playerMovingLightRadius;
+                    this.demonMaxSight = this.levelData.enemySenseMovingDistance;
                     this.game.ending = false;
 
                     var map = this.createTileMap();
@@ -113,11 +94,11 @@ angular.module('uiApp').factory('Act1MazeState',
 
                 //  Creation functions - begin
                 createTileMap: function () {
-                    var map = this.game.add.tilemap('act1tilemaps');
+                    var map = this.game.add.tilemap('tilemap');
                     map.addTilesetImage('hyptosis_tile-art-batch-1');
 
-                    map.createLayer('Path Layer ' + this.LEVEL);
-                    this.blockLayer = map.createLayer('Block Layer ' + this.LEVEL);
+                    map.createLayer('Path Layer ' + this.level);
+                    this.blockLayer = map.createLayer('Block Layer ' + this.level);
                     this.blockLayer.debug = this.DEBUG;
                     this.blockLayer.resizeWorld();
                     var tileIds = [];
@@ -176,7 +157,7 @@ angular.module('uiApp').factory('Act1MazeState',
                     });
                 },
                 createPlayer: function () {
-                    this.player = this.game.add.sprite(this.PLAYER_START_X, this.PLAYER_START_Y, 'player');
+                    this.player = this.game.add.sprite(this.levelData.startingX, this.levelData.startingY, 'player');
                     this.game.physics.p2.enable(this.player);
                     this.player.body.collideWorldBounds = true;
                     this.player.body.fixedRotation = true;
@@ -185,7 +166,7 @@ angular.module('uiApp').factory('Act1MazeState',
                     this.player.height = 32;
                     this.player.width = 32;
                     this.player.body.setCircle(10);
-                    this.player.body.mass = this.PLAYER_MASS;
+                    this.player.body.mass = Act1Settings.PLAYER_MASS;
                     this.player.isHiding = false;
                     this.game.camera.follow(this.player);
                     this.player.body.onBeginContact.add(this.collisionCheck, this);
@@ -194,8 +175,8 @@ angular.module('uiApp').factory('Act1MazeState',
 
                 createFinishArea: function (map) {
                     this.finishGroup = this.game.add.physicsGroup(Phaser.Physics.P2JS);
-                    map.createFromObjects('Object Layer ' + this.LEVEL, 742, 'hyptosis_tile-art-batch-1', 741, true, false, this.finishGroup);
-                    map.createFromObjects('Object Layer ' + this.LEVEL, 772, 'hyptosis_tile-art-batch-1', 771, true, false, this.finishGroup);
+                    map.createFromObjects('Object Layer ' + this.level, 742, 'hyptosis_tile-art-batch-1', 741, true, false, this.finishGroup);
+                    map.createFromObjects('Object Layer ' + this.level, 772, 'hyptosis_tile-art-batch-1', 771, true, false, this.finishGroup);
                     this.finishGroup.forEach(function (finish) {
                         finish.body.debug = this.DEBUG;
                         finish.height = 32;
@@ -212,11 +193,11 @@ angular.module('uiApp').factory('Act1MazeState',
                 createMovableObjects: function (map) {
                     //  TODO - custom class for logic?
                     this.movableGroup = this.game.add.physicsGroup(Phaser.Physics.P2JS);
-                    map.createFromObjects('Object Layer ' + this.LEVEL, 214, 'hyptosis_tile-art-batch-1', 214, true, false, this.movableGroup);
+                    map.createFromObjects('Object Layer ' + this.level, 214, 'hyptosis_tile-art-batch-1', 214, true, false, this.movableGroup);
                     this.movableGroup.forEach(function (movable) {
                         movable.body.setMaterial(this.movableMaterial);
                         movable.body.collideWorldBounds = true;
-                        movable.body.mass = this.MOVABLE_MASS;
+                        movable.body.mass = Act1Settings.MOVABLE_MASS;
                         movable.body.damping = 0.95;
                         movable.body.angularDamping = 0.85;
                         movable.body.debug = this.DEBUG;
@@ -231,7 +212,7 @@ angular.module('uiApp').factory('Act1MazeState',
                 createEnemies: function (map) {
                     this.enemyGroup = this.game.add.physicsGroup(Phaser.Physics.P2JS);
                     //  TODO - custom class for logic?
-                    map.createFromObjects('Object Layer ' + this.LEVEL, 782, 'demon', 0, true, false, this.enemyGroup);
+                    map.createFromObjects('Object Layer ' + this.level, 782, 'demon', 0, true, false, this.enemyGroup);
                     this.enemyGroup.forEach(function (enemy) {
                         enemy.height = 32;
                         enemy.width = 32;
@@ -240,17 +221,17 @@ angular.module('uiApp').factory('Act1MazeState',
                         enemy.y += 16;
                         enemy.initialX = enemy.x;
                         enemy.initialY = enemy.y;
-                        enemy.minX = enemy.initialX - this.ENEMY_PATROL_RANGE;
-                        enemy.maxX = enemy.initialX + this.ENEMY_PATROL_RANGE;
-                        enemy.minY = enemy.initialY - this.ENEMY_PATROL_RANGE;
-                        enemy.maxY = enemy.initialY + this.ENEMY_PATROL_RANGE;
+                        enemy.minX = enemy.initialX - Act1Settings.ENEMY_PATROL_RANGE;
+                        enemy.maxX = enemy.initialX + Act1Settings.ENEMY_PATROL_RANGE;
+                        enemy.minY = enemy.initialY - Act1Settings.ENEMY_PATROL_RANGE;
+                        enemy.maxY = enemy.initialY + Act1Settings.ENEMY_PATROL_RANGE;
                         enemy.isChasing = false;
                         enemy.stopChasingCount = 0;
                         enemy.body.debug = this.DEBUG;
                         enemy.body.collideWorldBounds = true;
                         enemy.body.fixedRotation = true;
-                        enemy.body.velocity.x = this.ENEMY_PATROL_SPEED;
-                        enemy.body.velocity.y = this.ENEMY_PATROL_SPEED;
+                        enemy.body.velocity.x = Act1Settings.ENEMY_PATROL_SPEED;
+                        enemy.body.velocity.y = Act1Settings.ENEMY_PATROL_SPEED;
                         enemy.body.setZeroDamping();
                         enemy.body.setMaterial(this.enemyMaterial);
                     }, this);
@@ -269,7 +250,7 @@ angular.module('uiApp').factory('Act1MazeState',
                 },
 
                 initializeCandleTracker: function () {
-                    if (this.STARTING_CANDLES > 0) {
+                    if (this.startingCandles > 0) {
                         var textStyle = {
                             font: '10px Arial',
                             fill: '#FF9329',
@@ -285,27 +266,27 @@ angular.module('uiApp').factory('Act1MazeState',
 
                 //  Candle related - begin
                 makeCandleText: function () {
-                    return 'Candles: ' + this.CURRENT_CANDLES + ', Time: ' + this.CURRENT_TIME;
+                    return 'Candles: ' + this.currentCandles + ', Time: ' + this.currentCandleTime;
                 },
 
                 candleTimeoutHandler: function (state) {
                     if (state.game.ending) {
                         return;
                     }
-                    state.CURRENT_TIME -= 1;
-                    if (state.CURRENT_TIME === 0) {
-                        if (state.CURRENT_CANDLES > 1) {
+                    state.currentCandleTime -= 1;
+                    if (state.currentCandleTime === 0) {
+                        if (state.currentCandles > 1) {
                             if (state.player.isHiding) {
                                 state.deathEnding();
                             } else {
                                 //  TODO - play match type sound?
-                                state.CURRENT_CANDLES -= 1;
-                                state.CURRENT_TIME = state.TIME_PER_CANDLE;
+                                state.currentCandles -= 1;
+                                state.currentCandleTime = Act1Settings.TIME_PER_CANDLE;
                             }
                         }
                     }
                     state.candleText.text = state.makeCandleText();
-                    if (state.CURRENT_CANDLES > 0 || state.CURRENT_TIME > 0) {
+                    if (state.currentCandles > 0 || state.currentCandleTime > 0) {
                         $timeout(state.candleTimeoutHandler, 1000, true, state);
                     } else {
                         state.deathEnding();
@@ -329,9 +310,9 @@ angular.module('uiApp').factory('Act1MazeState',
                     this.shadowTexture.context.fillStyle = 'rgb(50, 70, 100)';
                     this.shadowTexture.context.fillRect(0, 0, this.game.world.width, this.game.world.height);
 
-                    this.drawCircleOfLight(this.player, this.PLAYER_LIGHT_RADIUS);
+                    this.drawCircleOfLight(this.player, this.playerLightRadius);
                     this.finishGroup.forEach(function (finish) {
-                        this.drawCircleOfLight(finish, this.FINISH_LIGHT_RADIUS);
+                        this.drawCircleOfLight(finish, Act1Settings.FINISH_LIGHT_RADIUS);
                     }, this);
 
                     this.shadowTexture.dirty = true;
@@ -358,12 +339,12 @@ angular.module('uiApp').factory('Act1MazeState',
                 switchTakingCover: function () {
                     this.player.isHiding = !this.player.isHiding;
                     if (this.player.isHiding) {
-                        this.PLAYER_LIGHT_RADIUS = this.PLAYER_HIDING_LIGHT_RADIUS;
-                        this.DEMON_MAX_SIGHT = this.ENEMY_MAX_SIGHT_PLAYER_HIDING;
+                        this.playerLightRadius = this.levelData.playerHidingLightRadius;
+                        this.demonMaxSight = this.levelData.enemySenseHidingDistance;
                         this.player.loadTexture('playerHiding');
                     } else {
-                        this.PLAYER_LIGHT_RADIUS = this.PLAYER_MOVING_LIGHT_RADIUS;
-                        this.DEMON_MAX_SIGHT = this.ENEMY_MAX_SIGHT_PLAYER_MOVING;
+                        this.playerLightRadius = this.levelData.playerMovingLightRadius;
+                        this.demonMaxSight = this.levelData.enemySenseMovingDistance;
                         this.player.loadTexture('player');
                     }
                 },
@@ -371,16 +352,16 @@ angular.module('uiApp').factory('Act1MazeState',
                 handlePlayerMovement: function () {
                     if (!this.player.isHiding) {
                         if (this.cursors.up.isDown) {
-                            this.player.body.moveUp(this.PLAYER_MOVE_SPEED);
+                            this.player.body.moveUp(Act1Settings.PLAYER_MOVE_SPEED);
                         }
                         if (this.cursors.down.isDown) {
-                            this.player.body.moveDown(this.PLAYER_MOVE_SPEED);
+                            this.player.body.moveDown(Act1Settings.PLAYER_MOVE_SPEED);
                         }
                         if (this.cursors.left.isDown) {
-                            this.player.body.moveLeft(this.PLAYER_MOVE_SPEED);
+                            this.player.body.moveLeft(Act1Settings.PLAYER_MOVE_SPEED);
                         }
                         if (this.cursors.right.isDown) {
-                            this.player.body.moveRight(this.PLAYER_MOVE_SPEED);
+                            this.player.body.moveRight(Act1Settings.PLAYER_MOVE_SPEED);
                         }
                     }
                 },
@@ -392,7 +373,7 @@ angular.module('uiApp').factory('Act1MazeState',
                     var ray = new Phaser.Line(enemy.x, enemy.y, this.player.x, this.player.y);
                     var wasChasing = enemy.isChasing;
                     enemy.isChasing = false;
-                    if (ray.length < this.DEMON_MAX_SIGHT) {
+                    if (ray.length < this.demonMaxSight) {
                         if (this.DEBUG) {
                             angular.forEach(this.tileHits, function (tileHit) {
                                 tileHit.debug = false;
@@ -421,7 +402,7 @@ angular.module('uiApp').factory('Act1MazeState',
                     }
                     if (!enemy.isChasing && wasChasing) {
                         enemy.stopChasingCount++;
-                        if (enemy.stopChasingCount < this.ENEMY_STOP_CHASING_AFTER) {
+                        if (enemy.stopChasingCount < Act1Settings.ENEMY_STOP_CHASING_AFTER) {
                             enemy.isChasing = true;
                         } else {
                             enemy.stopChasingCount = 0;
@@ -432,8 +413,8 @@ angular.module('uiApp').factory('Act1MazeState',
                 enemyChasingPlayerMovement: function (enemy) {
                     //  TODO - smarter pathing logic - see easystar perhaps
                     var angle = Math.atan2(this.player.y - enemy.y, this.player.x - enemy.x);
-                    enemy.body.velocity.x = Math.cos(angle) * this.ENEMY_CHASE_SPEED;
-                    enemy.body.velocity.y = Math.sin(angle) * this.ENEMY_CHASE_SPEED;
+                    enemy.body.velocity.x = Math.cos(angle) * Act1Settings.ENEMY_CHASE_SPEED;
+                    enemy.body.velocity.y = Math.sin(angle) * Act1Settings.ENEMY_CHASE_SPEED;
                 },
 
                 enemyRandomlyMoving: function (enemy) {
@@ -447,11 +428,11 @@ angular.module('uiApp').factory('Act1MazeState',
                         (compareY >= enemy.maxY && enemy.body.velocity.y > 0)) {
                         enemy.body.velocity.y *= -1;
                     }
-                    if (Math.abs(enemy.body.velocity.x) < this.ENEMY_PATROL_SPEED / 5) {
-                        enemy.body.velocity.x = Math.sign(enemy.body.velocity.x) * -1 * this.ENEMY_PATROL_SPEED;
+                    if (Math.abs(enemy.body.velocity.x) < Act1Settings.ENEMY_PATROL_SPEED / 5) {
+                        enemy.body.velocity.x = Math.sign(enemy.body.velocity.x) * -1 * Act1Settings.ENEMY_PATROL_SPEED;
                     }
-                    if (Math.abs(enemy.body.velocity.y) < this.ENEMY_PATROL_SPEED / 5) {
-                        enemy.body.velocity.y = Math.sign(enemy.body.velocity.y) * -1 * this.ENEMY_PATROL_SPEED;
+                    if (Math.abs(enemy.body.velocity.y) < Act1Settings.ENEMY_PATROL_SPEED / 5) {
+                        enemy.body.velocity.y = Math.sign(enemy.body.velocity.y) * -1 * Act1Settings.ENEMY_PATROL_SPEED;
                     }
                 },
                 //  Enemy movement - end
@@ -460,26 +441,26 @@ angular.module('uiApp').factory('Act1MazeState',
                 deathEnding: function () {
                     this.game.ending = true;
                     var deathTween = this.game.add.tween(this);
-                    deathTween.to({PLAYER_LIGHT_RADIUS: 0}, 1000, Phaser.Easing.Power1, true);
+                    deathTween.to({playerLightRadius: 0}, 1000, Phaser.Easing.Power1, true);
                     deathTween.onComplete.add(function () {
                         //  TODO - dying off screen doesn't reset cleanly without move
-                        this.player.x = this.PLAYER_START_X;
-                        this.player.y = this.PLAYER_START_Y;
+                        this.player.x = this.levelData.startingX;
+                        this.player.y = this.levelData.startingY;
                         this.player.kill();
                         //  TODO - retry move on option
-                        this.game.state.start(this.state.current, true, false, this.LEVEL, this.STARTING_CANDLES);
+                        this.game.state.start(this.state.current, true, false, this.level, this.startingCandles);
                     }, this);
                 },
 
                 winEnding: function () {
                     this.game.ending = true;
                     var winTween = this.game.add.tween(this);
-                    winTween.to({PLAYER_LIGHT_RADIUS: 100}, 1000, Phaser.Easing.Power1, true);
+                    winTween.to({playerLightRadius: 100}, 1000, Phaser.Easing.Power1, true);
                     winTween.onComplete.add(function () {
                         //  TODO - End of Act
                         //  TODO - interludes
                         //  TODO - retry move on option
-                        this.game.state.start(this.state.current, true, false, this.LEVEL + 1, this.CURRENT_CANDLES + Act1Settings.addsCandlesAtEnd[this.LEVEL]);
+                        this.game.state.start(this.state.current, true, false, this.level + 1, this.currentCandles + this.levelData.addsCandlesAtEnd);
                     }, this);
                 }
 
