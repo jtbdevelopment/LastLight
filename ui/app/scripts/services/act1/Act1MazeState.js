@@ -211,9 +211,11 @@ angular.module('uiApp').factory('Act1MazeState',
 
                 createEnemies: function (map) {
                     this.enemyGroup = this.game.add.physicsGroup(Phaser.Physics.P2JS);
+                    this.classType = PatrollingEnemy;
                     //  TODO - custom class for logic?
                     map.createFromObjects('Object Layer ' + this.level, 782, 'demon', 0, true, false, this.enemyGroup);
                     this.enemyGroup.forEach(function (enemy) {
+                        enemy.state = this;
                         enemy.height = 32;
                         enemy.width = 32;
                         enemy.body.setCircle(11);
