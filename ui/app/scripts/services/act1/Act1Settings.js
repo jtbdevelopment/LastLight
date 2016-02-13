@@ -1,3 +1,4 @@
+/* globals PatrollingEnemy: false */
 'use strict';
 
 angular.module('uiApp').factory('Act1Settings',
@@ -51,6 +52,9 @@ angular.module('uiApp').factory('Act1Settings',
             }
             if(angular.isUndefined(level.enemySenseHidingDistance)) {
                 level.enemySenseHidingDistance = level.playerHidingLightRadius + 20;
+            }
+            if(angular.isUndefined(level.patrolEnemyClass)) {
+                level.patrolEnemyClass = PatrollingEnemy;
             }
         });
 

@@ -58,17 +58,32 @@ angular.module('uiApp').factory('Act1MazeState',
                     this.game.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;
                     this.initializeCandleTracker();
                 },
+                clearTileHitDisplay: function () {
+                    if (this.state.DEBUG) {
+                        angular.forEach(this.state.tileHits, function (tileHit) {
+                            tileHit.debug = false;
+                        });
+                        this.blockLayer.dirty = this.tileHits.length > 0;
+                    }
+                    this.tileHits = [];
+                },
+                addTileHitsToDisplay: function(moreTileHits) {
+                    this.tileHits = this.tileHits.concat(moreTileHits);
+                },
+                showTileHitsDisplay: function() {
+                    if (this.DEBUG) {
+                        angular.forEach(this.tileHits, function (tileHit) {
+                            tileHit.debug = this.DEBUG;
+                        }, this);
+                        this.blockLayer.dirty = this.tileHits.length > 0;
+                    }
+                },
                 update: function () {
                     this.player.body.setZeroVelocity();
-
+                    this.clearTileHitDisplay();
                     if (!this.game.ending) {
                         this.enemyGroup.forEach(function (enemy) {
-                            this.checkIfEnemyWillChasePlayer(enemy);
-                            if (enemy.isChasing) {
-                                this.enemyChasingPlayerMovement(enemy);
-                            } else {
-                                this.enemyRandomlyMoving(enemy);
-                            }
+                            enemy.updateFunction(this.player);
                         }, this);
                         this.handlePlayerMovement();
                     } else {
@@ -76,6 +91,7 @@ angular.module('uiApp').factory('Act1MazeState',
                             enemy.body.setZeroVelocity();
                         });
                     }
+                    this.showTileHitsDisplay();
                     this.updateWorldShadowAndLights();
                 },
                 render: function () {
@@ -211,31 +227,12 @@ angular.module('uiApp').factory('Act1MazeState',
 
                 createEnemies: function (map) {
                     this.enemyGroup = this.game.add.physicsGroup(Phaser.Physics.P2JS);
-                    this.classType = PatrollingEnemy;
-                    //  TODO - custom class for logic?
-                    map.createFromObjects('Object Layer ' + this.level, 782, 'demon', 0, true, false, this.enemyGroup);
+                    map.createFromObjects('Object Layer ' + this.level, 782, 'demon', 0, true, false, this.enemyGroup, this.levelData.patrolEnemyClass, false);
                     this.enemyGroup.forEach(function (enemy) {
                         enemy.state = this;
-                        enemy.height = 32;
-                        enemy.width = 32;
-                        enemy.body.setCircle(11);
-                        enemy.x += 16;
-                        enemy.y += 16;
-                        enemy.initialX = enemy.x;
-                        enemy.initialY = enemy.y;
-                        enemy.minX = enemy.initialX - Act1Settings.ENEMY_PATROL_RANGE;
-                        enemy.maxX = enemy.initialX + Act1Settings.ENEMY_PATROL_RANGE;
-                        enemy.minY = enemy.initialY - Act1Settings.ENEMY_PATROL_RANGE;
-                        enemy.maxY = enemy.initialY + Act1Settings.ENEMY_PATROL_RANGE;
-                        enemy.isChasing = false;
-                        enemy.stopChasingCount = 0;
-                        enemy.body.debug = this.DEBUG;
-                        enemy.body.collideWorldBounds = true;
-                        enemy.body.fixedRotation = true;
-                        enemy.body.velocity.x = Act1Settings.ENEMY_PATROL_SPEED;
-                        enemy.body.velocity.y = Act1Settings.ENEMY_PATROL_SPEED;
-                        enemy.body.setZeroDamping();
+                        enemy.settings = Act1Settings;
                         enemy.body.setMaterial(this.enemyMaterial);
+                        enemy.initialize();
                     }, this);
                 },
 
@@ -368,76 +365,6 @@ angular.module('uiApp').factory('Act1MazeState',
                     }
                 },
                 //  Player action and movement - end
-
-                //  Enemy movement - begin
-                checkIfEnemyWillChasePlayer: function (enemy) {
-                    //  TODO - Play sound while chasing or play sound when chase begins?
-                    var ray = new Phaser.Line(enemy.x, enemy.y, this.player.x, this.player.y);
-                    var wasChasing = enemy.isChasing;
-                    enemy.isChasing = false;
-                    if (ray.length < this.demonMaxSight) {
-                        if (this.DEBUG) {
-                            angular.forEach(this.tileHits, function (tileHit) {
-                                tileHit.debug = false;
-                            });
-                            this.blockLayer.dirty = this.tileHits.length > 0;
-                        }
-                        this.tileHits = this.blockLayer.getRayCastTiles(ray, undefined, true);
-                        if (this.DEBUG) {
-                            angular.forEach(this.tileHits, function (tileHit) {
-                                tileHit.debug = this.DEBUG;
-                            }, this);
-                            this.blockLayer.dirty = this.tileHits.length > 0;
-                        }
-
-                        var rocksHit = [];
-                        var lineCoordinates = ray.coordinatesOnLine(1);
-                        angular.forEach(lineCoordinates, function (point) {
-                            this.game.physics.p2.hitTest({
-                                x: point[0],
-                                y: point[1]
-                            }, this.movableGroup.children, undefined, true).forEach(function (hit) {
-                                rocksHit.push(hit);
-                            });
-                        }, this);
-                        enemy.isChasing = this.tileHits.length === 0 && rocksHit.length === 0;
-                    }
-                    if (!enemy.isChasing && wasChasing) {
-                        enemy.stopChasingCount++;
-                        if (enemy.stopChasingCount < Act1Settings.ENEMY_STOP_CHASING_AFTER) {
-                            enemy.isChasing = true;
-                        } else {
-                            enemy.stopChasingCount = 0;
-                        }
-                    }
-                },
-
-                enemyChasingPlayerMovement: function (enemy) {
-                    //  TODO - smarter pathing logic - see easystar perhaps
-                    var angle = Math.atan2(this.player.y - enemy.y, this.player.x - enemy.x);
-                    enemy.body.velocity.x = Math.cos(angle) * Act1Settings.ENEMY_CHASE_SPEED;
-                    enemy.body.velocity.y = Math.sin(angle) * Act1Settings.ENEMY_CHASE_SPEED;
-                },
-
-                enemyRandomlyMoving: function (enemy) {
-                    var compareX = Math.round(enemy.x * 100) / 100;
-                    var compareY = Math.round(enemy.y * 100) / 100;
-                    if ((compareX <= enemy.minX && enemy.body.velocity.x < 0) ||
-                        (compareX >= enemy.maxX && enemy.body.velocity.x > 0)) {
-                        enemy.body.velocity.x *= -1;
-                    }
-                    if ((compareY <= enemy.minY && enemy.body.velocity.y < 0) ||
-                        (compareY >= enemy.maxY && enemy.body.velocity.y > 0)) {
-                        enemy.body.velocity.y *= -1;
-                    }
-                    if (Math.abs(enemy.body.velocity.x) < Act1Settings.ENEMY_PATROL_SPEED / 5) {
-                        enemy.body.velocity.x = Math.sign(enemy.body.velocity.x) * -1 * Act1Settings.ENEMY_PATROL_SPEED;
-                    }
-                    if (Math.abs(enemy.body.velocity.y) < Act1Settings.ENEMY_PATROL_SPEED / 5) {
-                        enemy.body.velocity.y = Math.sign(enemy.body.velocity.y) * -1 * Act1Settings.ENEMY_PATROL_SPEED;
-                    }
-                },
-                //  Enemy movement - end
 
                 //  Ending related
                 deathEnding: function () {
