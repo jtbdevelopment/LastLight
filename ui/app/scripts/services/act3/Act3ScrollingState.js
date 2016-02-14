@@ -1,9 +1,8 @@
-/* globals Phaser: true */
 'use strict';
 
 angular.module('uiApp').factory('Act3ScrollingState',
-    ['$timeout', 'Act3Settings', 'Act3Calculator',
-        function ($timeout, Act3Settings, Act3Calculator) {
+    ['$timeout', 'Act3Settings', 'Act3Calculator', 'Phaser',
+        function ($timeout, Act3Settings, Act3Calculator, Phaser) {
             return {
                 game: undefined,
                 load: undefined,

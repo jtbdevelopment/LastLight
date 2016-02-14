@@ -1,9 +1,8 @@
-/* globals Phaser: false */
 'use strict';
 
 angular.module('uiApp').factory('GameFactory',
-    ['TitleScreenState', 'Act1MazeState', 'Act3ScrollingState',
-        function (TitleScreenState, Act1MazeState, Act3ScrollingState) {
+    ['TitleScreenState', 'Act1MazeState', 'Act3ScrollingState', 'Phaser',
+        function (TitleScreenState, Act1MazeState, Act3ScrollingState, Phaser) {
             var game = new Phaser.Game(800, 350, Phaser.AUTO, 'phaser');
 
             game.state.add('TitleScreen', TitleScreenState);

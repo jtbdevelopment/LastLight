@@ -17,6 +17,7 @@ angular
         'ngSanitize',
         'ngTouch'
     ])
+    .constant('Phaser', window.Phaser)
     .config(function ($routeProvider) {
         $routeProvider
             .when('/title', {

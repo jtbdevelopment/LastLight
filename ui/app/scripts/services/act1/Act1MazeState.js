@@ -1,9 +1,8 @@
-/* globals Phaser: true */
 'use strict';
 
 angular.module('uiApp').factory('Act1MazeState',
-    ['$timeout', 'Act1Settings',
-        function ($timeout, Act1Settings) {
+    ['$timeout', 'Act1Settings', 'Phaser',
+        function ($timeout, Act1Settings, Phaser) {
             return {
                 game: undefined,
                 load: undefined,
@@ -67,10 +66,10 @@ angular.module('uiApp').factory('Act1MazeState',
                     }
                     this.tileHits = [];
                 },
-                addTileHitsToDisplay: function(moreTileHits) {
+                addTileHitsToDisplay: function (moreTileHits) {
                     this.tileHits = this.tileHits.concat(moreTileHits);
                 },
-                showTileHitsDisplay: function() {
+                showTileHitsDisplay: function () {
                     if (this.DEBUG) {
                         angular.forEach(this.tileHits, function (tileHit) {
                             tileHit.debug = this.DEBUG;
