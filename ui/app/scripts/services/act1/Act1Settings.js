@@ -9,7 +9,7 @@ angular.module('uiApp').factory('Act1Settings',
 
             MOVABLE_MASS: 200,
 
-            ENEMY_PATROL_SPEED: 30,
+            ENEMY_PATROL_SPEED: 40,
             ENEMY_CHASE_SPEED: 90,
             ENEMY_PATROL_RANGE: 64,
             ENEMY_MAX_SIGHT_PLAYER_MOVING: 90,

@@ -16,8 +16,7 @@ angular.module('uiApp').factory('TitleScreenState',
 
                 create: function () {
                     this.game.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;
-                    //  TODO
-                    //this.game.state.start('Act1', true, false, 0, 0);
+                    //  TODO - make a flame for i dot
                     this.titleText = this.game.add.text(this.world.centerX, this.world.centerY, "Last Light");
                     this.titleText.anchor.setTo(0.5);
                     this.titleText.font = 'Revalia';
@@ -32,35 +31,35 @@ angular.module('uiApp').factory('TitleScreenState',
                     this.shadowTexture = this.game.add.bitmapData(this.game.world.width, this.game.world.height);
                     this.lightSprite = this.game.add.image(this.game.camera.x, this.game.camera.y, this.shadowTexture);
                     this.lightSprite.blendMode = Phaser.blendModes.MULTIPLY;
-
                     this.shadowTexture.context.fillStyle = 'rgb(10, 10, 10)';
                     this.shadowTexture.context.fillRect(0, 0, this.game.world.width, this.game.world.height);
-                    this.lightRadius = 500;
+                    this.lightRadius = 400;
                 },
 
                 update: function () {
                     if (this.lightRadius > 12) {
                         this.lightRadius -= 1;
+                        this.shadowTexture.context.fillStyle = 'rgb(1, 1, 1)';
+                        this.shadowTexture.context.fillRect(0, 0, this.game.world.width, this.game.world.height);
+                        var x = this.world.centerX + 81;
+                        var y = this.world.centerY - 24;
+                        var radius = this.lightRadius + this.game.rnd.integerInRange(1, 10);
+                        var gradient = this.shadowTexture.context.createRadialGradient(
+                            x, y, this.lightRadius * 0.25,
+                            x, y, radius);
+                        gradient.addColorStop(0, 'rgba(225, 225, 225, 1.0)');
+                        gradient.addColorStop(1, 'rgba(225, 225, 225, 0.0)');
+
+                        this.shadowTexture.context.beginPath();
+                        this.shadowTexture.context.fillStyle = gradient;
+                        this.shadowTexture.context.arc(x, y, radius, 0, Math.PI * 2, false);
+                        this.shadowTexture.context.fill();
+                        this.shadowTexture.dirty = true;
+
                     } else {
-
+                        //  TODO - go to picker/levels etc
+                        this.game.state.start('Act1', true, false, 0, 0);
                     }
-                    this.shadowTexture.context.fillStyle = 'rgb(10, 10, 10)';
-                    this.shadowTexture.context.fillRect(0, 0, this.game.world.width, this.game.world.height);
-                    var x = this.world.centerX + 81;
-                    var y = this.world.centerY - 24;
-                    var radius = this.lightRadius + this.game.rnd.integerInRange(1, 10);
-                    var gradient = this.shadowTexture.context.createRadialGradient(
-                        x, y, this.lightRadius * 0.25,
-                        x, y, radius);
-                    gradient.addColorStop(0, 'rgba(225, 225, 225, 1.0)');
-                    gradient.addColorStop(1, 'rgba(225, 225, 225, 0.0)');
-
-                    this.shadowTexture.context.beginPath();
-                    this.shadowTexture.context.fillStyle = gradient;
-                    this.shadowTexture.context.arc(x, y, radius, 0, Math.PI * 2, false);
-                    this.shadowTexture.context.fill();
-                    this.shadowTexture.dirty = true;
-
                 }
             };
 

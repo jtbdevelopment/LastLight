@@ -16,7 +16,7 @@ var PatrollingEnemy = function (game, x, y, key, frame) {
 PatrollingEnemy.prototype = Object.create(AbstractAct1Enemy.prototype);
 PatrollingEnemy.prototype.constructor = PatrollingEnemy;
 
-PatrollingEnemy.prototype.initialize = function() {
+PatrollingEnemy.prototype.initialize = function () {
     this.body.setCircle(11);
     this.initialX = this.x;
     this.initialY = this.y;
@@ -30,21 +30,28 @@ PatrollingEnemy.prototype.initialize = function() {
     this.body.debug = this.state.DEBUG;
     this.body.collideWorldBounds = true;
     this.body.fixedRotation = true;
-    this.body.velocity.x = this.settings.ENEMY_PATROL_SPEED;
-    this.body.velocity.y = this.settings.ENEMY_PATROL_SPEED;
+    this.randomizeDirection();
     this.body.setZeroDamping();
 };
 
 PatrollingEnemy.prototype.updateFunction = function (player) {
     AbstractAct1Enemy.prototype.updateFunction.call(this, player);
-    if(this.checkIfEnemyWillChasePlayer(player)) {
+    if (this.checkIfEnemyWillChasePlayer(player)) {
         this.chasePlayer(player);
     } else {
         this.patrol();
     }
 };
 
-PatrollingEnemy.prototype.checkIfEnemyWillChasePlayer = function(player) {
+PatrollingEnemy.prototype.randomizeDirection = function () {
+    var signX = this.state.game.rnd.integerInRange(1, 2);
+    var signY = this.state.game.rnd.integerInRange(1, 2);
+    var percent = this.state.game.rnd.integerInRange(0, 100) / 100;
+    this.body.velocity.x = this.settings.ENEMY_PATROL_SPEED * percent * (signX === 2 ? -1 : 1);
+    this.body.velocity.y = this.settings.ENEMY_PATROL_SPEED * (1 - percent) * (signY === 2 ? -1 : 1);
+};
+
+PatrollingEnemy.prototype.checkIfEnemyWillChasePlayer = function (player) {
     //  TODO - Play sound while chasing or play sound when chase begins?
     var wasChasing = this.isChasing;
     this.isChasing = false;
@@ -102,13 +109,10 @@ PatrollingEnemy.prototype.patrol = function () {
         this.body.velocity.y *= -1;
     }
 
-    var totalSpeed = Math.abs(this.body.velocity.x) + Math.abs(this.body.velocity.y);
-    if((totalSpeed) < (this.settings.ENEMY_PATROL_SPEED * 2)) {
-        var pX = this.body.velocity.x / totalSpeed;
-        var pY = this.body.velocity.y / totalSpeed;
-        this.body.velocity.x = pX * this.settings.ENEMY_PATROL_SPEED;
-        this.body.velocity.x = pY * this.settings.ENEMY_PATROL_SPEED;
+    if (Math.abs(this.body.velocity.x) + Math.abs(this.body.velocity.y) < this.settings.ENEMY_PATROL_SPEED / 2) {
+        this.randomizeDirection();
     }
+
 };
 
 
