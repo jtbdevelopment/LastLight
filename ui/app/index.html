@@ -44,6 +44,7 @@
                     <li><a ng-href="#/act1">Act1</a></li>
                     <li><a ng-href="#/act1temp">Act1 Phase 2</a></li>
                     <li><a ng-href="#/act3">Act3</a></li>
+                    <li><a ng-href="#/act4">Act4</a></li>
                 </ul>
             </div>
         </div>
@@ -77,11 +78,15 @@
 </script>
 <script src="https://ajax.googleapis.com/ajax/libs/webfont/1.6.16/webfont.js"></script>
 <script>
-    WebFont.load({
-        google: {
-            families: ['Droid Sans', 'Droid Serif', 'Revalia']
-        }
-    });
+    try {
+        WebFont.load({
+            google: {
+                families: ['Droid Sans', 'Droid Serif', 'Revalia']
+            }
+        });
+    } catch(ex) {
+        console.log('Error loading fonts');
+    }
 </script>
 <!-- build:js(.) scripts/vendor.js -->
 <!-- bower:js -->
@@ -111,11 +116,13 @@
 <script src="scripts/services/act3/Act3Settings.js"></script>
 <script src="scripts/services/act3/Act3Calculator.js"></script>
 <script src="scripts/services/act3/Act3ScrollingState.js"></script>
+<script src="scripts/services/act4/Act4State.js"></script>
 <script src="scripts/services/GameFactory.js"></script>
 <script src="scripts/controllers/title.js"></script>
 <script src="scripts/controllers/act1.js"></script>
 <script src="scripts/controllers/act1Temp.js"></script>
 <script src="scripts/controllers/act3.js"></script>
+<script src="scripts/controllers/act4.js"></script>
 <!-- endbuild -->
 </body>
 </html>

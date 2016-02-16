@@ -36,6 +36,10 @@ angular
                 templateUrl: 'views/main.html',
                 controller: 'Act3Ctrl'
             })
+            .when('/act4', {
+                templateUrl: 'views/main.html',
+                controller: 'Act4Ctrl'
+            })
             .otherwise({
                 redirectTo: '/title'
             });
