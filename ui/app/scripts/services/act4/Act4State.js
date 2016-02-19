@@ -45,14 +45,14 @@ angular.module('uiApp').factory('Act4State',
 //                    this.createMaterials();
                     this.createPlayer();
                     /*
-                    this.createFinishArea(map);
-                    this.createMovableObjects(map);
-                    this.createEnemies(map);
-                    */
+                     this.createFinishArea(map);
+                     this.createMovableObjects(map);
+                     this.createEnemies(map);
+                     */
                     this.initializeKeyboard();
                     //this.initializeWorldShadowing();
                     this.game.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;
-                    //this.initializeCandleTracker();
+
                 },
                 clearTileHitDisplay: function () {
                     if (this.state.DEBUG) {
@@ -75,7 +75,7 @@ angular.module('uiApp').factory('Act4State',
                     }
                 },
                 update: function () {
-                    this.player.body.setZeroVelocity();
+                    //this.player.body.setZeroVelocity();
                     this.clearTileHitDisplay();
                     if (!this.game.ending) {
 //                        this.enemyGroup.forEach(function (enemy) {
@@ -87,6 +87,15 @@ angular.module('uiApp').factory('Act4State',
 //                            enemy.body.setZeroVelocity();
 //                        });
                     }
+
+                    //  TODO - zoom in/zoom out
+                    //  TODO - zoom player and enemies and allies
+                    this.blockLayer.scale.setTo(0.8);
+                    this.pathLayer.scale.setTo(0.8);
+                    this.blockLayer.resize(this.game.scale.width, this.game.scale.height);
+                    this.pathLayer.resize(this.game.scale.width, this.game.scale.height);
+                    this.game.camera.bounds.width = this.game.world.width * this.blockLayer.scale.x;
+                    this.game.camera.bounds.height = this.game.world.height * this.blockLayer.scale.y;
                     this.showTileHitsDisplay();
 //                    this.updateWorldShadowAndLights();
                 },
@@ -95,13 +104,13 @@ angular.module('uiApp').factory('Act4State',
                         this.game.debug.cameraInfo(this.game.camera, 0, 0);
                         //this.game.debug.spriteInfo(this.player, 400, 0);
                         /*
-                        angular.forEach(this.enemyGroup.children, function (child, index) {
-                            this.game.debug.spriteInfo(child, index * 350, 100);
-                        }, this);
-                        angular.forEach(this.movableGroup.children, function (child, index) {
-                            this.game.debug.spriteInfo(child, index * 350, 200);
-                        }, this);
-                        */
+                         angular.forEach(this.enemyGroup.children, function (child, index) {
+                         this.game.debug.spriteInfo(child, index * 350, 100);
+                         }, this);
+                         angular.forEach(this.movableGroup.children, function (child, index) {
+                         this.game.debug.spriteInfo(child, index * 350, 200);
+                         }, this);
+                         */
                     }
                 },
                 //  Phaser state functions - end
@@ -114,7 +123,7 @@ angular.module('uiApp').factory('Act4State',
                     map.addTilesetImage('hyptosis_tile-art-batch-3');
                     map.addTilesetImage('hyptosis_tile-art-batch-5');
 
-                    map.createLayer('Path Layer');
+                    this.pathLayer = map.createLayer('Path Layer');
                     this.blockLayer = map.createLayer('Block Layer');
                     this.blockLayer.debug = this.DEBUG;
                     this.blockLayer.resizeWorld();
@@ -129,7 +138,7 @@ angular.module('uiApp').factory('Act4State',
                         });
                     });
                     tileIds = tileIds.sort();
-                    //map.setCollision(tileIds, true, this.blockLayer);
+                    map.setCollision(tileIds, true, this.blockLayer);
                     return map;
                 },
                 createMaterials: function () {
@@ -175,17 +184,17 @@ angular.module('uiApp').factory('Act4State',
                 },
                 createPlayer: function () {
                     this.player = this.game.add.sprite(20, 20, 'lens-center');
-                    this.game.physics.p2.enable(this.player);
+                    //this.game.physics.p2.enable(this.player);
                     //this.player.body.collideWorldBounds = true;
                     //this.player.body.fixedRotation = true;
-                    this.player.body.debug = this.DEBUG;
+                    //this.player.body.debug = this.DEBUG;
                     //this.player.body.setMaterial(this.playerMaterial);
                     this.player.height = 32;
                     this.player.width = 32;
                     //this.player.body.setCircle(10);
                     //this.player.body.mass = Act1Settings.PLAYER_MASS;
                     //this.player.isHiding = false;
-                    this.game.camera.follow(this.player);
+                    //this.game.camera.follow(this.player);
                     //this.player.body.onBeginContact.add(this.collisionCheck, this);
 
                 },
@@ -351,16 +360,20 @@ angular.module('uiApp').factory('Act4State',
                 handlePlayerMovement: function () {
                     if (!this.player.isHiding) {
                         if (this.cursors.up.isDown) {
-                            this.player.body.moveUp(75);
+                            //this.player.body.moveUp(75);
+                            this.game.camera.y -= 75;
                         }
                         if (this.cursors.down.isDown) {
-                            this.player.body.moveDown(75);
+//                            this.player.body.moveDown(75);
+                            this.game.camera.y += 75;
                         }
                         if (this.cursors.left.isDown) {
-                            this.player.body.moveLeft(75);
+                            //                          this.player.body.moveLeft(75);
+                            this.game.camera.x -= 75;
                         }
                         if (this.cursors.right.isDown) {
-                            this.player.body.moveRight(75);
+                            //                        this.player.body.moveRight(75);
+                            this.game.camera.x += 75;
                         }
                     }
                 },
