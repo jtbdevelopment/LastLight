@@ -39,9 +39,8 @@ angular.module('uiApp').factory('Act4State',
 
                     var map = this.createTileMap();
 
-                    this.game.physics.startSystem(Phaser.Physics.P2JS);
-                    this.game.physics.p2.convertTilemap(map, this.blockLayer);
-                    this.game.physics.p2.setBoundsToWorld(true, true, true, true, false);
+                    this.game.physics.startSystem(Phaser.Physics.ARCADE);
+                    this.game.physics.arcade.setBoundsToWorld(true, true, true, true, false);
 //                    this.createMaterials();
                     this.createPlayer();
                     /*
@@ -90,8 +89,10 @@ angular.module('uiApp').factory('Act4State',
 
                     //  TODO - zoom in/zoom out
                     //  TODO - zoom player and enemies and allies
-                    this.blockLayer.scale.setTo(0.8);
-                    this.pathLayer.scale.setTo(0.8);
+                    var scale = 0.65;
+                    this.blockLayer.scale.setTo(scale);
+                    this.pathLayer.scale.setTo(scale);
+                    this.playerGroup.scale.setTo(scale);
                     this.blockLayer.resize(this.game.scale.width, this.game.scale.height);
                     this.pathLayer.resize(this.game.scale.width, this.game.scale.height);
                     this.game.camera.bounds.width = this.game.world.width * this.blockLayer.scale.x;
@@ -101,8 +102,8 @@ angular.module('uiApp').factory('Act4State',
                 },
                 render: function () {
                     if (this.DEBUG) {
-                        this.game.debug.cameraInfo(this.game.camera, 0, 0);
-                        //this.game.debug.spriteInfo(this.player, 400, 0);
+                        this.game.debug.cameraInfo(this.game.camera, 0, 20);
+                        this.game.debug.spriteInfo(this.focusFire, 400, 20);
                         /*
                          angular.forEach(this.enemyGroup.children, function (child, index) {
                          this.game.debug.spriteInfo(child, index * 350, 100);
@@ -141,102 +142,17 @@ angular.module('uiApp').factory('Act4State',
                     map.setCollision(tileIds, true, this.blockLayer);
                     return map;
                 },
-                createMaterials: function () {
-                    this.playerMaterial = this.game.physics.p2.createMaterial('playerMaterial');
-                    this.worldMaterial = this.game.physics.p2.createMaterial('worldMaterial');
-                    this.movableMaterial = this.game.physics.p2.createMaterial('movableMaterial');
-                    this.enemyMaterial = this.game.physics.p2.createMaterial('enemyMaterial');
-
-                    this.game.physics.p2.setWorldMaterial(this.worldMaterial, true, true, true, true);
-
-                    this.game.physics.p2.createContactMaterial(this.playerMaterial, this.worldMaterial, {
-                        friction: 0.01,
-                        restitution: 1,
-                        stiffness: 0
-                    });
-                    this.game.physics.p2.createContactMaterial(this.movableMaterial, this.worldMaterial, {
-                        friction: 0.9,
-                        restitution: 0.1,
-                        stiffness: 1e7,
-                        relaxation: 3,
-                        frictionStiffness: 1e7,
-                        frictionRelaxation: 3,
-                        surfaceVelocity: 0
-                    });
-                    this.game.physics.p2.createContactMaterial(this.enemyMaterial, this.worldMaterial, {
-                        friction: 0,
-                        restitution: 1,
-                        stiffness: 0,
-                        relaxation: 0,
-                        frictionStiffness: 0,
-                        frictionRelaxation: 0,
-                        surfaceVelocity: 0
-                    });
-                    this.game.physics.p2.createContactMaterial(this.enemyMaterial, this.movableMaterial, {
-                        friction: 1.0,
-                        restitution: 0.0,
-                        stiffness: 1e7,
-                        relaxation: 3,
-                        frictionStiffness: 1e7,
-                        frictionRelaxation: 3,
-                        surfaceVelocity: 0
-                    });
-                },
                 createPlayer: function () {
-                    this.player = this.game.add.sprite(20, 20, 'lens-center');
-                    //this.game.physics.p2.enable(this.player);
-                    //this.player.body.collideWorldBounds = true;
-                    //this.player.body.fixedRotation = true;
-                    //this.player.body.debug = this.DEBUG;
-                    //this.player.body.setMaterial(this.playerMaterial);
-                    this.player.height = 32;
-                    this.player.width = 32;
-                    //this.player.body.setCircle(10);
-                    //this.player.body.mass = Act1Settings.PLAYER_MASS;
-                    //this.player.isHiding = false;
-                    //this.game.camera.follow(this.player);
-                    //this.player.body.onBeginContact.add(this.collisionCheck, this);
+                    this.playerGroup = this.game.add.group();
 
-                },
-
-                createFinishArea: function (map) {
-                    this.finishGroup = this.game.add.physicsGroup(Phaser.Physics.P2JS);
-                    map.createFromObjects('Object Layer ' + this.level, 742, 'hyptosis_tile-art-batch-1', 741, true, false, this.finishGroup);
-                    map.createFromObjects('Object Layer ' + this.level, 772, 'hyptosis_tile-art-batch-1', 771, true, false, this.finishGroup);
-                    this.finishGroup.forEach(function (finish) {
-                        finish.body.debug = this.DEBUG;
-                        finish.height = 32;
-                        finish.width = 32;
-                        finish.anchor.setTo(0.5);
-                        finish.body.x += finish.width / 2;
-                        finish.body.y += finish.height / 2;
-                        finish.body.setRectangle(finish.width, finish.height, 0, 0);
-                        finish.body.static = true;
-                        finish.body.debug = this.DEBUG;
-                    }, this);
-                },
-
-                createMovableObjects: function (map) {
-                    //  TODO - custom class for logic?
-                    this.movableGroup = this.game.add.physicsGroup(Phaser.Physics.P2JS);
-                    map.createFromObjects('Object Layer ' + this.level, 214, 'hyptosis_tile-art-batch-1', 214, true, false, this.movableGroup);
-                    this.movableGroup.forEach(function (movable) {
-                        movable.body.setMaterial(this.movableMaterial);
-                        movable.body.collideWorldBounds = true;
-                        movable.body.mass = Act1Settings.MOVABLE_MASS;
-                        movable.body.damping = 0.95;
-                        movable.body.angularDamping = 0.85;
-                        movable.body.debug = this.DEBUG;
-                        movable.height = 30;
-                        movable.width = 30;
-                        movable.body.x += movable.width / 2;
-                        movable.body.y += movable.height / 2;
-                        movable.body.setRectangle(movable.width, movable.width, 0, 0);
-                    }, this);
+                    this.focusFire = this.game.add.sprite(20, 20, 'lens-center');
+                    this.focusFire.height = 16;
+                    this.focusFire.width = 16;
+                    this.playerGroup.add(this.focusFire);
                 },
 
                 createEnemies: function (map) {
-                    this.enemyGroup = this.game.add.physicsGroup(Phaser.Physics.P2JS);
+                    this.enemyGroup = this.game.add.physicsGroup(Phaser.Physics.ARCADE);
                     map.createFromObjects('Object Layer ' + this.level, 782, 'demon', 0, true, false, this.enemyGroup, this.levelData.patrolEnemyClass, false);
                     this.enemyGroup.forEach(function (enemy) {
                         enemy.state = this;
@@ -344,36 +260,37 @@ angular.module('uiApp').factory('Act4State',
                         }
                     }
                 },
-                switchTakingCover: function () {
-                    this.player.isHiding = !this.player.isHiding;
-                    if (this.player.isHiding) {
-                        this.playerLightRadius = this.levelData.playerHidingLightRadius;
-                        this.demonMaxSight = this.levelData.enemySenseHidingDistance;
-                        this.player.loadTexture('playerHiding');
-                    } else {
-                        this.playerLightRadius = this.levelData.playerMovingLightRadius;
-                        this.demonMaxSight = this.levelData.enemySenseMovingDistance;
-                        this.player.loadTexture('player');
-                    }
-                },
 
                 handlePlayerMovement: function () {
-                    if (!this.player.isHiding) {
+                    if (this.altKey.isDown) {
+                        this.game.camera.follow(this.focusFire);
+                        var move = 5 * this.playerGroup.scale.x;
                         if (this.cursors.up.isDown) {
-                            //this.player.body.moveUp(75);
-                            this.game.camera.y -= 75;
+                            this.focusFire.y -= move;
                         }
                         if (this.cursors.down.isDown) {
-//                            this.player.body.moveDown(75);
-                            this.game.camera.y += 75;
+                            this.focusFire.y += move;
                         }
                         if (this.cursors.left.isDown) {
-                            //                          this.player.body.moveLeft(75);
-                            this.game.camera.x -= 75;
+                            this.focusFire.x -= move;
                         }
                         if (this.cursors.right.isDown) {
-                            //                        this.player.body.moveRight(75);
-                            this.game.camera.x += 75;
+                            this.focusFire.x += move;
+                        }
+                    } else {
+                        var move = 50 * this.playerGroup.scale.x;
+                        this.game.camera.unfollow();
+                        if (this.cursors.up.isDown) {
+                            this.game.camera.y -= move;
+                        }
+                        if (this.cursors.down.isDown) {
+                            this.game.camera.y += move;
+                        }
+                        if (this.cursors.left.isDown) {
+                            this.game.camera.x -= move;
+                        }
+                        if (this.cursors.right.isDown) {
+                            this.game.camera.x += move;
                         }
                     }
                 },
