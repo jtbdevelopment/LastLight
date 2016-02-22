@@ -10,6 +10,10 @@ angular.module('uiApp').factory('Act4State',
                 state: undefined,
 
                 DEBUG: false,
+                MAX_ZOOM: 1.0,
+                MIN_ZOOM: 0.365,
+                ZOOM_STEP: 0.01,
+
                 //  Phaser state functions - begin
                 init: function () {
                     //  TODO - checkpoint
@@ -36,6 +40,8 @@ angular.module('uiApp').factory('Act4State',
                 create: function () {
                     this.tileHits = [];
                     this.game.ending = false;
+                    this.scale = 1.0;
+                    this.lastScale = 0;
 
                     var map = this.createTileMap();
 
@@ -87,16 +93,17 @@ angular.module('uiApp').factory('Act4State',
 //                        });
                     }
 
-                    //  TODO - zoom in/zoom out
                     //  TODO - zoom player and enemies and allies
-                    var scale = 0.65;
-                    this.blockLayer.scale.setTo(scale);
-                    this.pathLayer.scale.setTo(scale);
-                    this.playerGroup.scale.setTo(scale);
-                    this.blockLayer.resize(this.game.scale.width, this.game.scale.height);
-                    this.pathLayer.resize(this.game.scale.width, this.game.scale.height);
-                    this.game.camera.bounds.width = this.game.world.width * this.blockLayer.scale.x;
-                    this.game.camera.bounds.height = this.game.world.height * this.blockLayer.scale.y;
+                    if(this.scale !== this.lastScale) {
+                        this.blockLayer.scale.setTo(this.scale);
+                        this.pathLayer.scale.setTo(this.scale);
+                        this.playerGroup.scale.setTo(this.scale);
+                        this.blockLayer.resize(this.game.scale.width / this.scale, this.game.scale.height / this.scale);
+                        this.pathLayer.resize(this.game.scale.width / this.scale, this.game.scale.height / this.scale);
+                        this.game.camera.bounds.width = this.game.world.width * this.blockLayer.scale.x;
+                        this.game.camera.bounds.height = this.game.world.height * this.blockLayer.scale.y;
+                        this.lastScale = this.scale;
+                    }
                     this.showTileHitsDisplay();
 //                    this.updateWorldShadowAndLights();
                 },
@@ -171,6 +178,8 @@ angular.module('uiApp').factory('Act4State',
                 initializeKeyboard: function () {
                     this.cursors = this.game.input.keyboard.createCursorKeys();
                     this.altKey = this.game.input.keyboard.addKey(Phaser.Keyboard.ALT);
+                    this.zoomIn = this.game.input.keyboard.addKey(Phaser.Keyboard.X);
+                    this.zoomOut = this.game.input.keyboard.addKey(Phaser.Keyboard.Z);
                 },
 
                 initializeCandleTracker: function () {
@@ -262,9 +271,17 @@ angular.module('uiApp').factory('Act4State',
                 },
 
                 handlePlayerMovement: function () {
+                    if (this.zoomIn.isDown) {
+                        this.scale += this.ZOOM_STEP;
+                    }
+                    if (this.zoomOut.isDown) {
+                        this.scale -= this.ZOOM_STEP;
+                    }
+                    this.scale = Math.min(Math.max(this.MIN_ZOOM, this.scale), this.MAX_ZOOM);
+                    var move;
                     if (this.altKey.isDown) {
                         this.game.camera.follow(this.focusFire);
-                        var move = 5 * this.playerGroup.scale.x;
+                        move = 10 * this.scale;
                         if (this.cursors.up.isDown) {
                             this.focusFire.y -= move;
                         }
@@ -278,7 +295,7 @@ angular.module('uiApp').factory('Act4State',
                             this.focusFire.x += move;
                         }
                     } else {
-                        var move = 50 * this.playerGroup.scale.x;
+                        move = 50 * this.playerGroup.scale.x;
                         this.game.camera.unfollow();
                         if (this.cursors.up.isDown) {
                             this.game.camera.y -= move;
