@@ -40,7 +40,7 @@ angular.module('uiApp').factory('Act4State',
                 create: function () {
                     this.tileHits = [];
                     this.game.ending = false;
-                    this.scale = 1.0;
+                    this.scale = this.MIN_ZOOM;
                     this.lastScale = 0;
 
                     var map = this.createTileMap();
@@ -50,13 +50,13 @@ angular.module('uiApp').factory('Act4State',
 //                    this.createMaterials();
                     this.createPlayer();
                     /*
-                     this.createFinishArea(map);
                      this.createMovableObjects(map);
                      this.createEnemies(map);
                      */
                     this.initializeKeyboard();
                     //this.initializeWorldShadowing();
                     this.game.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;
+                    this.game.camera.follow(this.focusFire);
 
                 },
                 clearTileHitDisplay: function () {
@@ -94,7 +94,7 @@ angular.module('uiApp').factory('Act4State',
 //                        });
                     }
 
-                    //  TODO - zoom player and enemies and allies
+                    //  TODO - zoom enemies and allies
                     if (this.scale !== this.lastScale) {
                         this.blockLayer.scale.setTo(this.scale);
                         this.pathLayer.scale.setTo(this.scale);
@@ -153,7 +153,7 @@ angular.module('uiApp').factory('Act4State',
                 createPlayer: function () {
                     this.playerGroup = this.game.add.group();
 
-                    this.focusFire = this.game.add.sprite(20, 20, 'lens-center');
+                    this.focusFire = this.game.add.sprite(this.game.world.width / 2, 20, 'lens-center');
                     this.focusFire.height = 16;
                     this.focusFire.width = 16;
                     this.playerGroup.add(this.focusFire);
@@ -284,21 +284,6 @@ angular.module('uiApp').factory('Act4State',
                 handlePlayerMovement: function () {
                     var move;
                     if (this.altKey.isDown) {
-                        this.game.camera.follow(this.focusFire);
-                        move = 10 * this.scale;
-                        if (this.cursors.up.isDown) {
-                            this.focusFire.y -= move;
-                        }
-                        if (this.cursors.down.isDown) {
-                            this.focusFire.y += move;
-                        }
-                        if (this.cursors.left.isDown) {
-                            this.focusFire.x -= move;
-                        }
-                        if (this.cursors.right.isDown) {
-                            this.focusFire.x += move;
-                        }
-                    } else {
                         move = 50 * this.playerGroup.scale.x;
                         this.game.camera.unfollow();
                         if (this.cursors.up.isDown) {
@@ -312,6 +297,21 @@ angular.module('uiApp').factory('Act4State',
                         }
                         if (this.cursors.right.isDown) {
                             this.game.camera.x += move;
+                        }
+                    } else {
+                        this.game.camera.follow(this.focusFire);
+                        move = 10 * this.scale;
+                        if (this.cursors.up.isDown) {
+                            this.focusFire.y -= move;
+                        }
+                        if (this.cursors.down.isDown) {
+                            this.focusFire.y += move;
+                        }
+                        if (this.cursors.left.isDown) {
+                            this.focusFire.x -= move;
+                        }
+                        if (this.cursors.right.isDown) {
+                            this.focusFire.x += move;
                         }
                     }
                 },
