@@ -86,6 +86,7 @@ angular.module('uiApp').factory('Act4State',
 //                        this.enemyGroup.forEach(function (enemy) {
 //                            enemy.updateFunction(this.player);
 //                        }, this);
+                        this.handleZoomChange();
                         this.handlePlayerMovement();
                     } else {
 //                        this.enemyGroup.forEach(function (enemy) {
@@ -94,7 +95,7 @@ angular.module('uiApp').factory('Act4State',
                     }
 
                     //  TODO - zoom player and enemies and allies
-                    if(this.scale !== this.lastScale) {
+                    if (this.scale !== this.lastScale) {
                         this.blockLayer.scale.setTo(this.scale);
                         this.pathLayer.scale.setTo(this.scale);
                         this.playerGroup.scale.setTo(this.scale);
@@ -270,7 +271,7 @@ angular.module('uiApp').factory('Act4State',
                     }
                 },
 
-                handlePlayerMovement: function () {
+                handleZoomChange: function () {
                     if (this.zoomIn.isDown) {
                         this.scale += this.ZOOM_STEP;
                     }
@@ -278,6 +279,9 @@ angular.module('uiApp').factory('Act4State',
                         this.scale -= this.ZOOM_STEP;
                     }
                     this.scale = Math.min(Math.max(this.MIN_ZOOM, this.scale), this.MAX_ZOOM);
+                },
+
+                handlePlayerMovement: function () {
                     var move;
                     if (this.altKey.isDown) {
                         this.game.camera.follow(this.focusFire);
