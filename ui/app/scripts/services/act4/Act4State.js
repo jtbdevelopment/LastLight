@@ -11,13 +11,14 @@ angular.module('uiApp').factory('Act4State',
 
                 DEBUG: false,
                 MAX_ZOOM: 1.0,
-                MIN_ZOOM: 0.365,
+                MIN_ZOOM: 0.50,
                 ZOOM_STEP: 0.01,
                 INITIAL_FOG_HEALTH: 20000,
 
                 //  Phaser state functions - begin
                 init: function () {
                     //  TODO - checkpoint
+                    //  TODO - minimap
                 },
                 preload: function () {
                     //  Note tile asset IDs do not match because 0 represents no tile
@@ -35,7 +36,6 @@ angular.module('uiApp').factory('Act4State',
                     this.load.spritesheet('hyptosis_tile-art-batch-1', 'images/hyptosis_tile-art-batch-1.png', 32, 32);
                     this.load.spritesheet('hyptosis_tile-art-batch-2', 'images/hyptosis_tile-art-batch-2.png', 32, 32);
                     this.load.spritesheet('hyptosis_tile-art-batch-3', 'images/hyptosis_tile-art-batch-3.png', 32, 32);
-                    this.load.spritesheet('hyptosis_tile-art-batch-5', 'images/hyptosis_tile-art-batch-5.png', 32, 32);
                     this.load.image('lens-center', 'images/LightOrb.png');
                     this.load.image('sun', 'images/LightStar.png');
                 },
@@ -137,7 +137,6 @@ angular.module('uiApp').factory('Act4State',
                     map.addTilesetImage('hyptosis_tile-art-batch-1');
                     map.addTilesetImage('hyptosis_tile-art-batch-2');
                     map.addTilesetImage('hyptosis_tile-art-batch-3');
-                    map.addTilesetImage('hyptosis_tile-art-batch-5');
 
                     this.pathLayer = map.createLayer('Path Layer');
                     this.blockLayer = map.createLayer('Block Layer');
