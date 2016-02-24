@@ -10,6 +10,11 @@ angular.module('uiApp').factory('Act4State',
                 state: undefined,
 
                 DEBUG: false,
+                MAX_ZOOM: 1.0,
+                MIN_ZOOM: 0.365,
+                ZOOM_STEP: 0.01,
+                INITIAL_FOG_HEALTH: 20000,
+
                 //  Phaser state functions - begin
                 init: function () {
                     //  TODO - checkpoint
@@ -32,10 +37,14 @@ angular.module('uiApp').factory('Act4State',
                     this.load.spritesheet('hyptosis_tile-art-batch-3', 'images/hyptosis_tile-art-batch-3.png', 32, 32);
                     this.load.spritesheet('hyptosis_tile-art-batch-5', 'images/hyptosis_tile-art-batch-5.png', 32, 32);
                     this.load.image('lens-center', 'images/LightOrb.png');
+                    this.load.image('sun', 'images/LightStar.png');
                 },
                 create: function () {
                     this.tileHits = [];
                     this.game.ending = false;
+                    this.scale = this.MIN_ZOOM;
+                    this.lastScale = 0;
+                    this.fogHealth = this.INITIAL_FOG_HEALTH;
 
                     var map = this.createTileMap();
 
@@ -43,16 +52,18 @@ angular.module('uiApp').factory('Act4State',
                     this.game.physics.arcade.setBoundsToWorld(true, true, true, true, false);
 //                    this.createMaterials();
                     this.createPlayer();
+                    this.createSun();
                     /*
-                     this.createFinishArea(map);
                      this.createMovableObjects(map);
                      this.createEnemies(map);
                      */
                     this.initializeKeyboard();
-                    //this.initializeWorldShadowing();
+                    this.initializeWorldShadowing();
+                    this.initializeFogHealthText();
                     this.game.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;
-
+                    this.game.camera.follow(this.focusFire);
                 },
+
                 clearTileHitDisplay: function () {
                     if (this.state.DEBUG) {
                         angular.forEach(this.tileHits, function (tileHit) {
@@ -80,25 +91,29 @@ angular.module('uiApp').factory('Act4State',
 //                        this.enemyGroup.forEach(function (enemy) {
 //                            enemy.updateFunction(this.player);
 //                        }, this);
+                        this.handleZoomChange();
                         this.handlePlayerMovement();
+
+                        this.fogHealthText.text = this.makeFogHealthText();
+                        //  TODO - zoom enemies and allies
+                        if (this.scale !== this.lastScale) {
+                            this.blockLayer.scale.setTo(this.scale);
+                            this.pathLayer.scale.setTo(this.scale);
+                            this.playerGroup.scale.setTo(this.scale);
+                            this.sunGroup.scale.setTo(this.scale);
+                            this.blockLayer.resize(this.game.scale.width / this.scale, this.game.scale.height / this.scale);
+                            this.pathLayer.resize(this.game.scale.width / this.scale, this.game.scale.height / this.scale);
+                            this.game.camera.bounds.width = this.game.world.width * this.blockLayer.scale.x;
+                            this.game.camera.bounds.height = this.game.world.height * this.blockLayer.scale.y;
+                            this.lastScale = this.scale;
+                        }
+                        this.showTileHitsDisplay();
+                        this.updateWorldShadowAndLights();
                     } else {
 //                        this.enemyGroup.forEach(function (enemy) {
 //                            enemy.body.setZeroVelocity();
 //                        });
                     }
-
-                    //  TODO - zoom in/zoom out
-                    //  TODO - zoom player and enemies and allies
-                    var scale = 0.65;
-                    this.blockLayer.scale.setTo(scale);
-                    this.pathLayer.scale.setTo(scale);
-                    this.playerGroup.scale.setTo(scale);
-                    this.blockLayer.resize(this.game.scale.width, this.game.scale.height);
-                    this.pathLayer.resize(this.game.scale.width, this.game.scale.height);
-                    this.game.camera.bounds.width = this.game.world.width * this.blockLayer.scale.x;
-                    this.game.camera.bounds.height = this.game.world.height * this.blockLayer.scale.y;
-                    this.showTileHitsDisplay();
-//                    this.updateWorldShadowAndLights();
                 },
                 render: function () {
                     if (this.DEBUG) {
@@ -145,10 +160,18 @@ angular.module('uiApp').factory('Act4State',
                 createPlayer: function () {
                     this.playerGroup = this.game.add.group();
 
-                    this.focusFire = this.game.add.sprite(20, 20, 'lens-center');
+                    this.focusFire = this.game.add.sprite(this.game.world.width / 2, 20, 'lens-center');
                     this.focusFire.height = 16;
                     this.focusFire.width = 16;
                     this.playerGroup.add(this.focusFire);
+                },
+                createSun: function () {
+                    this.sunGroup = this.game.add.group();
+
+                    this.sun = this.game.add.sprite(this.game.world.width - 20, 230, 'sun');
+                    this.sun.height = 24;
+                    this.sun.width = 24;
+                    this.sunGroup.add(this.sun);
                 },
 
                 createEnemies: function (map) {
@@ -171,29 +194,28 @@ angular.module('uiApp').factory('Act4State',
                 initializeKeyboard: function () {
                     this.cursors = this.game.input.keyboard.createCursorKeys();
                     this.altKey = this.game.input.keyboard.addKey(Phaser.Keyboard.ALT);
+                    this.zoomIn = this.game.input.keyboard.addKey(Phaser.Keyboard.X);
+                    this.zoomOut = this.game.input.keyboard.addKey(Phaser.Keyboard.Z);
                 },
 
-                initializeCandleTracker: function () {
-                    if (this.startingCandles > 0) {
-                        var textStyle = {
-                            font: '10px Arial',
-                            fill: '#FF9329',
-                            align: 'left'
-                        };
-                        this.candleText = this.game.add.text(0, 0, this.makeCandleText(), textStyle);
-                        this.candleText.fixedToCamera = true;
-                        this.candleText.cameraOffset.setTo(0, 0);
-                        $timeout(this.candleTimeoutHandler, 1000, true, this);
-                    }
+                initializeFogHealthText: function () {
+                    var textStyle = {
+                        font: '10px Arial',
+                        fill: '#FF9329',
+                        align: 'left'
+                    };
+                    this.fogHealthText = this.game.add.text(0, 0, '', textStyle);
+                    this.fogHealthText.fixedToCamera = true;
+                    this.fogHealthText.cameraOffset.setTo(0, 0);
                 },
                 //  Creation functions - end
 
                 //  Candle related - begin
-                makeCandleText: function () {
-                    return 'Candles: ' + this.currentCandles + ', Time: ' + this.currentCandleTime;
+                makeFogHealthText: function () {
+                    return 'Fog: ' + Math.floor(this.fogHealth / this.INITIAL_FOG_HEALTH * 100) + '%';
                 },
 
-                candleTimeoutHandler: function (state) {
+                fogHealthTimeoutHandler: function (state) {
                     if (state.game.ending) {
                         return;
                     }
@@ -209,9 +231,9 @@ angular.module('uiApp').factory('Act4State',
                             }
                         }
                     }
-                    state.candleText.text = state.makeCandleText();
+                    state.fogHealthText.text = state.makeCandleText();
                     if (state.currentCandles > 0 || state.currentCandleTime > 0) {
-                        $timeout(state.candleTimeoutHandler, 1000, true, state);
+                        $timeout(state.fogHealthTimeoutHandler, 1000, true, state);
                     } else {
                         state.deathEnding();
                     }
@@ -219,25 +241,29 @@ angular.module('uiApp').factory('Act4State',
 
                 drawCircleOfLight: function (sprite, lightRadius) {
                     var radius = lightRadius + this.game.rnd.integerInRange(1, 10);
+                    var x = (sprite.x + (sprite.width / 2)) * this.scale;
+                    var y = (sprite.y + (sprite.height / 2)) * this.scale;
                     var gradient = this.shadowTexture.context.createRadialGradient(
-                        sprite.x, sprite.y, lightRadius * 0.25,
-                        sprite.x, sprite.y, radius);
-                    gradient.addColorStop(0, 'rgba(200, 200, 200, 0.5)');
-                    gradient.addColorStop(1, 'rgba(200, 200, 200, 0.0)');
+                        x, y, lightRadius * 0.25,
+                        x, y, radius);
+                    gradient.addColorStop(0, 'rgba(255, 255, 255, 1.0)');
+                    gradient.addColorStop(1, 'rgba(255, 255, 200, 0.0)');
 
                     this.shadowTexture.context.beginPath();
                     this.shadowTexture.context.fillStyle = gradient;
-                    this.shadowTexture.context.arc(sprite.x, sprite.y, radius, 0, Math.PI * 2, false);
+                    this.shadowTexture.context.arc(x, y, radius, 0, Math.PI * 2, false);
                     this.shadowTexture.context.fill();
                 },
                 updateWorldShadowAndLights: function () {
-                    this.shadowTexture.context.fillStyle = 'rgb(50, 70, 100)';
+                    //  TODO - make this scale as we go
+                    this.fogHealth = this.  INITIAL_FOG_HEALTH * .9;
+                    var darknessScale = 255 - (145 * (this.fogHealth / this.INITIAL_FOG_HEALTH));
+                    console.log(darknessScale);
+                    this.shadowTexture.context.fillStyle = 'rgb(110, 110, 100)';
                     this.shadowTexture.context.fillRect(0, 0, this.game.world.width, this.game.world.height);
 
-                    this.drawCircleOfLight(this.player, this.playerLightRadius);
-                    this.finishGroup.forEach(function (finish) {
-                        this.drawCircleOfLight(finish, Act1Settings.FINISH_LIGHT_RADIUS);
-                    }, this);
+                    this.drawCircleOfLight(this.focusFire, this.focusFire.width * 2);
+                    this.drawCircleOfLight(this.sun, 1);
 
                     this.shadowTexture.dirty = true;
                 },
@@ -261,24 +287,20 @@ angular.module('uiApp').factory('Act4State',
                     }
                 },
 
+                handleZoomChange: function () {
+                    if (this.zoomIn.isDown) {
+                        this.scale += this.ZOOM_STEP;
+                    }
+                    if (this.zoomOut.isDown) {
+                        this.scale -= this.ZOOM_STEP;
+                    }
+                    this.scale = Math.min(Math.max(this.MIN_ZOOM, this.scale), this.MAX_ZOOM);
+                },
+
                 handlePlayerMovement: function () {
+                    var move;
                     if (this.altKey.isDown) {
-                        this.game.camera.follow(this.focusFire);
-                        var move = 5 * this.playerGroup.scale.x;
-                        if (this.cursors.up.isDown) {
-                            this.focusFire.y -= move;
-                        }
-                        if (this.cursors.down.isDown) {
-                            this.focusFire.y += move;
-                        }
-                        if (this.cursors.left.isDown) {
-                            this.focusFire.x -= move;
-                        }
-                        if (this.cursors.right.isDown) {
-                            this.focusFire.x += move;
-                        }
-                    } else {
-                        var move = 50 * this.playerGroup.scale.x;
+                        move = 50 * this.playerGroup.scale.x;
                         this.game.camera.unfollow();
                         if (this.cursors.up.isDown) {
                             this.game.camera.y -= move;
@@ -291,6 +313,21 @@ angular.module('uiApp').factory('Act4State',
                         }
                         if (this.cursors.right.isDown) {
                             this.game.camera.x += move;
+                        }
+                    } else {
+                        this.game.camera.follow(this.focusFire);
+                        move = 10 * this.scale;
+                        if (this.cursors.up.isDown) {
+                            this.focusFire.y -= move;
+                        }
+                        if (this.cursors.down.isDown) {
+                            this.focusFire.y += move;
+                        }
+                        if (this.cursors.left.isDown) {
+                            this.focusFire.x -= move;
+                        }
+                        if (this.cursors.right.isDown) {
+                            this.focusFire.x += move;
                         }
                     }
                 },
