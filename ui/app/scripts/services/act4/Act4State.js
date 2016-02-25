@@ -45,6 +45,7 @@ angular.module('uiApp').factory('Act4State',
                     this.scale = this.MIN_ZOOM;
                     this.lastScale = 0;
                     this.fogHealth = this.INITIAL_FOG_HEALTH;
+                    this.fogHealthPercent = 1.0;
 
                     var map = this.createTileMap();
 
@@ -94,19 +95,8 @@ angular.module('uiApp').factory('Act4State',
                         this.handleZoomChange();
                         this.handlePlayerMovement();
 
+                        this.fogHealthPercent = this.fogHealth / this.INITIAL_FOG_HEALTH;
                         this.fogHealthText.text = this.makeFogHealthText();
-                        //  TODO - zoom enemies and allies
-                        if (this.scale !== this.lastScale) {
-                            this.blockLayer.scale.setTo(this.scale);
-                            this.pathLayer.scale.setTo(this.scale);
-                            this.playerGroup.scale.setTo(this.scale);
-                            this.sunGroup.scale.setTo(this.scale);
-                            this.blockLayer.resize(this.game.scale.width / this.scale, this.game.scale.height / this.scale);
-                            this.pathLayer.resize(this.game.scale.width / this.scale, this.game.scale.height / this.scale);
-                            this.game.camera.bounds.width = this.game.world.width * this.blockLayer.scale.x;
-                            this.game.camera.bounds.height = this.game.world.height * this.blockLayer.scale.y;
-                            this.lastScale = this.scale;
-                        }
                         this.showTileHitsDisplay();
                         this.updateWorldShadowAndLights();
                     } else {
@@ -209,9 +199,9 @@ angular.module('uiApp').factory('Act4State',
                 },
                 //  Creation functions - end
 
-                //  Candle related - begin
+                //  Light related - begin
                 makeFogHealthText: function () {
-                    return 'Fog: ' + Math.floor(this.fogHealth / this.INITIAL_FOG_HEALTH * 100) + '%';
+                    return 'Fog: ' + Math.floor(this.fogHealthPercent * 100) + '%';
                 },
 
                 fogHealthTimeoutHandler: function (state) {
@@ -238,14 +228,14 @@ angular.module('uiApp').factory('Act4State',
                     }
                 },
 
-                drawCircleOfLight: function (sprite, lightRadius) {
+                drawCircleOfLight: function (sprite, lightRadius, maxBrightness) {
                     var radius = lightRadius + this.game.rnd.integerInRange(1, 10);
                     var x = (sprite.x + (sprite.width / 2)) * this.scale;
                     var y = (sprite.y + (sprite.height / 2)) * this.scale;
                     var gradient = this.shadowTexture.context.createRadialGradient(
                         x, y, lightRadius * 0.25,
                         x, y, radius);
-                    gradient.addColorStop(0, 'rgba(255, 255, 255, 1.0)');
+                    gradient.addColorStop(0, 'rgba(255, 255, 255, ' + maxBrightness + ')');
                     gradient.addColorStop(1, 'rgba(255, 255, 200, 0.0)');
 
                     this.shadowTexture.context.beginPath();
@@ -253,20 +243,22 @@ angular.module('uiApp').factory('Act4State',
                     this.shadowTexture.context.arc(x, y, radius, 0, Math.PI * 2, false);
                     this.shadowTexture.context.fill();
                 },
+
                 updateWorldShadowAndLights: function () {
                     //  TODO - make this scale as we go
-                    this.fogHealth = this.  INITIAL_FOG_HEALTH * .9;
-                    var darknessScale = 255 - (145 * (this.fogHealth / this.INITIAL_FOG_HEALTH));
-                    console.log(darknessScale);
-                    this.shadowTexture.context.fillStyle = 'rgb(110, 110, 100)';
+                    var darknessScale = Math.floor(255 - (145 * this.fogHealthPercent));
+                    this.shadowTexture.context.fillStyle = 'rgb(' + darknessScale +
+                        ', ' + darknessScale +
+                        ', ' + darknessScale +
+                        ')';
                     this.shadowTexture.context.fillRect(0, 0, this.game.world.width, this.game.world.height);
 
-                    this.drawCircleOfLight(this.focusFire, this.focusFire.width * 2);
-                    this.drawCircleOfLight(this.sun, 1);
+                    this.drawCircleOfLight(this.focusFire, this.focusFire.width * 2, 1.0);
+                    this.drawCircleOfLight(this.sun, 1, Math.min(0.1, 1 - this.fogHealthPercent));
 
                     this.shadowTexture.dirty = true;
                 },
-                //  Candle related -end
+                //  Light related - end
 
                 //  Player action and movement - begin
                 collisionCheck: function (body) {
@@ -294,6 +286,18 @@ angular.module('uiApp').factory('Act4State',
                         this.scale -= this.ZOOM_STEP;
                     }
                     this.scale = Math.min(Math.max(this.MIN_ZOOM, this.scale), this.MAX_ZOOM);
+                    //  TODO - zoom enemies and allies
+                    if (this.scale !== this.lastScale) {
+                        this.blockLayer.scale.setTo(this.scale);
+                        this.pathLayer.scale.setTo(this.scale);
+                        this.playerGroup.scale.setTo(this.scale);
+                        this.sunGroup.scale.setTo(this.scale);
+                        this.blockLayer.resize(this.game.scale.width / this.scale, this.game.scale.height / this.scale);
+                        this.pathLayer.resize(this.game.scale.width / this.scale, this.game.scale.height / this.scale);
+                        this.game.camera.bounds.width = this.game.world.width * this.blockLayer.scale.x;
+                        this.game.camera.bounds.height = this.game.world.height * this.blockLayer.scale.y;
+                        this.lastScale = this.scale;
+                    }
                 },
 
                 handlePlayerMovement: function () {
