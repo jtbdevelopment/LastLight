@@ -14,6 +14,7 @@ angular.module('uiApp').factory('Act4State',
                 MIN_ZOOM: 0.50,
                 ZOOM_STEP: 0.01,
                 INITIAL_FOG_HEALTH: 20000,
+                TOTAL_TIME: 20, // minutes
 
                 //  Phaser state functions - begin
                 init: function () {
@@ -153,14 +154,20 @@ angular.module('uiApp').factory('Act4State',
                     this.focusFire.height = 16;
                     this.focusFire.width = 16;
                     this.playerGroup.add(this.focusFire);
+                    this.playerGroup.
                 },
                 createSun: function () {
                     this.sunGroup = this.game.add.group();
 
-                    this.sun = this.game.add.sprite(this.game.world.width - 20, 230, 'sun');
+                    this.sun = this.game.add.sprite(this.game.world.width, 230, 'sun');
                     this.sun.height = 24;
                     this.sun.width = 24;
                     this.sunGroup.add(this.sun);
+                    var totalTime = this.TOTAL_TIME * 60 * 1000;
+                    var startTween = this.game.add.tween(this.sun).to({x: this.game.world.width / 2, y: 20}, totalTime / 2, Phaser.Easing.Linear.None);
+                    var endTween = this.game.add.tween(this.sun).to({x: 0 - this.sun.width, y: 230}, totalTime / 2, Phaser.Easing.Linear.None);
+                    startTween.chain(endTween);
+                    startTween.start();
                 },
 
                 createEnemies: function (map) {
@@ -302,7 +309,7 @@ angular.module('uiApp').factory('Act4State',
 
                 handlePlayerMovement: function () {
                     var move;
-                    if (this.altKey.isDown) {
+                    if (!this.altKey.isDown) {
                         move = 50 * this.playerGroup.scale.x;
                         this.game.camera.unfollow();
                         if (this.cursors.up.isDown) {
