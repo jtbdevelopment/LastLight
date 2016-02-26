@@ -16,7 +16,7 @@ angular.module('uiApp').factory('Act4State',
                 INITIAL_FOG_HEALTH: 100000,
                 TOTAL_TIME: 20, // minutes
 
-                SUN_HIT_PRECISION: 3,
+                SUN_HIT_PRECISION: 5,
 
                 //  Phaser state functions - begin
                 init: function () {
@@ -327,7 +327,8 @@ angular.module('uiApp').factory('Act4State',
                 },
 
                 checkLensHits: function () {
-                    if (Math.abs(this.sun.x - this.focusFire.x) <= this.SUN_HIT_PRECISION && Math.abs(this.sun.y - this.focusFire.y) <= this.SUN_HIT_PRECISION) {
+                    if (Math.abs((this.sun.x + this.sun.width / 2) - (this.focusFire.x + this.focusFire.width / 2)) <= this.SUN_HIT_PRECISION &&
+                        Math.abs((this.sun.y + this.sun.height / 2) - (this.focusFire.y + this.focusFire.height / 2)) <= this.SUN_HIT_PRECISION) {
                         this.fogHealth -= 1;
                         if (this.fogHealth === 0) {
                             this.winEnding();
