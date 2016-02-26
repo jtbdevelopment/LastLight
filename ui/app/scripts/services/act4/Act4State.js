@@ -13,7 +13,7 @@ angular.module('uiApp').factory('Act4State',
                 MAX_ZOOM: 1.0,
                 MIN_ZOOM: 0.50,
                 ZOOM_STEP: 0.01,
-                INITIAL_FOG_HEALTH: 20000,
+                INITIAL_FOG_HEALTH: 100000,
                 TOTAL_TIME: 20, // minutes
 
                 //  Phaser state functions - begin
@@ -53,8 +53,8 @@ angular.module('uiApp').factory('Act4State',
                     this.game.physics.startSystem(Phaser.Physics.ARCADE);
                     this.game.physics.arcade.setBoundsToWorld(true, true, true, true, false);
 //                    this.createMaterials();
-                    this.createPlayer();
                     this.createSun();
+                    this.createPlayer();
                     /*
                      this.createMovableObjects(map);
                      this.createEnemies(map);
@@ -95,7 +95,7 @@ angular.module('uiApp').factory('Act4State',
 //                        }, this);
                         this.handleZoomChange();
                         this.handlePlayerMovement();
-
+                        this.checkLensHits();
                         this.fogHealthPercent = this.fogHealth / this.INITIAL_FOG_HEALTH;
                         this.fogHealthText.text = this.makeFogHealthText();
                         this.showTileHitsDisplay();
@@ -154,9 +154,9 @@ angular.module('uiApp').factory('Act4State',
                     this.focusFire.height = 16;
                     this.focusFire.width = 16;
                     this.playerGroup.add(this.focusFire);
-                    this.playerGroup.
                 },
                 createSun: function () {
+                    //  TODO - will be problem when checkpointing
                     this.sunGroup = this.game.add.group();
 
                     this.sun = this.game.add.sprite(this.game.world.width, 230, 'sun');
@@ -164,10 +164,27 @@ angular.module('uiApp').factory('Act4State',
                     this.sun.width = 24;
                     this.sunGroup.add(this.sun);
                     var totalTime = this.TOTAL_TIME * 60 * 1000;
-                    var startTween = this.game.add.tween(this.sun).to({x: this.game.world.width / 2, y: 20}, totalTime / 2, Phaser.Easing.Linear.None);
-                    var endTween = this.game.add.tween(this.sun).to({x: 0 - this.sun.width, y: 230}, totalTime / 2, Phaser.Easing.Linear.None);
-                    startTween.chain(endTween);
-                    startTween.start();
+                    this.sunTweens = [];
+                    this.sunTweens.push(this.game.add.tween(this.sun).to({
+                        x: this.game.world.width * .8,
+                        y: 50
+                    }, totalTime / 4, Phaser.Easing.Linear.None));
+                    this.sunTweens.push(this.game.add.tween(this.sun).to({
+                        x: this.game.world.width * .5,
+                        y: 20
+                    }, totalTime / 4, Phaser.Easing.Linear.None));
+                    this.sunTweens.push(this.game.add.tween(this.sun).to({
+                        x: this.game.world.width * .2,
+                        y: 70
+                    }, totalTime / 4, Phaser.Easing.Linear.None));
+                    this.sunTweens.push(this.game.add.tween(this.sun).to({
+                        x: 0 - this.sun.width,
+                        y: 230
+                    }, totalTime / 4, Phaser.Easing.Linear.None));
+                    this.sunTweens[0].chain(this.sunTweens[1]);
+                    this.sunTweens[1].chain(this.sunTweens[2]);
+                    this.sunTweens[2].chain(this.sunTweens[3]);
+                    this.sunTweens[0].start();
                 },
 
                 createEnemies: function (map) {
@@ -253,7 +270,7 @@ angular.module('uiApp').factory('Act4State',
 
                 updateWorldShadowAndLights: function () {
                     //  TODO - make this scale as we go
-                    var darknessScale = Math.floor(255 - (145 * this.fogHealthPercent));
+                    var darknessScale = Math.floor(255 - (175 * this.fogHealthPercent));
                     this.shadowTexture.context.fillStyle = 'rgb(' + darknessScale +
                         ', ' + darknessScale +
                         ', ' + darknessScale +
@@ -304,6 +321,15 @@ angular.module('uiApp').factory('Act4State',
                         this.game.camera.bounds.width = this.game.world.width * this.blockLayer.scale.x;
                         this.game.camera.bounds.height = this.game.world.height * this.blockLayer.scale.y;
                         this.lastScale = this.scale;
+                    }
+                },
+
+                checkLensHits: function() {
+                    if(Phaser.Rectangle.intersects(this.sun.getBounds(), this.focusFire.getBounds())) {
+                        this.fogHealth -= 1;
+                        if(this.fogHealth === 0) {
+                            this.winEnding();
+                        }
                     }
                 },
 
