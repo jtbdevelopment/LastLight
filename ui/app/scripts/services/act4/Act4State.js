@@ -16,6 +16,8 @@ angular.module('uiApp').factory('Act4State',
                 INITIAL_FOG_HEALTH: 100000,
                 TOTAL_TIME: 20, // minutes
 
+                SUN_HIT_PRECISION: 3,
+
                 //  Phaser state functions - begin
                 init: function () {
                     //  TODO - checkpoint
@@ -324,10 +326,10 @@ angular.module('uiApp').factory('Act4State',
                     }
                 },
 
-                checkLensHits: function() {
-                    if(Phaser.Rectangle.intersects(this.sun.getBounds(), this.focusFire.getBounds())) {
+                checkLensHits: function () {
+                    if (Math.abs(this.sun.x - this.focusFire.x) <= this.SUN_HIT_PRECISION && Math.abs(this.sun.y - this.focusFire.y) <= this.SUN_HIT_PRECISION) {
                         this.fogHealth -= 1;
-                        if(this.fogHealth === 0) {
+                        if (this.fogHealth === 0) {
                             this.winEnding();
                         }
                     }
@@ -366,7 +368,9 @@ angular.module('uiApp').factory('Act4State',
                             this.focusFire.x += move;
                         }
                     }
-                },
+                }
+
+                ,
                 //  Player action and movement - end
 
                 //  Ending related
@@ -382,7 +386,8 @@ angular.module('uiApp').factory('Act4State',
                         //  TODO - retry move on option
                         this.game.state.start(this.state.current, true, false, this.level, this.startingCandles);
                     }, this);
-                },
+                }
+                ,
 
                 winEnding: function () {
                     this.game.ending = true;
@@ -399,4 +404,5 @@ angular.module('uiApp').factory('Act4State',
             };
         }
     ]
-);
+)
+;
