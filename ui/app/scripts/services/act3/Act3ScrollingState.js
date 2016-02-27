@@ -107,9 +107,7 @@ angular.module('uiApp').factory('Act3ScrollingState',
                 },
                 createPlayerGroup: function () {
                     this.playerTween = [];
-                    this.players = this.game.add.group();
-                    this.players.enableBody = true;
-                    this.players.physicsBodyType = Phaser.Physics.ARCADE;
+                    this.players = this.game.add.physicsGroup();
                     var x = this.levelData.startingX;
                     var y = this.levelData.startingY;
                     for (var i = 0; i < this.PLAYER_HELPERS; ++i) {
@@ -119,9 +117,7 @@ angular.module('uiApp').factory('Act3ScrollingState',
                     this.switchFormation(undefined, this.currentPlayerFormation);
                 },
                 createArrowGroup: function () {
-                    this.arrows = this.game.add.group();
-                    this.arrows.enableBody = true;
-                    this.arrows.physicsBodyType = Phaser.Physics.ARCADE;
+                    this.arrows = this.game.add.physicsGroup();
                     this.arrows.createMultiple(50, 'arrow');
                     this.arrows.setAll('checkWorldBounds', true);
                     this.arrows.setAll('body.debug', this.DEBUG);
@@ -132,16 +128,12 @@ angular.module('uiApp').factory('Act3ScrollingState',
                     this.arrows.setAll('width', 5);
                 },
                 createEnemies: function () {
-                    this.enemies = this.game.add.group();
-                    this.enemies.enableBody = true;
-                    this.enemies.physicsBodyType = Phaser.Physics.ARCADE;
+                    this.enemies = this.game.add.physicsGroup();
                     this.enemyGroups = {};
                     angular.forEach(this.enemyWaves, function (wave) {
                         var type = wave.className;
                         if (angular.isUndefined(this.enemyGroups[type])) {
-                            var group = this.game.add.group();
-                            group.enableBody = true;
-                            group.physicsBodyType = Phaser.Physics.ARCADE;
+                            var group = this.game.add.physicsGroup();
                             group.classType = wave.type;
                             group.createMultiple(100, wave.image);
                             group.setAll('checkWorldBounds', false);
@@ -158,9 +150,7 @@ angular.module('uiApp').factory('Act3ScrollingState',
                     }, this);
                 },
                 createBoss: function () {
-                    this.boss = this.game.add.group();
-                    this.boss.enableBody = true;
-                    this.boss.physicsBodyType = Phaser.Physics.ARCADE;
+                    this.boss = this.game.add.physicsGroup();
                     this.boss.classType = this.levelData.boss.type;
                     this.boss.createMultiple(1, this.levelData.boss.image);
                     this.boss.setAll('checkWorldBounds', false);

@@ -41,6 +41,8 @@ angular.module('uiApp').factory('Act4State',
                     this.load.spritesheet('hyptosis_tile-art-batch-3', 'images/hyptosis_tile-art-batch-3.png', 32, 32);
                     this.load.image('lens-center', 'images/LightOrb.png');
                     this.load.image('sun', 'images/LightStar.png');
+                    this.load.image('ally', 'images/act4ally.png');
+                    this.load.image('enemy', 'images/act4enemy.png');
                 },
                 create: function () {
                     this.tileHits = [];
@@ -54,13 +56,9 @@ angular.module('uiApp').factory('Act4State',
 
                     this.game.physics.startSystem(Phaser.Physics.ARCADE);
                     this.game.physics.arcade.setBoundsToWorld(true, true, true, true, false);
-//                    this.createMaterials();
                     this.createSun();
+                    this.createAllies();
                     this.createPlayer();
-                    /*
-                     this.createMovableObjects(map);
-                     this.createEnemies(map);
-                     */
                     this.initializeKeyboard();
                     this.initializeWorldShadowing();
                     this.initializeFogHealthText();
@@ -149,6 +147,39 @@ angular.module('uiApp').factory('Act4State',
                     map.setCollision(tileIds, true, this.blockLayer);
                     return map;
                 },
+                createAllies: function () {
+                    this.alliesGroup = this.game.add.physicsGroup();
+
+                    //this.alliesGroup.classType =
+                    this.alliesGroup.createMultiple(160, 'ally');
+                    this.alliesGroup.setAll('checkWorldBounds', true);
+                    this.alliesGroup.setAll('body.debug', this.DEBUG);
+                    this.alliesGroup.setAll('anchor.x', 0.0);
+                    this.alliesGroup.setAll('anchor.y', 0.0);
+                    this.alliesGroup.setAll('outOfBoundsKill', false);
+                    this.alliesGroup.setAll('body.collideWorldBounds', false);
+                    this.alliesGroup.setAll('body.bounce.x', 1);
+                    this.alliesGroup.setAll('body.bounce.y', 1);
+                    this.alliesGroup.setAll('state', this);
+                    this.alliesGroup.setAll('height', 15);
+                    this.alliesGroup.setAll('width', 15);
+                    this.alliesGroup.setAll('body.height', 15);
+                    this.alliesGroup.setAll('body.width', 15);
+
+                    for (var i = 0; i < 8; ++i) {
+                        var baseX = (360 + 720 * i) - (32 * 3);
+                        var baseY = 600 - 32;
+                        if(i === 2 || i === 4 || i === 7) {
+                            baseY = 320 -32;
+                        }
+                        for (var j = 0; j < 20; ++j) {
+                            var x = baseX + this.game.rnd.integerInRange(0, 32 * 3);
+                            var y = baseY + this.game.rnd.integerInRange(0, 32 * 3);
+                            var ally = this.alliesGroup.getFirstExists(false);
+                            ally.reset(x, y);
+                        }
+                    }
+                },
                 createPlayer: function () {
                     this.playerGroup = this.game.add.group();
 
@@ -167,26 +198,12 @@ angular.module('uiApp').factory('Act4State',
                     this.sunGroup.add(this.sun);
                     var totalTime = this.TOTAL_TIME * 60 * 1000;
                     this.sunTweens = [];
-                    this.sunTweens.push(this.game.add.tween(this.sun).to({
-                        x: this.game.world.width * .8,
-                        y: 50
-                    }, totalTime / 4, Phaser.Easing.Linear.None));
-                    this.sunTweens.push(this.game.add.tween(this.sun).to({
-                        x: this.game.world.width * .5,
-                        y: 20
-                    }, totalTime / 4, Phaser.Easing.Linear.None));
-                    this.sunTweens.push(this.game.add.tween(this.sun).to({
-                        x: this.game.world.width * .2,
-                        y: 70
-                    }, totalTime / 4, Phaser.Easing.Linear.None));
-                    this.sunTweens.push(this.game.add.tween(this.sun).to({
-                        x: 0 - this.sun.width,
-                        y: 230
-                    }, totalTime / 4, Phaser.Easing.Linear.None));
-                    this.sunTweens[0].chain(this.sunTweens[1]);
+                    this.sunTweens.push(this.game.add.tween(this.sun).to({x: 0 - this.sun.width},totalTime, Phaser.Easing.Linear.None, false));
+                    this.sunTweens.push(this.game.add.tween(this.sun).to({y: 10}, totalTime / 2, Phaser.Easing.Quartic.Out, false));
+                    this.sunTweens.push(this.game.add.tween(this.sun).to({y: 230}, totalTime / 2, Phaser.Easing.Quartic.In, false));
                     this.sunTweens[1].chain(this.sunTweens[2]);
-                    this.sunTweens[2].chain(this.sunTweens[3]);
                     this.sunTweens[0].start();
+                    this.sunTweens[1].start();
                 },
 
                 createEnemies: function (map) {
@@ -312,11 +329,12 @@ angular.module('uiApp').factory('Act4State',
                         this.scale -= this.ZOOM_STEP;
                     }
                     this.scale = Math.min(Math.max(this.MIN_ZOOM, this.scale), this.MAX_ZOOM);
-                    //  TODO - zoom enemies and allies
+                    //  TODO - zoom enemies
                     if (this.scale !== this.lastScale) {
                         this.blockLayer.scale.setTo(this.scale);
                         this.pathLayer.scale.setTo(this.scale);
                         this.playerGroup.scale.setTo(this.scale);
+                        this.alliesGroup.scale.setTo(this.scale);
                         this.sunGroup.scale.setTo(this.scale);
                         this.blockLayer.resize(this.game.scale.width / this.scale, this.game.scale.height / this.scale);
                         this.pathLayer.resize(this.game.scale.width / this.scale, this.game.scale.height / this.scale);
