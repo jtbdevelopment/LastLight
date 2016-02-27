@@ -169,8 +169,8 @@ angular.module('uiApp').factory('Act4State',
                     for (var i = 0; i < 8; ++i) {
                         var baseX = (360 + 720 * i) - (32 * 3);
                         var baseY = 600 - 32;
-                        if(i === 2 || i === 4 || i === 7) {
-                            baseY = 320 -32;
+                        if (i === 2 || i === 4 || i === 7) {
+                            baseY = 320 - 32;
                         }
                         for (var j = 0; j < 20; ++j) {
                             var x = baseX + this.game.rnd.integerInRange(0, 32 * 3);
@@ -198,7 +198,7 @@ angular.module('uiApp').factory('Act4State',
                     this.sunGroup.add(this.sun);
                     var totalTime = this.TOTAL_TIME * 60 * 1000;
                     this.sunTweens = [];
-                    this.sunTweens.push(this.game.add.tween(this.sun).to({x: 0 - this.sun.width},totalTime, Phaser.Easing.Linear.None, false));
+                    this.sunTweens.push(this.game.add.tween(this.sun).to({x: 0 - this.sun.width}, totalTime, Phaser.Easing.Linear.None, false));
                     this.sunTweens.push(this.game.add.tween(this.sun).to({y: 10}, totalTime / 2, Phaser.Easing.Quartic.Out, false));
                     this.sunTweens.push(this.game.add.tween(this.sun).to({y: 230}, totalTime / 2, Phaser.Easing.Quartic.In, false));
                     this.sunTweens[1].chain(this.sunTweens[2]);
