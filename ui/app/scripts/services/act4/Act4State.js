@@ -169,12 +169,29 @@ angular.module('uiApp').factory('Act4State',
                     for (var i = 0; i < 8; ++i) {
                         var baseX = (360 + 720 * i) - (32 * 3);
                         var baseY = 600 - 32;
-                        if (i === 2 || i === 4 || i === 7) {
-                            baseY = 320 - 32;
+                        switch(i) {
+                            case 0:
+                                baseX -= 30;
+                                break;
+                            case 1:
+                            case 6:
+                                baseY += 70;
+                                break;
+                            case 2:
+                                baseY = 320 - 32;
+                                break;
+                            case 4:
+                                baseY = 300 - 32;
+                                baseX -= 10;
+                                break;
+                            case 7:
+                                baseY = 400;
+                                baseX -= 20;
+                                break;
                         }
                         for (var j = 0; j < 20; ++j) {
-                            var x = baseX + this.game.rnd.integerInRange(0, 32 * 3);
-                            var y = baseY + this.game.rnd.integerInRange(0, 32 * 3);
+                            var x = baseX + this.game.rnd.integerInRange(0, 42 * 3);
+                            var y = baseY + this.game.rnd.integerInRange(0, 42 * 3);
                             var ally = this.alliesGroup.getFirstExists(false);
                             ally.reset(x, y);
                         }
