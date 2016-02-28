@@ -168,7 +168,7 @@ angular.module('uiApp').factory('Act4State',
 
                     for (var i = 0; i < 8; ++i) {
                         var baseX = (360 + 720 * i) - (32 * 3);
-                        var baseY = 600 - 32;
+                        var baseY = 565;
                         switch(i) {
                             case 0:
                                 baseX -= 30;
@@ -178,14 +178,14 @@ angular.module('uiApp').factory('Act4State',
                                 baseY += 70;
                                 break;
                             case 2:
-                                baseY = 320 - 32;
+                                baseY = 285;
                                 break;
                             case 4:
-                                baseY = 300 - 32;
+                                baseY = 265;
                                 baseX -= 10;
                                 break;
                             case 7:
-                                baseY = 400;
+                                baseY = 390;
                                 baseX -= 20;
                                 break;
                         }
