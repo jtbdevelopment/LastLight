@@ -1,3 +1,5 @@
+/* globals Act4Ally: false */
+/* globals Act4Enemy: false */
 'use strict';
 
 angular.module('uiApp').factory('Act4State',
@@ -13,7 +15,10 @@ angular.module('uiApp').factory('Act4State',
                 MAX_ZOOM: 1.0,
                 MIN_ZOOM: 0.50,
                 ZOOM_STEP: 0.01,
-                INITIAL_FOG_HEALTH: 100000,
+
+                INITIAL_FOG_HEALTH: 10000,
+                INITIAL_TOWER_HEALTH: 1000,
+
                 TOTAL_TIME: 20, // minutes
 
                 SUN_HIT_PRECISION: 5,
@@ -43,6 +48,7 @@ angular.module('uiApp').factory('Act4State',
                     this.load.image('sun', 'images/LightStar.png');
                     this.load.image('ally', 'images/act4ally.png');
                     this.load.image('enemy', 'images/act4enemy.png');
+                    this.load.image('arrow', 'images/enemy-bullet.png');
                 },
                 create: function () {
                     this.tileHits = [];
@@ -51,17 +57,20 @@ angular.module('uiApp').factory('Act4State',
                     this.lastScale = 0;
                     this.fogHealth = this.INITIAL_FOG_HEALTH;
                     this.fogHealthPercent = 1.0;
+                    this.towerHealth = this.INITIAL_TOWER_HEALTH;
+                    this.towerHealthPercent = 1.0;
 
-                    var map = this.createTileMap();
+                    this.createTileMap();
 
                     this.game.physics.startSystem(Phaser.Physics.ARCADE);
                     this.game.physics.arcade.setBoundsToWorld(true, true, true, true, false);
                     this.createSun();
                     this.createAllies();
+                    this.createEnemies();
                     this.createPlayer();
                     this.initializeKeyboard();
                     this.initializeWorldShadowing();
-                    this.initializeFogHealthText();
+                    this.initializeInfoText();
                     this.game.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;
                     this.game.camera.follow(this.focusFire);
                 },
@@ -98,6 +107,15 @@ angular.module('uiApp').factory('Act4State',
                         this.checkLensHits();
                         this.fogHealthPercent = this.fogHealth / this.INITIAL_FOG_HEALTH;
                         this.fogHealthText.text = this.makeFogHealthText();
+                        this.game.physics.arcade.overlap(this.alliesGroup, this.enemyGroup, this.enemyHitsAlly, null, this);
+                        this.game.physics.arcade.overlap(this.arrowsGroup, this.enemyGroup, this.arrowHitsEnemy, null, this);
+                        this.alliesGroup.forEachAlive(function (ally) {
+                            ally.updateFunction();
+                        });
+                        this.towerHealthPercent = this.towerHealth / this.INITIAL_TOWER_HEALTH;
+                        this.towerHealthText.text = this.makeTowerHealthText();
+                        this.alliesLiving = this.alliesGroup.countLiving();
+                        this.alliesText.text = this.makeAlliesText();
                         this.showTileHitsDisplay();
                         this.updateWorldShadowAndLights();
                     } else {
@@ -110,14 +128,16 @@ angular.module('uiApp').factory('Act4State',
                     if (this.DEBUG) {
                         this.game.debug.cameraInfo(this.game.camera, 0, 20);
                         this.game.debug.spriteInfo(this.focusFire, 400, 20);
-                        /*
-                         angular.forEach(this.enemyGroup.children, function (child, index) {
-                         this.game.debug.spriteInfo(child, index * 350, 100);
-                         }, this);
-                         angular.forEach(this.movableGroup.children, function (child, index) {
-                         this.game.debug.spriteInfo(child, index * 350, 200);
-                         }, this);
-                         */
+                        this.game.debug.body(this.sun);
+                        angular.forEach(this.enemyGroup.children, function (p) {
+                            this.game.debug.body(p);
+                        }, this);
+                        angular.forEach(this.arrowsGroup.children, function (p) {
+                            this.game.debug.body(p);
+                        }, this);
+                        angular.forEach(this.alliesGroup.children, function (p) {
+                            this.game.debug.body(p);
+                        }, this);
                     }
                 },
                 //  Phaser state functions - end
@@ -148,19 +168,33 @@ angular.module('uiApp').factory('Act4State',
                     return map;
                 },
                 createAllies: function () {
-                    this.alliesGroup = this.game.add.physicsGroup();
+                    this.arrowsGroup = this.game.add.physicsGroup();
+                    this.arrowsGroup.createMultiple(300, 'arrow');
+                    this.arrowsGroup.setAll('checkWorldBounds', true);
+                    this.arrowsGroup.setAll('body.debug', this.DEBUG);
+                    this.arrowsGroup.setAll('anchor.x', 0.0);
+                    this.arrowsGroup.setAll('anchor.y', 0.0);
+                    this.arrowsGroup.setAll('outOfBoundsKill', true);
+                    this.arrowsGroup.setAll('body.collideWorldBounds', true);
+                    this.arrowsGroup.setAll('body.bounce.x', 0);
+                    this.arrowsGroup.setAll('body.bounce.y', 0);
+                    this.arrowsGroup.setAll('height', 3);
+                    this.arrowsGroup.setAll('width', 3);
+                    this.arrowsGroup.setAll('body.height', 3);
+                    this.arrowsGroup.setAll('body.width', 3);
 
-                    //this.alliesGroup.classType =
-                    this.alliesGroup.createMultiple(160, 'ally');
+                    this.alliesGroup = this.game.add.physicsGroup();
+                    this.alliesGroup.classType = Act4Ally;
+                    this.alliesGroup.createMultiple(200, 'ally');
+                    this.alliesGroup.setAll('state', this);
                     this.alliesGroup.setAll('checkWorldBounds', true);
                     this.alliesGroup.setAll('body.debug', this.DEBUG);
                     this.alliesGroup.setAll('anchor.x', 0.0);
                     this.alliesGroup.setAll('anchor.y', 0.0);
-                    this.alliesGroup.setAll('outOfBoundsKill', false);
-                    this.alliesGroup.setAll('body.collideWorldBounds', false);
+                    this.alliesGroup.setAll('outOfBoundsKill', true);
+                    this.alliesGroup.setAll('body.collideWorldBounds', true);
                     this.alliesGroup.setAll('body.bounce.x', 1);
                     this.alliesGroup.setAll('body.bounce.y', 1);
-                    this.alliesGroup.setAll('state', this);
                     this.alliesGroup.setAll('height', 15);
                     this.alliesGroup.setAll('width', 15);
                     this.alliesGroup.setAll('body.height', 15);
@@ -169,7 +203,7 @@ angular.module('uiApp').factory('Act4State',
                     for (var i = 0; i < 8; ++i) {
                         var baseX = (360 + 720 * i) - (32 * 3);
                         var baseY = 565;
-                        switch(i) {
+                        switch (i) {
                             case 0:
                                 baseX -= 30;
                                 break;
@@ -179,6 +213,9 @@ angular.module('uiApp').factory('Act4State',
                                 break;
                             case 2:
                                 baseY = 285;
+                                break;
+                            case 3:
+                                baseX += 15;
                                 break;
                             case 4:
                                 baseY = 265;
@@ -223,15 +260,23 @@ angular.module('uiApp').factory('Act4State',
                     this.sunTweens[1].start();
                 },
 
-                createEnemies: function (map) {
+                createEnemies: function () {
                     this.enemyGroup = this.game.add.physicsGroup(Phaser.Physics.ARCADE);
-                    map.createFromObjects('Object Layer ' + this.level, 782, 'demon', 0, true, false, this.enemyGroup, this.levelData.patrolEnemyClass, false);
-                    this.enemyGroup.forEach(function (enemy) {
-                        enemy.state = this;
-                        enemy.settings = Act1Settings;
-                        enemy.body.setMaterial(this.enemyMaterial);
-                        enemy.initialize();
-                    }, this);
+                    this.enemyGroup.classType = Act4Enemy;
+                    this.enemyGroup.createMultiple(200, 'enemy');
+                    this.enemyGroup.setAll('state', this);
+                    this.enemyGroup.setAll('checkWorldBounds', true);
+                    this.enemyGroup.setAll('body.debug', this.DEBUG);
+                    this.enemyGroup.setAll('anchor.x', 0.0);
+                    this.enemyGroup.setAll('anchor.y', 0.0);
+                    this.enemyGroup.setAll('outOfBoundsKill', true);
+                    this.enemyGroup.setAll('body.collideWorldBounds', true);
+                    this.enemyGroup.setAll('body.bounce.x', 1);
+                    this.enemyGroup.setAll('body.bounce.y', 1);
+                    this.enemyGroup.setAll('height', 15);
+                    this.enemyGroup.setAll('width', 15);
+                    this.enemyGroup.setAll('body.height', 15);
+                    this.enemyGroup.setAll('body.width', 15);
                 },
 
                 initializeWorldShadowing: function () {
@@ -247,15 +292,23 @@ angular.module('uiApp').factory('Act4State',
                     this.zoomOut = this.game.input.keyboard.addKey(Phaser.Keyboard.Z);
                 },
 
-                initializeFogHealthText: function () {
+                initializeInfoText: function () {
                     var textStyle = {
-                        font: '10px Arial',
+                        font: '12px Arial',
                         fill: '#FF9329',
                         align: 'left'
                     };
                     this.fogHealthText = this.game.add.text(0, 0, '', textStyle);
                     this.fogHealthText.fixedToCamera = true;
-                    this.fogHealthText.cameraOffset.setTo(0, 0);
+                    this.fogHealthText.cameraOffset.setTo(3, 0);
+
+                    this.towerHealthText = this.game.add.text(0, 0, '', textStyle);
+                    this.towerHealthText.fixedToCamera = true;
+                    this.towerHealthText.cameraOffset.setTo(3, 15);
+
+                    this.alliesText = this.game.add.text(0, 0, '', textStyle);
+                    this.alliesText.fixedToCamera = true;
+                    this.alliesText.cameraOffset.setTo(3, 30);
                 },
                 //  Creation functions - end
 
@@ -264,28 +317,12 @@ angular.module('uiApp').factory('Act4State',
                     return 'Fog: ' + Math.floor(this.fogHealthPercent * 100) + '%';
                 },
 
-                fogHealthTimeoutHandler: function (state) {
-                    if (state.game.ending) {
-                        return;
-                    }
-                    state.currentCandleTime -= 1;
-                    if (state.currentCandleTime === 0) {
-                        if (state.currentCandles > 1) {
-                            if (state.player.isHiding) {
-                                state.deathEnding();
-                            } else {
-                                //  TODO - play match type sound?
-                                state.currentCandles -= 1;
-                                state.currentCandleTime = Act1Settings.TIME_PER_CANDLE;
-                            }
-                        }
-                    }
-                    state.fogHealthText.text = state.makeCandleText();
-                    if (state.currentCandles > 0 || state.currentCandleTime > 0) {
-                        $timeout(state.fogHealthTimeoutHandler, 1000, true, state);
-                    } else {
-                        state.deathEnding();
-                    }
+                makeTowerHealthText: function () {
+                    return 'Tower: ' + Math.floor(this.towerHealthPercent * 100) + '%';
+                },
+
+                makeAlliesText: function () {
+                    return 'Allies: ' + this.alliesLiving;
                 },
 
                 drawCircleOfLight: function (sprite, lightRadius, maxBrightness) {
@@ -320,24 +357,22 @@ angular.module('uiApp').factory('Act4State',
                 },
                 //  Light related - end
 
-                //  Player action and movement - begin
-                collisionCheck: function (body) {
-                    if (angular.isDefined(body) &&
-                        body !== null &&
-                        angular.isDefined(body.sprite) &&
-                        body.sprite !== null &&
-                        angular.isDefined(body.sprite.key)) {
-                        switch (body.sprite.parent) {
-                            case this.enemyGroup:
-                                this.deathEnding();
-                                break;
-                            case this.finishGroup:
-                                this.winEnding();
-                                break;
-                        }
+                //  Allies and Enemies - begin
+                arrowHitsEnemy: function (arrow, enemy) {
+                    enemy.health -= 1;
+                    if (enemy.height <= 0) {
+                        enemy.kill();
                     }
+                    arrow.kill();
                 },
 
+                enemyHitsAlly: function (ally, enemy) {
+                    ally.kill();
+                },
+
+                //  Allies and Enemies - end
+
+                //  Player action and movement - begin
                 handleZoomChange: function () {
                     if (this.zoomIn.isDown) {
                         this.scale += this.ZOOM_STEP;
@@ -369,6 +404,22 @@ angular.module('uiApp').factory('Act4State',
                             this.winEnding();
                         }
                     }
+                    var lensBounds = this.focusFire.getBounds();
+                    this.enemyGroup.forEachAlive(function (sprite) {
+                        var spriteBounds = sprite.getBounds();
+                        if (Phaser.Rectangle.intersects(lensBounds, spriteBounds)) {
+                            sprite.health -= 5;
+                            if (sprite.health <= 0) {
+                                sprite.kill();
+                            }
+                        }
+                    });
+                    this.alliesGroup.forEachAlive(function (sprite) {
+                        var spriteBounds = sprite.getBounds();
+                        if (Phaser.Rectangle.intersects(lensBounds, spriteBounds)) {
+                            sprite.kill();
+                        }
+                    });
                 },
 
                 handlePlayerMovement: function () {
@@ -404,9 +455,7 @@ angular.module('uiApp').factory('Act4State',
                             this.focusFire.x += move;
                         }
                     }
-                }
-
-                ,
+                },
                 //  Player action and movement - end
 
                 //  Ending related
@@ -422,8 +471,7 @@ angular.module('uiApp').factory('Act4State',
                         //  TODO - retry move on option
                         this.game.state.start(this.state.current, true, false, this.level, this.startingCandles);
                     }, this);
-                }
-                ,
+                },
 
                 winEnding: function () {
                     this.game.ending = true;
