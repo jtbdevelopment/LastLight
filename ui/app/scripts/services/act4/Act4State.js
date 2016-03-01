@@ -59,6 +59,7 @@ angular.module('uiApp').factory('Act4State',
                     this.fogHealthPercent = 1.0;
                     this.towerHealth = this.INITIAL_TOWER_HEALTH;
                     this.towerHealthPercent = 1.0;
+                    this.sunPositionPercent = 1.0;
 
                     this.createTileMap();
 
@@ -99,16 +100,18 @@ angular.module('uiApp').factory('Act4State',
                     //this.player.body.setZeroVelocity();
                     this.clearTileHitDisplay();
                     if (!this.game.ending) {
-//                        this.enemyGroup.forEach(function (enemy) {
-//                            enemy.updateFunction(this.player);
-//                        }, this);
                         this.handleZoomChange();
                         this.handlePlayerMovement();
                         this.checkLensHits();
                         this.fogHealthPercent = this.fogHealth / this.INITIAL_FOG_HEALTH;
                         this.fogHealthText.text = this.makeFogHealthText();
-                        this.game.physics.arcade.overlap(this.alliesGroup, this.enemyGroup, this.enemyHitsAlly, null, this);
+                        this.sunPositionPercent = this.sun.x / this.game.world.width;
+                        this.sunPositionText.text = this.makeDaylightText();
                         this.game.physics.arcade.overlap(this.arrowsGroup, this.enemyGroup, this.arrowHitsEnemy, null, this);
+                        this.game.physics.arcade.overlap(this.alliesGroup, this.enemyGroup, this.enemyHitsAlly, null, this);
+                        this.enemyGroup.forEachAlive(function (enemy) {
+                            enemy.updateFunction();
+                        });
                         this.alliesGroup.forEachAlive(function (ally) {
                             ally.updateFunction();
                         });
@@ -302,19 +305,27 @@ angular.module('uiApp').factory('Act4State',
                     this.fogHealthText.fixedToCamera = true;
                     this.fogHealthText.cameraOffset.setTo(3, 0);
 
+                    this.sunPositionText = this.game.add.text(0, 0, '', textStyle);
+                    this.sunPositionText.fixedToCamera = true;
+                    this.sunPositionText.cameraOffset.setTo(3, 15);
+
                     this.towerHealthText = this.game.add.text(0, 0, '', textStyle);
                     this.towerHealthText.fixedToCamera = true;
-                    this.towerHealthText.cameraOffset.setTo(3, 15);
+                    this.towerHealthText.cameraOffset.setTo(3, 30);
 
                     this.alliesText = this.game.add.text(0, 0, '', textStyle);
                     this.alliesText.fixedToCamera = true;
-                    this.alliesText.cameraOffset.setTo(3, 30);
+                    this.alliesText.cameraOffset.setTo(3, 45);
                 },
                 //  Creation functions - end
 
                 //  Light related - begin
                 makeFogHealthText: function () {
                     return 'Fog: ' + Math.floor(this.fogHealthPercent * 100) + '%';
+                },
+
+                makeDaylightText: function () {
+                    return 'Daylight Remaining: ' + Math.floor(this.sunPositionPercent * 100) + '%';
                 },
 
                 makeTowerHealthText: function () {
@@ -366,7 +377,7 @@ angular.module('uiApp').factory('Act4State',
                     arrow.kill();
                 },
 
-                enemyHitsAlly: function (ally, enemy) {
+                enemyHitsAlly: function (ally) {
                     ally.kill();
                 },
 
