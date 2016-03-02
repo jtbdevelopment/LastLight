@@ -74,6 +74,7 @@ angular.module('uiApp').factory('Act4State',
                     this.initializeInfoText();
                     this.game.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;
                     this.game.camera.follow(this.focusFire);
+                    $timeout(this.addEnemies, 500, false, this);
                 },
 
                 clearTileHitDisplay: function () {
@@ -96,6 +97,7 @@ angular.module('uiApp').factory('Act4State',
                         this.blockLayer.dirty = this.tileHits.length > 0;
                     }
                 },
+
                 update: function () {
                     //this.player.body.setZeroVelocity();
                     this.clearTileHitDisplay();
@@ -266,7 +268,7 @@ angular.module('uiApp').factory('Act4State',
                 createEnemies: function () {
                     this.enemyGroup = this.game.add.physicsGroup(Phaser.Physics.ARCADE);
                     this.enemyGroup.classType = Act4Enemy;
-                    this.enemyGroup.createMultiple(200, 'enemy');
+                    this.enemyGroup.createMultiple(400, 'enemy');
                     this.enemyGroup.setAll('state', this);
                     this.enemyGroup.setAll('checkWorldBounds', true);
                     this.enemyGroup.setAll('body.debug', this.DEBUG);
@@ -280,6 +282,26 @@ angular.module('uiApp').factory('Act4State',
                     this.enemyGroup.setAll('width', 15);
                     this.enemyGroup.setAll('body.height', 15);
                     this.enemyGroup.setAll('body.width', 15);
+                },
+                addEnemies: function (state) {
+                    var enemy = state.enemyGroup.getFirstExists(false);
+                    var y = 270;
+                    enemy.activateFunction(2, 2, 15);
+                    var x;
+                    var looking = true;
+                    while (looking) {
+                        x = state.game.rnd.integerInRange(1, state.game.world.width) - 1;
+                        var tiles = state.blockLayer.getTiles(x, y, enemy.width, enemy.height, false, false);
+                        console.log(x);
+                        console.log(tiles.length);
+
+                        if (angular.isDefined(tiles) && tiles.length === 0) {
+                            looking = false;
+                            console.log('good');
+                        }
+                    }
+                    enemy.reset(x, y);
+                    $timeout(state.addEnemies, 1000, false, state);
                 },
 
                 initializeWorldShadowing: function () {
@@ -392,12 +414,14 @@ angular.module('uiApp').factory('Act4State',
                         this.scale -= this.ZOOM_STEP;
                     }
                     this.scale = Math.min(Math.max(this.MIN_ZOOM, this.scale), this.MAX_ZOOM);
-                    //  TODO - zoom enemies
                     if (this.scale !== this.lastScale) {
+                        //  Bodies not scaling...
                         this.blockLayer.scale.setTo(this.scale);
                         this.pathLayer.scale.setTo(this.scale);
                         this.playerGroup.scale.setTo(this.scale);
                         this.alliesGroup.scale.setTo(this.scale);
+                        this.enemyGroup.scale.setTo(this.scale);
+                        this.arrowsGroup.scale.setTo(this.scale);
                         this.sunGroup.scale.setTo(this.scale);
                         this.blockLayer.resize(this.game.scale.width / this.scale, this.game.scale.height / this.scale);
                         this.pathLayer.resize(this.game.scale.width / this.scale, this.game.scale.height / this.scale);
