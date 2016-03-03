@@ -74,7 +74,7 @@ angular.module('uiApp').factory('Act4State',
                     this.initializeInfoText();
                     this.game.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;
                     this.game.camera.follow(this.focusFire);
-                    $timeout(this.addEnemies, 500, false, this);
+                    $timeout(this.addEnemies, 5000, false, this);
                 },
 
                 clearTileHitDisplay: function () {
@@ -291,17 +291,20 @@ angular.module('uiApp').factory('Act4State',
                     var looking = true;
                     while (looking) {
                         x = state.game.rnd.integerInRange(1, state.game.world.width) - 1;
-                        var tiles = state.blockLayer.getTiles(x, y, enemy.width, enemy.height, false, false);
-                        console.log(x);
-                        console.log(tiles.length);
+                        var tiles = state.blockLayer.getTiles(
+                            x * state.scale,
+                            y * state.scale,
+                            enemy.width * state.scale,
+                            enemy.height * state.scale, false, false);
 
-                        if (angular.isDefined(tiles) && tiles.length === 0) {
-                            looking = false;
-                            console.log('good');
+                        if (angular.isDefined(tiles) && tiles.length >= 0) {
+                            looking = angular.isDefined(tiles.find(function (e) {
+                                return e.index !== -1
+                            }));
                         }
                     }
                     enemy.reset(x, y);
-                    $timeout(state.addEnemies, 1000, false, state);
+                    $timeout(state.addEnemies, 500, false, state);
                 },
 
                 initializeWorldShadowing: function () {
@@ -420,8 +423,20 @@ angular.module('uiApp').factory('Act4State',
                         this.pathLayer.scale.setTo(this.scale);
                         this.playerGroup.scale.setTo(this.scale);
                         this.alliesGroup.scale.setTo(this.scale);
+                        this.alliesGroup.forEach(function (e) {
+                            e.body.width = e.width * this.scale;
+                            e.body.height = e.height * this.scale;
+                        }, this);
                         this.enemyGroup.scale.setTo(this.scale);
+                        this.enemyGroup.forEach(function (e) {
+                            e.body.width = e.width * this.scale;
+                            e.body.height = e.height * this.scale;
+                        }, this);
                         this.arrowsGroup.scale.setTo(this.scale);
+                        this.arrowsGroup.forEach(function (e) {
+                            e.body.width = e.width * this.scale;
+                            e.body.height = e.height * this.scale;
+                        }, this);
                         this.sunGroup.scale.setTo(this.scale);
                         this.blockLayer.resize(this.game.scale.width / this.scale, this.game.scale.height / this.scale);
                         this.pathLayer.resize(this.game.scale.width / this.scale, this.game.scale.height / this.scale);

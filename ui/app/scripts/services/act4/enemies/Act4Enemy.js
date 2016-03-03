@@ -13,8 +13,8 @@ Act4Enemy.prototype.constructor = Act4Enemy;
 Act4Enemy.prototype.activateFunction = function (health, damage, size) {
     this.health = health;
     this.damage = damage;
-    this.body.height = size;
-    this.body.width = size;
+    this.body.height = size * this.state.scale;
+    this.body.width = size * this.state.scale;
     this.height = size;
     this.width = size;
 };
