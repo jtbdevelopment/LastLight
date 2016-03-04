@@ -18,6 +18,7 @@ angular
         'ngTouch'
     ])
     .constant('Phaser', window.Phaser)
+    .constant('EasyStar', window.EasyStar)
     .config(function ($routeProvider) {
         $routeProvider
             .when('/title', {

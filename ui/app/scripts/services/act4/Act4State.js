@@ -3,8 +3,8 @@
 'use strict';
 
 angular.module('uiApp').factory('Act4State',
-    ['$timeout', 'Phaser',
-        function ($timeout, Phaser) {
+    ['$timeout', 'Phaser', 'EasyStar',
+        function ($timeout, Phaser, EasyStar) {
             return {
                 game: undefined,
                 load: undefined,
@@ -63,6 +63,11 @@ angular.module('uiApp').factory('Act4State',
 
                     this.createTileMap();
 
+                    this.easyStar = new EasyStar.js();
+                    this.easyStar.setGrid(this.blockLayer.layer.data);
+                    this.easyStar.setAcceptableTiles([-1]);
+                    this.easyStar.enableDiagonals();
+
                     this.game.physics.startSystem(Phaser.Physics.ARCADE);
                     this.game.physics.arcade.setBoundsToWorld(true, true, true, true, false);
                     this.createSun();
@@ -111,11 +116,11 @@ angular.module('uiApp').factory('Act4State',
                         this.sunPositionText.text = this.makeDaylightText();
                         this.game.physics.arcade.overlap(this.arrowsGroup, this.enemyGroup, this.arrowHitsEnemy, null, this);
                         this.game.physics.arcade.overlap(this.alliesGroup, this.enemyGroup, this.enemyHitsAlly, null, this);
+                        this.game.physics.arcade.overlap(this.alliesGroup, this.enemyGroup, this.enemyHitsAlly, null, this);
                         this.enemyGroup.forEachAlive(function (enemy) {
                             enemy.updateFunction();
                         });
                         this.alliesGroup.forEachAlive(function (ally) {
-                            ally.updateFunction();
                         });
                         this.towerHealthPercent = this.towerHealth / this.INITIAL_TOWER_HEALTH;
                         this.towerHealthText.text = this.makeTowerHealthText();
@@ -123,6 +128,9 @@ angular.module('uiApp').factory('Act4State',
                         this.alliesText.text = this.makeAlliesText();
                         this.showTileHitsDisplay();
                         this.updateWorldShadowAndLights();
+                        this.game.physics.arcade.collide(this.alliesGroup, this.blockLayer);
+                        this.game.physics.arcade.collide(this.arrowsGroup, this.blockLayer, this.arrowHitsBarrier);
+                        this.game.physics.arcade.collide(this.enemyGroup, this.blockLayer);
                     } else {
 //                        this.enemyGroup.forEach(function (enemy) {
 //                            enemy.body.setZeroVelocity();
@@ -169,7 +177,7 @@ angular.module('uiApp').factory('Act4State',
                         });
                     });
                     tileIds = tileIds.sort();
-                    map.setCollision(tileIds, true, this.blockLayer);
+                    map.setCollision(tileIds, true, this.blockLayer, true);
                     return map;
                 },
                 createAllies: function () {
@@ -204,7 +212,6 @@ angular.module('uiApp').factory('Act4State',
                     this.alliesGroup.setAll('width', 15);
                     this.alliesGroup.setAll('body.height', 15);
                     this.alliesGroup.setAll('body.width', 15);
-
                     for (var i = 0; i < 8; ++i) {
                         var baseX = (360 + 720 * i) - (32 * 3);
                         var baseY = 565;
@@ -299,7 +306,7 @@ angular.module('uiApp').factory('Act4State',
 
                         if (angular.isDefined(tiles) && tiles.length >= 0) {
                             looking = angular.isDefined(tiles.find(function (e) {
-                                return e.index !== -1
+                                return e.index !== -1;
                             }));
                         }
                     }
@@ -394,9 +401,12 @@ angular.module('uiApp').factory('Act4State',
                 //  Light related - end
 
                 //  Allies and Enemies - begin
+                arrowHitsBarrier: function (arrow) {
+                    arrow.kill();
+                },
                 arrowHitsEnemy: function (arrow, enemy) {
                     enemy.health -= 1;
-                    if (enemy.height <= 0) {
+                    if (enemy.health <= 0) {
                         enemy.kill();
                     }
                     arrow.kill();
