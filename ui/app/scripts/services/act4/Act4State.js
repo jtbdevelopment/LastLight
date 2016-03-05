@@ -116,21 +116,21 @@ angular.module('uiApp').factory('Act4State',
                         this.sunPositionText.text = this.makeDaylightText();
                         this.game.physics.arcade.overlap(this.arrowsGroup, this.enemyGroup, this.arrowHitsEnemy, null, this);
                         this.game.physics.arcade.overlap(this.alliesGroup, this.enemyGroup, this.enemyHitsAlly, null, this);
-                        this.game.physics.arcade.overlap(this.alliesGroup, this.enemyGroup, this.enemyHitsAlly, null, this);
                         this.enemyGroup.forEachAlive(function (enemy) {
                             enemy.updateFunction();
                         });
                         this.alliesGroup.forEachAlive(function (ally) {
+                            ally.updateFunction();
                         });
                         this.towerHealthPercent = this.towerHealth / this.INITIAL_TOWER_HEALTH;
                         this.towerHealthText.text = this.makeTowerHealthText();
                         this.alliesLiving = this.alliesGroup.countLiving();
                         this.alliesText.text = this.makeAlliesText();
-                        this.showTileHitsDisplay();
-                        this.updateWorldShadowAndLights();
                         this.game.physics.arcade.collide(this.alliesGroup, this.blockLayer);
                         this.game.physics.arcade.collide(this.arrowsGroup, this.blockLayer, this.arrowHitsBarrier);
                         this.game.physics.arcade.collide(this.enemyGroup, this.blockLayer);
+                        this.updateWorldShadowAndLights();
+                        this.showTileHitsDisplay();
                     } else {
 //                        this.enemyGroup.forEach(function (enemy) {
 //                            enemy.body.setZeroVelocity();
@@ -157,28 +157,27 @@ angular.module('uiApp').factory('Act4State',
 
                 //  Creation functions - begin
                 createTileMap: function () {
-                    var map = this.game.add.tilemap('tilemap');
-                    map.addTilesetImage('hyptosis_tile-art-batch-1');
-                    map.addTilesetImage('hyptosis_tile-art-batch-2');
-                    map.addTilesetImage('hyptosis_tile-art-batch-3');
+                    this.map = this.game.add.tilemap('tilemap');
+                    this.map.addTilesetImage('hyptosis_tile-art-batch-1');
+                    this.map.addTilesetImage('hyptosis_tile-art-batch-2');
+                    this.map.addTilesetImage('hyptosis_tile-art-batch-3');
 
-                    this.pathLayer = map.createLayer('Path Layer');
-                    this.blockLayer = map.createLayer('Block Layer');
+                    this.pathLayer = this.map.createLayer('Path Layer');
+                    this.blockLayer = this.map.createLayer('Block Layer');
                     this.blockLayer.debug = this.DEBUG;
                     this.blockLayer.resizeWorld();
-                    var tileIds = [];
+                    this.collisionTileIds = [];
                     this.blockLayer.layer.data.forEach(function (layerRow) {
                         layerRow.forEach(function (layerCell) {
                             if (layerCell.index > 0) {
-                                if (tileIds.indexOf(layerCell.index) < 0) {
-                                    tileIds.push(layerCell.index);
+                                if (this.collisionTileIds.indexOf(layerCell.index) < 0) {
+                                    this.collisionTileIds.push(layerCell.index);
                                 }
                             }
-                        });
-                    });
-                    tileIds = tileIds.sort();
-                    map.setCollision(tileIds, true, this.blockLayer, true);
-                    return map;
+                        }, this);
+                    }, this);
+                    this.collisionTileIds = this.collisionTileIds.sort();
+                    this.map.setCollision(this.collisionTileIds, true, this.blockLayer, false);
                 },
                 createAllies: function () {
                     this.arrowsGroup = this.game.add.physicsGroup();
@@ -189,8 +188,8 @@ angular.module('uiApp').factory('Act4State',
                     this.arrowsGroup.setAll('anchor.y', 0.0);
                     this.arrowsGroup.setAll('outOfBoundsKill', true);
                     this.arrowsGroup.setAll('body.collideWorldBounds', true);
-                    this.arrowsGroup.setAll('body.bounce.x', 0);
-                    this.arrowsGroup.setAll('body.bounce.y', 0);
+                    this.arrowsGroup.setAll('body.bounce.x', 1);
+                    this.arrowsGroup.setAll('body.bounce.y', 1);
                     this.arrowsGroup.setAll('height', 3);
                     this.arrowsGroup.setAll('width', 3);
                     this.arrowsGroup.setAll('body.height', 3);
@@ -204,7 +203,7 @@ angular.module('uiApp').factory('Act4State',
                     this.alliesGroup.setAll('body.debug', this.DEBUG);
                     this.alliesGroup.setAll('anchor.x', 0.0);
                     this.alliesGroup.setAll('anchor.y', 0.0);
-                    this.alliesGroup.setAll('outOfBoundsKill', true);
+                    this.alliesGroup.setAll('outOfBoundsKill', false);
                     this.alliesGroup.setAll('body.collideWorldBounds', true);
                     this.alliesGroup.setAll('body.bounce.x', 1);
                     this.alliesGroup.setAll('body.bounce.y', 1);
@@ -402,6 +401,7 @@ angular.module('uiApp').factory('Act4State',
 
                 //  Allies and Enemies - begin
                 arrowHitsBarrier: function (arrow) {
+                    console.log('hit wall');
                     arrow.kill();
                 },
                 arrowHitsEnemy: function (arrow, enemy) {
@@ -428,9 +428,9 @@ angular.module('uiApp').factory('Act4State',
                     }
                     this.scale = Math.min(Math.max(this.MIN_ZOOM, this.scale), this.MAX_ZOOM);
                     if (this.scale !== this.lastScale) {
-                        //  Bodies not scaling...
-                        this.blockLayer.scale.setTo(this.scale);
-                        this.pathLayer.scale.setTo(this.scale);
+                        this.blockLayer.setScale(this.scale, this.scale);
+                        //this.blockLayer.resizeWorld();
+                        this.pathLayer.setScale(this.scale, this.scale);
                         this.playerGroup.scale.setTo(this.scale);
                         this.alliesGroup.scale.setTo(this.scale);
                         this.alliesGroup.forEach(function (e) {
