@@ -70,7 +70,7 @@ angular.module('uiApp').factory('Act4State',
                     this.easyStar.enableDiagonals();
 
                     this.game.physics.startSystem(Phaser.Physics.ARCADE);
-                    this.game.physics.arcade.setBoundsToWorld(true, true, true, true, false);
+                    this.game.physics.arcade.setBoundsToWorld();
                     this.createSun();
                     this.createAllies();
                     this.createEnemies();
@@ -256,10 +256,12 @@ angular.module('uiApp').factory('Act4State',
                 },
                 createPlayer: function () {
                     this.playerGroup = this.game.add.physicsGroup();
-                    this.focusFire = this.playerGroup.create(this.game.world.width / 2, 20, 'lens-center');
+                    this.focusFire = this.playerGroup.create(this.game.world.width - 300, 20, 'lens-center');
                     this.focusFire.checkWorldBounds = true;
                     this.focusFire.outOfBoundsKill = false;
                     this.focusFire.body.collideWorldBounds = true;
+                    this.focusFire.body.bounce.x = 0;
+                    this.focusFire.body.bounce.y = 0;
                     this.focusFire.height = 16;
                     this.focusFire.width = 16;
                     this.focusFire.body.width = this.focusFire.width;
@@ -500,6 +502,7 @@ angular.module('uiApp').factory('Act4State',
                         this.pathLayer.resize(this.game.scale.width / this.scale, this.game.scale.height / this.scale);
                         this.game.camera.bounds.width = this.game.world.width * this.blockLayer.scale.x;
                         this.game.camera.bounds.height = this.game.world.height * this.blockLayer.scale.y;
+                        this.game.physics.arcade.setBoundsToWorld();
                         this.lastScale = this.scale;
                     }
                 },
@@ -521,20 +524,31 @@ angular.module('uiApp').factory('Act4State',
                         if (this.cursors.right.isDown) {
                             this.game.camera.x += move;
                         }
+                        this.focusFire.body.velocity.y = 0;
+                        this.focusFire.body.velocity.x = 0;
                     } else {
                         this.game.camera.follow(this.focusFire);
-                        move = 10 * this.scale;
+                        move = 2 * this.scale;
+                        var max = move * 200;
                         if (this.cursors.up.isDown) {
-                            this.focusFire.y -= move;
+                            this.focusFire.body.velocity.y = Math.min(0, this.focusFire.body.velocity.y);
+                            this.focusFire.body.velocity.y -= move;
+                            this.focusFire.body.velocity.y = Math.max(-max, this.focusFire.body.velocity.y);
                         }
                         if (this.cursors.down.isDown) {
-                            this.focusFire.y += move;
+                            this.focusFire.body.velocity.y = Math.max(0, this.focusFire.body.velocity.y);
+                            this.focusFire.body.velocity.y += move;
+                            this.focusFire.body.velocity.y = Math.min(max, this.focusFire.body.velocity.y);
                         }
                         if (this.cursors.left.isDown) {
-                            this.focusFire.x -= move;
+                            this.focusFire.body.velocity.x = Math.min(0, this.focusFire.body.velocity.x);
+                            this.focusFire.body.velocity.x -= move;
+                            this.focusFire.body.velocity.x = Math.max(-max, this.focusFire.body.velocity.x);
                         }
                         if (this.cursors.right.isDown) {
-                            this.focusFire.x += move;
+                            this.focusFire.body.velocity.x = Math.max(0, this.focusFire.body.velocity.x);
+                            this.focusFire.body.velocity.x += move;
+                            this.focusFire.body.velocity.x = Math.min(max, this.focusFire.body.velocity.x);
                         }
                     }
                 },
