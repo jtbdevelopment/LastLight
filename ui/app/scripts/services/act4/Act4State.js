@@ -470,7 +470,6 @@ angular.module('uiApp').factory('Act4State',
                     this.scale = Math.min(Math.max(this.MIN_ZOOM, this.scale), this.MAX_ZOOM);
                     if (this.scale !== this.lastScale) {
                         this.blockLayer.setScale(this.scale, this.scale);
-                        //this.blockLayer.resizeWorld();
                         this.pathLayer.setScale(this.scale, this.scale);
                         this.playerGroup.scale.setTo(this.scale);
                         this.playerGroup.forEach(function (e) {
@@ -503,32 +502,6 @@ angular.module('uiApp').factory('Act4State',
                         this.game.camera.bounds.height = this.game.world.height * this.blockLayer.scale.y;
                         this.lastScale = this.scale;
                     }
-                },
-
-                checkLensHits: function () {
-                    if (Math.abs((this.sun.x + this.sun.width / 2) - (this.focusFire.x + this.focusFire.width / 2)) <= this.SUN_HIT_PRECISION &&
-                        Math.abs((this.sun.y + this.sun.height / 2) - (this.focusFire.y + this.focusFire.height / 2)) <= this.SUN_HIT_PRECISION) {
-                        this.fogHealth -= 1;
-                        if (this.fogHealth === 0) {
-                            this.winEnding();
-                        }
-                    }
-                    var lensBounds = this.focusFire.getBounds();
-                    this.enemyGroup.forEachAlive(function (sprite) {
-                        var spriteBounds = sprite.getBounds();
-                        if (Phaser.Rectangle.intersects(lensBounds, spriteBounds)) {
-                            sprite.health -= 5;
-                            if (sprite.health <= 0) {
-                                sprite.kill();
-                            }
-                        }
-                    });
-                    this.alliesGroup.forEachAlive(function (sprite) {
-                        var spriteBounds = sprite.getBounds();
-                        if (Phaser.Rectangle.intersects(lensBounds, spriteBounds)) {
-                            sprite.kill();
-                        }
-                    });
                 },
 
                 handlePlayerMovement: function () {
