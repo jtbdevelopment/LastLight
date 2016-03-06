@@ -3,9 +3,10 @@
 'use strict';
 
 angular.module('uiApp').factory('Act4State',
-    ['$timeout', 'Phaser', 'EasyStar',
-        function ($timeout, Phaser, EasyStar) {
+    ['$timeout', 'Phaser', 'EasyStar', 'Act4Calculator',
+        function ($timeout, Phaser, EasyStar, Act4Calculator) {
             return {
+                calculator: Act4Calculator,
                 game: undefined,
                 load: undefined,
                 data: undefined,
@@ -109,13 +110,15 @@ angular.module('uiApp').factory('Act4State',
                     if (!this.game.ending) {
                         this.handleZoomChange();
                         this.handlePlayerMovement();
-                        this.checkLensHits();
+                        this.game.physics.arcade.overlap(this.arrowsGroup, this.enemyGroup, this.arrowHitsEnemy, null, this);
+                        this.game.physics.arcade.overlap(this.alliesGroup, this.enemyGroup, this.enemyHitsAlly, null, this);
+                        this.game.physics.arcade.overlap(this.alliesGroup, this.playerGroup, this.lensHitsAlly, null, this);
+                        this.game.physics.arcade.overlap(this.enemyGroup, this.playerGroup, this.lensHitsEnemy, null, this);
+                        this.game.physics.arcade.overlap(this.playerGroup, this.sunGroup, this.lensHitsSun, null, this);
                         this.fogHealthPercent = this.fogHealth / this.INITIAL_FOG_HEALTH;
                         this.fogHealthText.text = this.makeFogHealthText();
                         this.sunPositionPercent = this.sun.x / this.game.world.width;
                         this.sunPositionText.text = this.makeDaylightText();
-                        this.game.physics.arcade.overlap(this.arrowsGroup, this.enemyGroup, this.arrowHitsEnemy, null, this);
-                        this.game.physics.arcade.overlap(this.alliesGroup, this.enemyGroup, this.enemyHitsAlly, null, this);
                         this.enemyGroup.forEachAlive(function (enemy) {
                             enemy.updateFunction();
                         });
@@ -126,11 +129,11 @@ angular.module('uiApp').factory('Act4State',
                         this.towerHealthText.text = this.makeTowerHealthText();
                         this.alliesLiving = this.alliesGroup.countLiving();
                         this.alliesText.text = this.makeAlliesText();
+                        this.updateWorldShadowAndLights();
+                        this.showTileHitsDisplay();
                         this.game.physics.arcade.collide(this.alliesGroup, this.blockLayer);
                         this.game.physics.arcade.collide(this.arrowsGroup, this.blockLayer, this.arrowHitsBarrier);
                         this.game.physics.arcade.collide(this.enemyGroup, this.blockLayer);
-                        this.updateWorldShadowAndLights();
-                        this.showTileHitsDisplay();
                     } else {
 //                        this.enemyGroup.forEach(function (enemy) {
 //                            enemy.body.setZeroVelocity();
@@ -142,6 +145,12 @@ angular.module('uiApp').factory('Act4State',
                         this.game.debug.cameraInfo(this.game.camera, 0, 20);
                         this.game.debug.spriteInfo(this.focusFire, 400, 20);
                         this.game.debug.body(this.sun);
+                        angular.forEach(this.playerGroup.children, function (p) {
+                            this.game.debug.body(p);
+                        }, this);
+                        angular.forEach(this.sunGroup.children, function (p) {
+                            this.game.debug.body(p);
+                        }, this);
                         angular.forEach(this.enemyGroup.children, function (p) {
                             this.game.debug.body(p);
                         }, this);
@@ -246,20 +255,30 @@ angular.module('uiApp').factory('Act4State',
                     }
                 },
                 createPlayer: function () {
-                    this.playerGroup = this.game.add.group();
-
-                    this.focusFire = this.game.add.sprite(this.game.world.width / 2, 20, 'lens-center');
+                    this.playerGroup = this.game.add.physicsGroup();
+                    this.focusFire = this.playerGroup.create(this.game.world.width / 2, 20, 'lens-center');
+                    this.focusFire.checkWorldBounds = true;
+                    this.focusFire.outOfBoundsKill = false;
+                    this.focusFire.body.collideWorldBounds = true;
                     this.focusFire.height = 16;
                     this.focusFire.width = 16;
+                    this.focusFire.body.width = this.focusFire.width;
+                    this.focusFire.body.height = this.focusFire.height;
+                    this.focusFire.anchor.x = 0;
+                    this.focusFire.anchor.y = 0;
+                    this.focusFire.debug = this.DEBUG;
                     this.playerGroup.add(this.focusFire);
                 },
                 createSun: function () {
-                    //  TODO - will be problem when checkpointing
-                    this.sunGroup = this.game.add.group();
-
-                    this.sun = this.game.add.sprite(this.game.world.width, 230, 'sun');
+                    this.sunGroup = this.game.add.physicsGroup();
+                    this.sun = this.sunGroup.create(this.game.world.width, 230, 'sun');
                     this.sun.height = 24;
                     this.sun.width = 24;
+                    this.sun.body.width = this.sun.width;
+                    this.sun.body.height = this.sun.height;
+                    this.sun.anchor.x = 0;
+                    this.sun.anchor.y = 0;
+                    this.sun.debug = this.DEBUG;
                     this.sunGroup.add(this.sun);
                     var totalTime = this.TOTAL_TIME * 60 * 1000;
                     this.sunTweens = [];
@@ -401,7 +420,6 @@ angular.module('uiApp').factory('Act4State',
 
                 //  Allies and Enemies - begin
                 arrowHitsBarrier: function (arrow) {
-                    console.log('hit wall');
                     arrow.kill();
                 },
                 arrowHitsEnemy: function (arrow, enemy) {
@@ -414,6 +432,29 @@ angular.module('uiApp').factory('Act4State',
 
                 enemyHitsAlly: function (ally) {
                     ally.kill();
+                },
+
+                lensHitsEnemy: function (enemy) {
+                    enemy.health -= 5;
+                    if (enemy.health <= 0) {
+                        enemy.kill();
+                    }
+                    //  TODO - track
+                },
+
+                lensHitsAlly: function (ally) {
+                    ally.kill();
+                    //  TODO - track
+                },
+
+                lensHitsSun: function () {
+                    var distance = this.calculator.calcDistance(this.focusFire, this.sun);
+                    if (distance.distance < this.SUN_HIT_PRECISION) {
+                        this.fogHealth -= 1;
+                        if (this.fogHealth === 0) {
+                            this.winEnding();
+                        }
+                    }
                 },
 
                 //  Allies and Enemies - end
@@ -432,6 +473,10 @@ angular.module('uiApp').factory('Act4State',
                         //this.blockLayer.resizeWorld();
                         this.pathLayer.setScale(this.scale, this.scale);
                         this.playerGroup.scale.setTo(this.scale);
+                        this.playerGroup.forEach(function (e) {
+                            e.body.width = e.width * this.scale;
+                            e.body.height = e.height * this.scale;
+                        }, this);
                         this.alliesGroup.scale.setTo(this.scale);
                         this.alliesGroup.forEach(function (e) {
                             e.body.width = e.width * this.scale;
@@ -448,6 +493,10 @@ angular.module('uiApp').factory('Act4State',
                             e.body.height = e.height * this.scale;
                         }, this);
                         this.sunGroup.scale.setTo(this.scale);
+                        this.sunGroup.forEach(function (e) {
+                            e.body.width = e.width * this.scale;
+                            e.body.height = e.height * this.scale;
+                        }, this);
                         this.blockLayer.resize(this.game.scale.width / this.scale, this.game.scale.height / this.scale);
                         this.pathLayer.resize(this.game.scale.width / this.scale, this.game.scale.height / this.scale);
                         this.game.camera.bounds.width = this.game.world.width * this.blockLayer.scale.x;

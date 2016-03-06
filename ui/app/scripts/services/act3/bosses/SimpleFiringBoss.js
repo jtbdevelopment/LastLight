@@ -41,8 +41,8 @@ SimpleFiringBoss.prototype.updateFunction = function (playerCenter) {
         if (playerCenter.count > 0) {
             attack.reset(x, y);
             var distance = this.state.calculator.calcDistance(playerCenter, this);
-            attack.body.velocity.x = this.attackSpeed * distance.distanceX / distance.distanceFactor;
-            attack.body.velocity.y = this.attackSpeed * distance.distanceY / distance.distanceFactor;
+            attack.body.velocity.x = this.attackSpeed * distance.distanceX / distance.distance;
+            attack.body.velocity.y = this.attackSpeed * distance.distanceY / distance.distance;
         }
     }
     this.state.game.physics.arcade.overlap(this.state.players, this.attacks, this.attackHitsPlayer, null, this);
