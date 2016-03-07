@@ -68,6 +68,7 @@ angular.module('uiApp').factory('Act4State',
                     this.easyStar.setGrid(this.blockLayer.layer.data);
                     this.easyStar.setAcceptableTiles([-1]);
                     this.easyStar.enableDiagonals();
+                    this.easyStar.enableSync();
 
                     this.game.physics.startSystem(Phaser.Physics.ARCADE);
                     this.game.physics.arcade.setBoundsToWorld();
