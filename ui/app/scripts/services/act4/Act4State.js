@@ -65,7 +65,15 @@ angular.module('uiApp').factory('Act4State',
                     this.createTileMap();
 
                     this.easyStar = new EasyStar.js();
-                    this.easyStar.setGrid(this.blockLayer.layer.data);
+                    var easyGrid = [];
+                    angular.forEach(this.blockLayer.layer.data, function (row) {
+                        var easyRow = [];
+                        angular.forEach(row, function (cell) {
+                            easyRow.push(cell.index);
+                        });
+                        easyGrid.push(easyRow);
+                    });
+                    this.easyStar.setGrid(easyGrid);
                     this.easyStar.setAcceptableTiles([-1]);
                     this.easyStar.enableDiagonals();
                     this.easyStar.enableSync();
@@ -126,6 +134,7 @@ angular.module('uiApp').factory('Act4State',
                         this.alliesGroup.forEachAlive(function (ally) {
                             ally.updateFunction();
                         });
+                        this.easyStar.calculate();
                         this.towerHealthPercent = this.towerHealth / this.INITIAL_TOWER_HEALTH;
                         this.towerHealthText.text = this.makeTowerHealthText();
                         this.alliesLiving = this.alliesGroup.countLiving();
