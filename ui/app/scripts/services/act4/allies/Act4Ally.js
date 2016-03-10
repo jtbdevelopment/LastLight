@@ -6,14 +6,9 @@ var Act4Ally = function (game, x, y, key, frame) {
     this.state = undefined;
     this.name = 'Act4Ally';
 
-    this.FIRE = 50;
-    this.SEE = 100;
-    this.FIRE_PAUSE = 3000;
-    this.ARROW_SPEED = 40;
     this.MOVE_SPEED = 15;
     this.MAX_PATROL_Y_TILE = 26;
     this.MIN_PATROL_Y_TILE = 7;
-    this.FIND_PATH_PAUSE = 2000;
     this.nextFireTime = 0;
     this.nextFindPathTime = 0;
     this.initialX = x;
@@ -41,35 +36,46 @@ Act4Ally.prototype.reset = function (x, y) {
 Act4Ally.prototype.updateFunction = function () {
     var closestEnemy = {distance: undefined, enemy: undefined};
     this.state.enemyGroup.forEachAlive(function (e) {
-        var distance = this.state.calculator.calcDistance(this, e);
-        if (angular.isUndefined(closestEnemy.enemy) || distance.distance < closestEnemy.distance.distance) {
-            closestEnemy.distance = distance;
-            closestEnemy.enemy = e;
+        var ray = new Phaser.Line(this.x, this.y, e.x, e.y);
+        if (ray.length < this.state.ALLY_SEE_DISTANCE) {
+            var tileHits = this.state.blockLayer.getRayCastTiles(ray, undefined, true);
+            this.state.addTileHitsToDisplay(tileHits);
+
+            if (tileHits.length === 0) {
+                var distance = this.state.calculator.calcDistanceSprites(this, e);
+                if (angular.isUndefined(closestEnemy.enemy) || distance.distance < closestEnemy.distance.distance) {
+                    closestEnemy.distance = distance;
+                    closestEnemy.enemy = e;
+                }
+            }
         }
     }, this);
-    if (angular.isDefined(closestEnemy.enemy) && closestEnemy.distance.distance <= this.SEE) {
+    if (angular.isDefined(closestEnemy.enemy) && closestEnemy.distance.distance <= this.state.ALLY_SEE_DISTANCE) {
         this.nextFindPathTime = 0;
-        if (closestEnemy.distance.distance <= this.FIRE) {
+        if (closestEnemy.distance.distance <= this.state.ALLY_FIRE_DISTANCE) {
             if (this.state.game.time.now > this.nextFireTime) {
-                this.nextFireTime = this.state.game.time.now + this.FIRE_PAUSE;
+                this.nextFireTime = this.state.game.time.now + this.state.ALLY_FIRE_RATE;
                 this.body.velocity.x = 0;
                 this.body.velocity.y = 0;
                 var arrow = this.state.arrowsGroup.getFirstExists(false);
                 arrow.reset(Math.floor(this.x + (this.width / 2)), Math.floor(this.y + (this.height / 2)));
-                arrow.body.velocity.x = this.ARROW_SPEED * closestEnemy.distance.distanceX / closestEnemy.distance.distance;
-                arrow.body.velocity.y = this.ARROW_SPEED * closestEnemy.distance.distanceY / closestEnemy.distance.distance;
+                arrow.initialX = arrow.x;
+                arrow.initialY = arrow.y;
+                arrow.firer = this;
+                arrow.body.velocity.x = this.state.ALLY_ARROW_SPEED * closestEnemy.distance.distanceX / closestEnemy.distance.distance;
+                arrow.body.velocity.y = this.state.ALLY_ARROW_SPEED * closestEnemy.distance.distanceY / closestEnemy.distance.distance;
             }
             else {
                 this.body.velocity.x = -1 * this.MOVE_SPEED * closestEnemy.distance.distanceX / closestEnemy.distance.distance;
                 this.body.velocity.y = -1 * this.MOVE_SPEED * closestEnemy.distance.distanceY / closestEnemy.distance.distance;
             }
-        } else if (closestEnemy.distance.distance <= this.SEE) {
+        } else if (closestEnemy.distance.distance <= this.state.ALLY_SEE_DISTANCE) {
             this.body.velocity.x = this.MOVE_SPEED * closestEnemy.distance.distanceX / closestEnemy.distance.distance;
             this.body.velocity.y = this.MOVE_SPEED * closestEnemy.distance.distanceY / closestEnemy.distance.distance;
         }
     } else {
         if (this.state.game.time.now > this.nextFindPathTime) {
-            this.nextFindPathTime = this.state.game.time.now + this.FIND_PATH_PAUSE;
+            this.nextFindPathTime = this.state.game.time.now + this.state.FIND_PATH_FREQUENCY;
             var tileX = Math.round(this.x / this.state.map.tileWidth);
             var tileY = Math.round(this.y / this.state.map.tileHeight);
             if (tileX === this.currentPatrolGoalXTile && tileY === this.currentPatrolGoalYTile) {
@@ -98,8 +104,8 @@ Act4Ally.prototype.updateFunction = function () {
                         body.body.velocity.y = -body.MOVE_SPEED;
                     }
                 } else {
-                    console.log('no path');
-                    //  TODO
+                    body.currentPatrolGoalX = body.randomXPatrolGoal();
+                    body.currentPatrolGoalXTile = Math.floor(body.currentPatrolGoalX / body.state.map.tileWidth);
                 }
             });
         }

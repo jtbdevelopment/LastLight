@@ -20,6 +20,14 @@ angular.module('uiApp').factory('Act4State',
                 INITIAL_FOG_HEALTH: 10000,
                 INITIAL_TOWER_HEALTH: 1000,
 
+                ALLY_FIRE_DISTANCE: 50,
+                ALLY_FIRE_RATE: 3000, //seconds in millis
+                ALLY_SEE_DISTANCE: 100,
+                ALLY_ARROW_SPEED: 45,
+                ALLY_ARROW_DISTANCE: 75,
+
+                FIND_PATH_FREQUENCY: 2000, // seconds in millis
+
                 TOTAL_TIME: 20, // minutes
 
                 SUN_HIT_PRECISION: 5,
@@ -134,6 +142,12 @@ angular.module('uiApp').factory('Act4State',
                         this.alliesGroup.forEachAlive(function (ally) {
                             ally.updateFunction();
                         });
+                        this.arrowsGroup.forEachAlive(function (arrow) {
+                            var arrowDistance = this.calculator.calcDistancePoints(arrow.initialX, arrow.initialY, arrow.x, arrow.y);
+                            if (arrowDistance.distance >= this.ALLY_ARROW_DISTANCE) {
+                                arrow.kill();
+                            }
+                        }, this);
                         this.easyStar.calculate();
                         this.towerHealthPercent = this.towerHealth / this.INITIAL_TOWER_HEALTH;
                         this.towerHealthText.text = this.makeTowerHealthText();
@@ -323,7 +337,6 @@ angular.module('uiApp').factory('Act4State',
                 addEnemies: function (state) {
                     var enemy = state.enemyGroup.getFirstExists(false);
                     var y = 270;
-                    enemy.activateFunction(2, 2, 15);
                     var x;
                     var looking = true;
                     while (looking) {
@@ -341,7 +354,9 @@ angular.module('uiApp').factory('Act4State',
                         }
                     }
                     enemy.reset(x, y);
-                    $timeout(state.addEnemies, 500, false, state);
+                    enemy.activateFunction(2, 2, 15);
+                    console.log('active health ' + enemy.health);
+                    $timeout(state.addEnemies, 100, false, state);
                 },
 
                 initializeWorldShadowing: function () {
@@ -435,15 +450,18 @@ angular.module('uiApp').factory('Act4State',
                     arrow.kill();
                 },
                 arrowHitsEnemy: function (arrow, enemy) {
+                    arrow.kill();
                     enemy.health -= 1;
+                    console.log(enemy.health);
                     if (enemy.health <= 0) {
                         enemy.kill();
                     }
-                    arrow.kill();
+                    //  TODO - record
                 },
 
                 enemyHitsAlly: function (ally) {
                     ally.kill();
+                    //  TODO - record
                 },
 
                 lensHitsEnemy: function (enemy) {
@@ -460,7 +478,7 @@ angular.module('uiApp').factory('Act4State',
                 },
 
                 lensHitsSun: function () {
-                    var distance = this.calculator.calcDistance(this.focusFire, this.sun);
+                    var distance = this.calculator.calcDistanceSprites(this.focusFire, this.sun);
                     if (distance.distance < this.SUN_HIT_PRECISION) {
                         this.fogHealth -= 1;
                         if (this.fogHealth === 0) {
