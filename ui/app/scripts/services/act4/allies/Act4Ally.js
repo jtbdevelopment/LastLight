@@ -28,7 +28,6 @@ Act4Ally.prototype.randomXPathFindingGoal = function () {
 
 Act4Ally.prototype.updatePathFindingGoal = function () {
     this.currentPathFindingGoalYTile = (this.currentPathFindingGoalYTile === this.MAX_PATROL_Y_TILE) ? this.MIN_PATROL_Y_TILE : this.MAX_PATROL_Y_TILE;
-    this.currentPathFindingGoalYPosition = this.currentPathFindingGoalYTile * this.state.map.tileHeight;
     this.randomXPathFindingGoal();
 };
 
@@ -61,10 +60,10 @@ Act4Ally.prototype.updateFunction = function () {
                 this.fireAtEnemy(closestOpponent);
             }
             else {
-                this.state.calculator.moveToPoint(me, closestOpponent.distance, -this.MOVE_SPEED);
+                this.state.calculator.moveToPoint(this, closestOpponent.distance, -this.MOVE_SPEED);
             }
         } else if (closestOpponent.distance.distance <= this.state.ALLY_SEE_DISTANCE) {
-            this.state.calculator.moveToPoint(me, closestOpponent.distance, this.MOVE_SPEED);
+            this.state.calculator.moveToPoint(this, closestOpponent.distance, this.MOVE_SPEED);
         }
     } else {
         var tileX = Math.round(this.x / this.state.map.tileWidth);

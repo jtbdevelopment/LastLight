@@ -17,14 +17,24 @@ var Act4Enemy = function (game, x, y, key, frame) {
 Act4Enemy.prototype = Object.create(Phaser.Sprite.prototype);
 Act4Enemy.prototype.constructor = Act4Enemy;
 
+Act4Enemy.prototype.randomXPathFindingGoal = function () {
+    this.currentPathFindingGoalXPosition = Math.max(
+        0,
+        this.initialX + (this.state.game.rnd.integerInRange(0, 60) * this.state.game.rnd.pick([1, -1]))
+    );
+    this.currentPathFindingGoalXTile = Math.floor(this.currentPathFindingGoalXPosition / this.state.map.tileWidth);
+};
+
+Act4Enemy.prototype.updatePathFindingGoal = function () {
+    this.currentPathFindingGoalYTile = this.SEE_WALL_TILE;
+    this.randomXPathFindingGoal();
+};
+
 Act4Enemy.prototype.reset = function (x, y, health) {
     Phaser.Component.Reset.prototype.reset.call(this, x, y, health);
     this.initialX = x;
     this.initialY = y;
-    this.currentPathFindingGoalYTile = this.SEE_WALL_TILE;
-    this.currentPathFindingGoalYPosition = this.currentPathFindingGoalYTile * this.state.map.tileHeight;
-    this.currentPathFindingGoalXPosition = x;
-    this.currentPathFindingGoalXTile = Math.floor(this.currentPathFindingGoalXPosition / this.state.map.tileWidth);
+    this.updatePathFindingGoal();
 };
 
 Act4Enemy.prototype.activateFunction = function (health, damage, size) {
@@ -39,7 +49,7 @@ Act4Enemy.prototype.activateFunction = function (health, damage, size) {
 Act4Enemy.prototype.updateFunction = function () {
     var closestOpponent = this.state.calculator.findClosestOpponent(this, this.state, this.state.alliesGroup, this.state.ENEMY_SEE_DISTANCE);
     if (angular.isDefined(closestOpponent.opponent)) {
-
+        this.state.calculator.moveToPoint(this, closestOpponent.distance, this.MOVE_SPEED);
     } else {
         var tileX = Math.round(this.x / this.state.map.tileWidth);
         var tileY = Math.round(this.y / this.state.map.tileHeight);
@@ -58,12 +68,7 @@ Act4Enemy.prototype.updateFunction = function () {
                         var distance = body.state.calculator.calcDistanceSpriteToPoint(body, xGoal, yGoal);
                         body.state.calculator.moveToPoint(body, distance, body.MOVE_SPEED);
                     } else {
-                        body.currentPathFindingGoalXTile += 1;
-                        body.currentPathFindingGoalXPosition += body.state.map.tileWidth;
-                        if (body.currentPathFindingGoalXPosition >= body.state.world.width) {
-                            body.currentPathFindingGoalXTile -= 3;
-                            body.currentPathFindingGoalXPosition -= (body.state.map.tileWidth * 3);
-                        }
+                        body.randomXPathFindingGoal();
                     }
                 });
             }
