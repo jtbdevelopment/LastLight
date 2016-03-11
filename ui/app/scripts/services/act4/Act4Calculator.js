@@ -35,17 +35,17 @@ angular.module('uiApp').factory('Act4Calculator',
                 findClosestOpponent: function (me, state, group, maxDistance) {
                     var closestOpponent = {distance: undefined, opponent: undefined};
                     group.forEachAlive(function (e) {
-                        var ray = new Phaser.Line(me.x, me.y, e.x, e.y);
+                        var ray = new Phaser.Line(me.x + (me.width / 2), me.y + (me.height / 2), e.x + (e.width / 2), e.y + (e.height / 2));
                         if (ray.length <= maxDistance) {
                             var tileHits = state.blockLayer.getRayCastTiles(ray, undefined, true);
-                            state.addTileHitsToDisplay(tileHits);
-
                             if (tileHits.length === 0) {
                                 var distance = this.calcDistanceSprites(me, e);
                                 if (angular.isUndefined(closestOpponent.opponent) || distance.distance < closestOpponent.distance.distance) {
                                     closestOpponent.distance = distance;
                                     closestOpponent.opponent = e;
                                 }
+                            } else {
+                                state.addTileHitsToDisplay(tileHits);
                             }
                         }
                     }, this);

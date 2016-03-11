@@ -23,7 +23,7 @@ angular.module('uiApp').factory('Act4State',
                 ENEMY_SEE_DISTANCE: 100,
 
                 ALLY_FIRE_DISTANCE: 50,
-                ALLY_FIRE_RATE: 3000, //seconds in millis
+                ALLY_FIRE_RATE: 2000, //seconds in millis
                 ALLY_SEE_DISTANCE: 100,
                 ALLY_ARROW_SPEED: 45,
                 ALLY_ARROW_DISTANCE: 75,
@@ -33,6 +33,8 @@ angular.module('uiApp').factory('Act4State',
                 TOTAL_TIME: 20, // minutes
 
                 SUN_HIT_PRECISION: 5,
+
+                ENEMY_SPAWN_FREQUENCY: 5000, //millis
 
                 //  Phaser state functions - begin
                 init: function () {
@@ -64,7 +66,7 @@ angular.module('uiApp').factory('Act4State',
                 create: function () {
                     this.tileHits = [];
                     this.game.ending = false;
-                    this.scale = this.MIN_ZOOM;
+                    this.scale = this.MAX_ZOOM;
                     this.lastScale = 0;
                     this.fogHealth = this.INITIAL_FOG_HEALTH;
                     this.fogHealthPercent = 1.0;
@@ -99,7 +101,7 @@ angular.module('uiApp').factory('Act4State',
                     this.initializeInfoText();
                     this.game.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;
                     this.game.camera.follow(this.focusFire);
-                    $timeout(this.addEnemies, 5000, false, this);
+                    $timeout(this.addEnemies, this.ENEMY_SPAWN_FREQUENCY, false, this);
                 },
 
                 clearTileHitDisplay: function () {
@@ -162,7 +164,9 @@ angular.module('uiApp').factory('Act4State',
                         this.towerHealthPercent = this.towerHealth / this.INITIAL_TOWER_HEALTH;
                         this.towerHealthText.text = this.makeTowerHealthText();
                         this.alliesLiving = this.alliesGroup.countLiving();
+                        this.enemiesLiving = this.enemyGroup.countLiving();
                         this.alliesText.text = this.makeAlliesText();
+                        this.enemiesText.text = this.makeEnemiesText();
                         this.updateWorldShadowAndLights();
                         this.showTileHitsDisplay();
                         this.game.physics.arcade.collide(this.alliesGroup, this.blockLayer);
@@ -345,28 +349,31 @@ angular.module('uiApp').factory('Act4State',
                     this.enemyGroup.setAll('body.width', 15);
                 },
                 addEnemies: function (state) {
-                    var enemy = state.enemyGroup.getFirstExists(false);
-                    var y = 270;
-                    var x;
-                    var looking = true;
-                    while (looking) {
-                        x = state.game.rnd.integerInRange(1, state.game.world.width) - 1;
-                        var tiles = state.blockLayer.getTiles(
-                            x * state.scale,
-                            y * state.scale,
-                            enemy.width * state.scale,
-                            enemy.height * state.scale, false, false);
+                    var enemiesToAdd = Math.max(10 - (state.fogHealthPercent * 10), 1);
+                    while (enemiesToAdd > 0) {
+                        var enemy = state.enemyGroup.getFirstExists(false);
+                        var y = 265;
+                        var x;
+                        var looking = true;
+                        while (looking) {
+                            x = state.game.rnd.integerInRange(1, state.game.world.width) - 1;
+                            var tiles = state.blockLayer.getTiles(
+                                x * state.scale,
+                                y * state.scale,
+                                enemy.width * state.scale,
+                                enemy.height * state.scale, false, false);
 
-                        if (angular.isDefined(tiles) && tiles.length >= 0) {
-                            looking = angular.isDefined(tiles.find(function (e) {
-                                return e.index !== -1;
-                            }));
+                            if (angular.isDefined(tiles) && tiles.length >= 0) {
+                                looking = angular.isDefined(tiles.find(function (e) {
+                                    return e.index !== -1;
+                                }));
+                            }
                         }
+                        enemy.reset(x, y);
+                        enemy.activateFunction(2, 2, 15);
+                        enemiesToAdd -= 1;
                     }
-                    enemy.reset(x, y);
-                    enemy.activateFunction(2, 2, 15);
-                    console.log('active health ' + enemy.health);
-                    $timeout(state.addEnemies, 100, false, state);
+                    $timeout(state.addEnemies, state.ENEMY_SPAWN_FREQUENCY, false, state);
                 },
 
                 initializeWorldShadowing: function () {
@@ -403,6 +410,10 @@ angular.module('uiApp').factory('Act4State',
                     this.alliesText = this.game.add.text(0, 0, '', textStyle);
                     this.alliesText.fixedToCamera = true;
                     this.alliesText.cameraOffset.setTo(3, 45);
+
+                    this.enemiesText = this.game.add.text(0, 0, '', textStyle);
+                    this.enemiesText.fixedToCamera = true;
+                    this.enemiesText.cameraOffset.setTo(3, 60);
                 },
                 //  Creation functions - end
 
@@ -421,6 +432,10 @@ angular.module('uiApp').factory('Act4State',
 
                 makeAlliesText: function () {
                     return 'Allies: ' + this.alliesLiving;
+                },
+
+                makeEnemiesText: function () {
+                    return 'Demons: ' + this.enemiesLiving;
                 },
 
                 drawCircleOfLight: function (sprite, lightRadius, maxBrightness) {
@@ -465,7 +480,6 @@ angular.module('uiApp').factory('Act4State',
                 arrowHitsEnemy: function (arrow, enemy) {
                     arrow.kill();
                     enemy.health -= 1;
-                    console.log(enemy.health);
                     if (enemy.health <= 0) {
                         enemy.kill();
                     }
