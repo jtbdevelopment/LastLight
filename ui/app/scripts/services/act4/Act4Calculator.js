@@ -5,11 +5,18 @@ angular.module('uiApp').factory('Act4Calculator',
         function (Phaser) {
             return {
                 calcDistanceSprites: function (from, to) {
+                    return this.calcDistanceSpriteToPoint(
+                        from,
+                        (to.x + (to.width / 2)),
+                        (to.y + (to.height / 2))
+                    );
+                },
+                calcDistanceSpriteToPoint: function (from, toX, toY) {
                     return this.calcDistancePoints(
                         (from.x + (from.width / 2)),
                         (from.y + (from.height / 2)),
-                        (to.x + (to.width / 2)),
-                        (to.y + (to.height / 2))
+                        (toX),
+                        (toY)
                     );
                 },
                 calcDistancePoints: function (fromX, fromY, toX, toY) {
@@ -20,6 +27,11 @@ angular.module('uiApp').factory('Act4Calculator',
                     var distance = Math.sqrt(x2 + y2);
                     return {distanceX: distanceX, distanceY: distanceY, distance: distance};
                 },
+                moveToPoint: function (sprite, distance, speed) {
+                    sprite.body.velocity.x = speed * distance.distanceX / distance.distance;
+                    sprite.body.velocity.y = speed * distance.distanceY / distance.distance;
+                },
+
                 findClosestOpponent: function (me, state, group, maxDistance) {
                     var closestOpponent = {distance: undefined, opponent: undefined};
                     group.forEachAlive(function (e) {

@@ -38,42 +38,35 @@ Act4Enemy.prototype.activateFunction = function (health, damage, size) {
 
 Act4Enemy.prototype.updateFunction = function () {
     var closestOpponent = this.state.calculator.findClosestOpponent(this, this.state, this.state.alliesGroup, this.state.ENEMY_SEE_DISTANCE);
-    var tileX = Math.round(this.x / this.state.map.tileWidth);
-    var tileY = Math.round(this.y / this.state.map.tileHeight);
-    if (tileX === this.currentPathFindingGoalXTile && tileY === this.currentPathFindingGoalYTile) {
-        this.body.velocity.x = 0;
-        this.body.velocity.y = this.MOVE_SPEED;
+    if (angular.isDefined(closestOpponent.opponent)) {
+
     } else {
-        if (this.state.game.time.now > this.nextFindPathTime) {
-            this.nextFindPathTime = this.state.game.time.now + this.state.FIND_PATH_FREQUENCY;
-            var calculated;
-            var body = this;
-            this.state.easyStar.findPath(tileX, tileY, this.currentPathFindingGoalXTile, this.currentPathFindingGoalYTile, function (path) {
-                if (angular.isDefined(path) && path !== null) {
-                    calculated = path[1];
-                    if (tileX === calculated.x) {
-                        body.body.velocity.x = body.state.game.rnd.integerInRange(0, 5) * (body.x < body.currentPathFindingGoalXPosition ? 1 : -1);
-                    } else if (tileX < calculated.x) {
-                        body.body.velocity.x = body.MOVE_SPEED;
+        var tileX = Math.round(this.x / this.state.map.tileWidth);
+        var tileY = Math.round(this.y / this.state.map.tileHeight);
+        if (tileX === this.currentPathFindingGoalXTile && tileY === this.currentPathFindingGoalYTile) {
+            this.body.velocity.x = 0;
+            this.body.velocity.y = this.MOVE_SPEED;
+        } else {
+            if (this.state.game.time.now > this.nextFindPathTime) {
+                this.nextFindPathTime = this.state.game.time.now + this.state.FIND_PATH_FREQUENCY;
+                var body = this;
+                this.state.easyStar.findPath(tileX, tileY, this.currentPathFindingGoalXTile, this.currentPathFindingGoalYTile, function (path) {
+                    if (angular.isDefined(path) && path !== null) {
+                        var calculated = path[1];
+                        var xGoal = (calculated.x * body.state.map.tileWidth) + (body.state.map.tileWidth / 2);
+                        var yGoal = (calculated.y * body.state.map.tileHeight) + (body.state.map.tileHeight / 2);
+                        var distance = body.state.calculator.calcDistanceSpriteToPoint(body, xGoal, yGoal);
+                        body.state.calculator.moveToPoint(body, distance, body.MOVE_SPEED);
                     } else {
-                        body.body.velocity.x = -body.MOVE_SPEED;
+                        body.currentPathFindingGoalXTile += 1;
+                        body.currentPathFindingGoalXPosition += body.state.map.tileWidth;
+                        if (body.currentPathFindingGoalXPosition >= body.state.world.width) {
+                            body.currentPathFindingGoalXTile -= 3;
+                            body.currentPathFindingGoalXPosition -= (body.state.map.tileWidth * 3);
+                        }
                     }
-                    if (tileY === calculated.y) {
-                        body.body.velocity.y = body.state.game.rnd.integerInRange(0, 5) * (body.y < body.currentPathFindingGoalYPosition ? 1 : -1);
-                    } else if (tileY < calculated.y) {
-                        body.body.velocity.y = body.MOVE_SPEED;
-                    } else {
-                        body.body.velocity.y = -body.MOVE_SPEED;
-                    }
-                } else {
-                    body.currentPathFindingGoalXTile += 1;
-                    body.currentPathFindingGoalXPosition += body.state.map.tileWidth;
-                    if (body.currentPathFindingGoalXPosition >= body.state.world.width) {
-                        body.currentPathFindingGoalXTile -= 3;
-                        body.currentPathFindingGoalXPosition -= (body.state.map.tileWidth * 3);
-                    }
-                }
-            });
+                });
+            }
         }
     }
 };

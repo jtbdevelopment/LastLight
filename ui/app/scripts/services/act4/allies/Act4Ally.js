@@ -39,6 +39,18 @@ Act4Ally.prototype.reset = function (x, y, health) {
     this.updatePathFindingGoal();
 };
 
+Act4Ally.prototype.fireAtEnemy = function (closestOpponent) {
+    this.body.velocity.x = 0;
+    this.body.velocity.y = 0;
+    var arrow = this.state.arrowsGroup.getFirstExists(false);
+    arrow.reset(Math.floor(this.x + (this.width / 2)), Math.floor(this.y + (this.height / 2)));
+    arrow.initialX = arrow.x;
+    arrow.initialY = arrow.y;
+    arrow.firer = this;
+    arrow.body.velocity.x = this.state.ALLY_ARROW_SPEED * closestOpponent.distance.distanceX / closestOpponent.distance.distance;
+    arrow.body.velocity.y = this.state.ALLY_ARROW_SPEED * closestOpponent.distance.distanceY / closestOpponent.distance.distance;
+};
+
 Act4Ally.prototype.updateFunction = function () {
     var closestOpponent = this.state.calculator.findClosestOpponent(this, this.state, this.state.enemyGroup, this.state.ALLY_SEE_DISTANCE);
     if (angular.isDefined(closestOpponent.opponent) && closestOpponent.distance.distance <= this.state.ALLY_SEE_DISTANCE) {
@@ -46,23 +58,13 @@ Act4Ally.prototype.updateFunction = function () {
         if (closestOpponent.distance.distance <= this.state.ALLY_FIRE_DISTANCE) {
             if (this.state.game.time.now > this.nextFireTime) {
                 this.nextFireTime = this.state.game.time.now + this.state.ALLY_FIRE_RATE;
-                this.body.velocity.x = 0;
-                this.body.velocity.y = 0;
-                var arrow = this.state.arrowsGroup.getFirstExists(false);
-                arrow.reset(Math.floor(this.x + (this.width / 2)), Math.floor(this.y + (this.height / 2)));
-                arrow.initialX = arrow.x;
-                arrow.initialY = arrow.y;
-                arrow.firer = this;
-                arrow.body.velocity.x = this.state.ALLY_ARROW_SPEED * closestOpponent.distance.distanceX / closestOpponent.distance.distance;
-                arrow.body.velocity.y = this.state.ALLY_ARROW_SPEED * closestOpponent.distance.distanceY / closestOpponent.distance.distance;
+                this.fireAtEnemy(closestOpponent);
             }
             else {
-                this.body.velocity.x = -1 * this.MOVE_SPEED * closestOpponent.distance.distanceX / closestOpponent.distance.distance;
-                this.body.velocity.y = -1 * this.MOVE_SPEED * closestOpponent.distance.distanceY / closestOpponent.distance.distance;
+                this.state.calculator.moveToPoint(me, closestOpponent.distance, -this.MOVE_SPEED);
             }
         } else if (closestOpponent.distance.distance <= this.state.ALLY_SEE_DISTANCE) {
-            this.body.velocity.x = this.MOVE_SPEED * closestOpponent.distance.distanceX / closestOpponent.distance.distance;
-            this.body.velocity.y = this.MOVE_SPEED * closestOpponent.distance.distanceY / closestOpponent.distance.distance;
+            this.state.calculator.moveToPoint(me, closestOpponent.distance, this.MOVE_SPEED);
         }
     } else {
         var tileX = Math.round(this.x / this.state.map.tileWidth);
@@ -76,20 +78,10 @@ Act4Ally.prototype.updateFunction = function () {
             this.state.easyStar.findPath(tileX, tileY, this.currentPathFindingGoalXTile, this.currentPathFindingGoalYTile, function (path) {
                 if (angular.isDefined(path) && path !== null) {
                     var calculated = path[1];
-                    if (tileX === calculated.x) {
-                        body.body.velocity.x = body.state.game.rnd.integerInRange(0, 5) * (body.x < body.currentPathFindingGoalXPosition ? 1 : -1);
-                    } else if (tileX < calculated.x) {
-                        body.body.velocity.x = body.MOVE_SPEED;
-                    } else {
-                        body.body.velocity.x = -body.MOVE_SPEED;
-                    }
-                    if (tileY === calculated.y) {
-                        body.body.velocity.y = body.state.game.rnd.integerInRange(0, 5) * (body.y < body.currentPathFindingGoalYPosition ? 1 : -1);
-                    } else if (tileY < calculated.y) {
-                        body.body.velocity.y = body.MOVE_SPEED;
-                    } else {
-                        body.body.velocity.y = -body.MOVE_SPEED;
-                    }
+                    var xGoal = (calculated.x * body.state.map.tileWidth) + (body.state.map.tileWidth / 2);
+                    var yGoal = (calculated.y * body.state.map.tileHeight) + (body.state.map.tileHeight / 2);
+                    var distance = body.state.calculator.calcDistanceSpriteToPoint(body, xGoal, yGoal);
+                    body.state.calculator.moveToPoint(body, distance, body.MOVE_SPEED);
                 } else {
                     body.randomXPathFindingGoal();
                 }
