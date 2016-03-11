@@ -20,6 +20,8 @@ angular.module('uiApp').factory('Act4State',
                 INITIAL_FOG_HEALTH: 10000,
                 INITIAL_TOWER_HEALTH: 1000,
 
+                ENEMY_SEE_DISTANCE: 100,
+
                 ALLY_FIRE_DISTANCE: 50,
                 ALLY_FIRE_RATE: 3000, //seconds in millis
                 ALLY_SEE_DISTANCE: 100,
@@ -137,10 +139,18 @@ angular.module('uiApp').factory('Act4State',
                         this.sunPositionPercent = this.sun.x / this.game.world.width;
                         this.sunPositionText.text = this.makeDaylightText();
                         this.enemyGroup.forEachAlive(function (enemy) {
-                            enemy.updateFunction();
+                            try {
+                                enemy.updateFunction();
+                            } catch (ex) {
+                                console.log(ex);
+                            }
                         });
                         this.alliesGroup.forEachAlive(function (ally) {
-                            ally.updateFunction();
+                            try {
+                                ally.updateFunction();
+                            } catch (ex) {
+                                console.log(ex);
+                            }
                         });
                         this.arrowsGroup.forEachAlive(function (arrow) {
                             var arrowDistance = this.calculator.calcDistancePoints(arrow.initialX, arrow.initialY, arrow.x, arrow.y);
@@ -446,6 +456,9 @@ angular.module('uiApp').factory('Act4State',
                 //  Light related - end
 
                 //  Allies and Enemies - begin
+                enemyHitsBarrier: function (enemy, barrier) {
+                    console.log(JSON.stringify(barrier));
+                },
                 arrowHitsBarrier: function (arrow) {
                     arrow.kill();
                 },

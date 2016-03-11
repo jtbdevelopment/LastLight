@@ -6,7 +6,7 @@ var Act4Enemy = function (game, x, y, key, frame) {
     this.state = undefined;
     this.name = 'Act4Enemy';
 
-    this.MOVE_SPEED = 25;
+    this.MOVE_SPEED = 30;
     this.SEE_WALL_TILE = 26;
     this.nextFireTime = 0;
     this.nextFindPathTime = 0;
@@ -17,14 +17,14 @@ var Act4Enemy = function (game, x, y, key, frame) {
 Act4Enemy.prototype = Object.create(Phaser.Sprite.prototype);
 Act4Enemy.prototype.constructor = Act4Enemy;
 
-Act4Enemy.prototype.reset = function (x, y) {
-    Phaser.Component.Reset.prototype.reset.call(this, x, y);
+Act4Enemy.prototype.reset = function (x, y, health) {
+    Phaser.Component.Reset.prototype.reset.call(this, x, y, health);
     this.initialX = x;
     this.initialY = y;
-    this.currentPatrolGoalYTile = this.SEE_WALL_TILE;
-    this.currentPatrolGoalY = this.currentPatrolGoalYTile * this.state.map.tileHeight;
-    this.currentPatrolGoalX = x;
-    this.currentPatrolGoalXTile = Math.floor(this.currentPatrolGoalX / this.state.map.tileWidth);
+    this.currentPathFindingGoalYTile = this.SEE_WALL_TILE;
+    this.currentPathFindingGoalYPosition = this.currentPathFindingGoalYTile * this.state.map.tileHeight;
+    this.currentPathFindingGoalXPosition = x;
+    this.currentPathFindingGoalXTile = Math.floor(this.currentPathFindingGoalXPosition / this.state.map.tileWidth);
 };
 
 Act4Enemy.prototype.activateFunction = function (health, damage, size) {
@@ -37,47 +37,43 @@ Act4Enemy.prototype.activateFunction = function (health, damage, size) {
 };
 
 Act4Enemy.prototype.updateFunction = function () {
-    if (this.state.game.time.now > this.nextFindPathTime) {
-        this.nextFindPathTime = this.state.game.time.now + this.state.FIND_PATH_FREQUENCY;
-        var tileX = Math.round(this.x / this.state.map.tileWidth);
-        var tileY = Math.round(this.y / this.state.map.tileHeight);
-        if (tileX === this.currentPatrolGoalXTile && tileY === this.currentPatrolGoalYTile) {
-            console.log('at wall');
-        } else {
+    var closestOpponent = this.state.calculator.findClosestOpponent(this, this.state, this.state.alliesGroup, this.state.ENEMY_SEE_DISTANCE);
+    var tileX = Math.round(this.x / this.state.map.tileWidth);
+    var tileY = Math.round(this.y / this.state.map.tileHeight);
+    if (tileX === this.currentPathFindingGoalXTile && tileY === this.currentPathFindingGoalYTile) {
+        this.body.velocity.x = 0;
+        this.body.velocity.y = this.MOVE_SPEED;
+    } else {
+        if (this.state.game.time.now > this.nextFindPathTime) {
+            this.nextFindPathTime = this.state.game.time.now + this.state.FIND_PATH_FREQUENCY;
             var calculated;
             var body = this;
-            try {
-                this.state.easyStar.findPath(tileX, tileY, this.currentPatrolGoalXTile, this.currentPatrolGoalYTile, function (path) {
-                    if (angular.isDefined(path) && path !== null) {
-                        calculated = path[1];
-                        if (tileX === calculated.x) {
-                            body.body.velocity.x = body.state.game.rnd.integerInRange(0, 5) * (body.x < body.currentPatrolGoalX ? 1 : -1);
-                        } else if (tileX < calculated.x) {
-                            body.body.velocity.x = body.MOVE_SPEED;
-                        } else {
-                            body.body.velocity.x = -body.MOVE_SPEED;
-                        }
-                        if (tileY === calculated.y) {
-                            body.body.velocity.y = body.state.game.rnd.integerInRange(0, 5) * (body.y < body.currentPatrolGoalY ? 1 : -1);
-                        } else if (tileY < calculated.y) {
-                            body.body.velocity.y = body.MOVE_SPEED;
-                        } else {
-                            body.body.velocity.y = -body.MOVE_SPEED;
-                        }
+            this.state.easyStar.findPath(tileX, tileY, this.currentPathFindingGoalXTile, this.currentPathFindingGoalYTile, function (path) {
+                if (angular.isDefined(path) && path !== null) {
+                    calculated = path[1];
+                    if (tileX === calculated.x) {
+                        body.body.velocity.x = body.state.game.rnd.integerInRange(0, 5) * (body.x < body.currentPathFindingGoalXPosition ? 1 : -1);
+                    } else if (tileX < calculated.x) {
+                        body.body.velocity.x = body.MOVE_SPEED;
                     } else {
-                        body.currentPatrolGoalXTile += 1;
-                        body.currentPatrolGoalX += body.state.map.tileWidth;
-                        if (body.currentPatrolGoalX >= body.state.world.width) {
-                            body.currentPatrolGoalXTile -= 3;
-                            body.currentPatrolGoalX -= (body.state.map.tileWidth * 3);
-                        }
-                        //  TODO
+                        body.body.velocity.x = -body.MOVE_SPEED;
                     }
-                });
-            } catch (ex) {
-                body.currentPatrolGoalXTile -= 2;
-                body.currentPatrolGoalX -= body.state.map.tileWidth;
-            }
+                    if (tileY === calculated.y) {
+                        body.body.velocity.y = body.state.game.rnd.integerInRange(0, 5) * (body.y < body.currentPathFindingGoalYPosition ? 1 : -1);
+                    } else if (tileY < calculated.y) {
+                        body.body.velocity.y = body.MOVE_SPEED;
+                    } else {
+                        body.body.velocity.y = -body.MOVE_SPEED;
+                    }
+                } else {
+                    body.currentPathFindingGoalXTile += 1;
+                    body.currentPathFindingGoalXPosition += body.state.map.tileWidth;
+                    if (body.currentPathFindingGoalXPosition >= body.state.world.width) {
+                        body.currentPathFindingGoalXTile -= 3;
+                        body.currentPathFindingGoalXPosition -= (body.state.map.tileWidth * 3);
+                    }
+                }
+            });
         }
     }
 };
