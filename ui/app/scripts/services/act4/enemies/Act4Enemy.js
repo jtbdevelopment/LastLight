@@ -42,15 +42,6 @@ Act4Enemy.prototype.resetEnemy = function (x, y, health, damage, size) {
     this.width = size;
 };
 
-Act4Enemy.prototype.activateFunction = function (health, damage, size) {
-    this.health = health;
-    this.damage = damage;
-    this.body.height = size * this.state.scale;
-    this.body.width = size * this.state.scale;
-    this.height = size;
-    this.width = size;
-};
-
 Act4Enemy.prototype.pathFindingGoalReached = function () {
     this.body.velocity.x = 0;
     this.body.velocity.y = this.MOVE_SPEED;
@@ -62,27 +53,7 @@ Act4Enemy.prototype.updateFunction = function () {
     if (angular.isDefined(closestOpponent.opponent)) {
         this.state.calculator.moveToPoint(this, closestOpponent.distance, this.MOVE_SPEED);
     } else {
-        var tileX = Math.round(this.x / this.state.map.tileWidth);
-        var tileY = Math.round(this.y / this.state.map.tileHeight);
-        if (tileX === this.currentPathFindingGoalXTile && tileY === this.currentPathFindingGoalYTile) {
-            this.pathFindingGoalReached();
-        } else {
-            if (this.state.game.time.now > this.nextFindPathTime) {
-                this.nextFindPathTime = this.state.game.time.now + this.state.FIND_PATH_FREQUENCY;
-                var body = this;
-                this.state.easyStar.findPath(tileX, tileY, this.currentPathFindingGoalXTile, this.currentPathFindingGoalYTile, function (path) {
-                    if (angular.isDefined(path) && path !== null) {
-                        var calculated = path[1];
-                        var xGoal = (calculated.x * body.state.map.tileWidth) + (body.state.map.tileWidth / 2);
-                        var yGoal = (calculated.y * body.state.map.tileHeight) + (body.state.map.tileHeight / 2);
-                        var distance = body.state.calculator.calcDistanceSpriteToPoint(body, xGoal, yGoal);
-                        body.state.calculator.moveToPoint(body, distance, body.MOVE_SPEED);
-                    } else {
-                        body.randomXPathFindingGoal();
-                    }
-                });
-            }
-        }
+        this.state.calculator.performPathFind(this);
     }
 };
 
