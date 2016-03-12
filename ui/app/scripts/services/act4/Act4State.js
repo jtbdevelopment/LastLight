@@ -479,7 +479,7 @@ angular.module('uiApp').factory('Act4State',
                         if (tower.indexOf(barrier.index) >= 0) {
                             this.towerHealth -= enemy.damage;
                             if (this.towerHealth <= 0) {
-                                this.deathEnding();
+                                this.loseEnding();
                             }
                         }
                     }
@@ -536,8 +536,6 @@ angular.module('uiApp').factory('Act4State',
                     }
                     this.scale = Math.min(Math.max(this.MIN_ZOOM, this.scale), this.MAX_ZOOM);
                     if (this.scale !== this.lastScale) {
-                        this.blockLayer.setScale(this.scale, this.scale);
-                        this.pathLayer.setScale(this.scale, this.scale);
                         this.playerGroup.scale.setTo(this.scale);
                         this.playerGroup.forEach(function (e) {
                             e.body.width = e.width * this.scale;
@@ -563,6 +561,8 @@ angular.module('uiApp').factory('Act4State',
                             e.body.width = e.width * this.scale;
                             e.body.height = e.height * this.scale;
                         }, this);
+                        this.blockLayer.setScale(this.scale, this.scale);
+                        this.pathLayer.setScale(this.scale, this.scale);
                         this.blockLayer.resize(this.game.scale.width / this.scale, this.game.scale.height / this.scale);
                         this.pathLayer.resize(this.game.scale.width / this.scale, this.game.scale.height / this.scale);
                         this.game.camera.bounds.width = this.game.world.width * this.blockLayer.scale.x;
@@ -620,17 +620,13 @@ angular.module('uiApp').factory('Act4State',
                 //  Player action and movement - end
 
                 //  Ending related
-                deathEnding: function () {
+                loseEnding: function () {
                     this.game.ending = true;
                     var deathTween = this.game.add.tween(this);
                     deathTween.to({playerLightRadius: 0}, 1000, Phaser.Easing.Power1, true);
                     deathTween.onComplete.add(function () {
-                        //  TODO - dying off screen doesn't reset cleanly without move
-                        this.player.x = this.levelData.startingX;
-                        this.player.y = this.levelData.startingY;
-                        this.player.kill();
                         //  TODO - retry move on option
-                        this.game.state.start(this.state.current, true, false, this.level, this.startingCandles);
+                        this.game.state.start(this.state.current, true, false);
                     }, this);
                 },
 
@@ -642,7 +638,7 @@ angular.module('uiApp').factory('Act4State',
                         //  TODO - End of Act
                         //  TODO - interludes
                         //  TODO - retry move on option
-                        this.game.state.start(this.state.current, true, false, this.level + 1, this.currentCandles + this.levelData.addsCandlesAtEnd);
+                        this.game.state.start(this.state.current, true, false);
                     }, this);
                 }
 
