@@ -50,6 +50,10 @@ Act4Ally.prototype.fireAtEnemy = function (closestOpponent) {
     arrow.body.velocity.y = this.state.ALLY_ARROW_SPEED * closestOpponent.distance.distanceY / closestOpponent.distance.distance;
 };
 
+Act4Ally.prototype.pathFindingGoalReached = function () {
+    this.updatePathFindingGoal();
+};
+
 Act4Ally.prototype.updateFunction = function () {
     var closestOpponent = this.state.calculator.findClosestOpponent(this, this.state, this.state.enemyGroup, this.state.ALLY_SEE_DISTANCE);
     if (angular.isDefined(closestOpponent.opponent) && closestOpponent.distance.distance <= this.state.ALLY_SEE_DISTANCE) {

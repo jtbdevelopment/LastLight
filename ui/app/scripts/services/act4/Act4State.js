@@ -170,8 +170,8 @@ angular.module('uiApp').factory('Act4State',
                         this.updateWorldShadowAndLights();
                         this.showTileHitsDisplay();
                         this.game.physics.arcade.collide(this.alliesGroup, this.blockLayer);
-                        this.game.physics.arcade.collide(this.arrowsGroup, this.blockLayer, this.arrowHitsBarrier);
-                        this.game.physics.arcade.collide(this.enemyGroup, this.blockLayer);
+                        this.game.physics.arcade.collide(this.arrowsGroup, this.blockLayer, this.arrowHitsBarrier, undefined, this);
+                        this.game.physics.arcade.collide(this.enemyGroup, this.blockLayer, this.enemyHitsBarrier, undefined, this);
                     } else {
 //                        this.enemyGroup.forEach(function (enemy) {
 //                            enemy.body.setZeroVelocity();
@@ -349,7 +349,10 @@ angular.module('uiApp').factory('Act4State',
                     this.enemyGroup.setAll('body.width', 15);
                 },
                 addEnemies: function (state) {
-                    var enemiesToAdd = Math.max(10 - (state.fogHealthPercent * 10), 1);
+                    var enemiesToAdd = Math.round(Math.max(10 - (state.fogHealthPercent * 10), 1));
+
+                    //  TODO - review scaling
+                    var scale = 1 + (1 - state.fogHealthPercent);
                     while (enemiesToAdd > 0) {
                         var enemy = state.enemyGroup.getFirstExists(false);
                         var y = 265;
@@ -369,8 +372,7 @@ angular.module('uiApp').factory('Act4State',
                                 }));
                             }
                         }
-                        enemy.reset(x, y);
-                        enemy.activateFunction(2, 2, 15);
+                        enemy.resetEnemy(x, y, 2 * scale, 2 * scale, Math.min(25, 15 * scale));
                         enemiesToAdd -= 1;
                     }
                     $timeout(state.addEnemies, state.ENEMY_SPAWN_FREQUENCY, false, state);
@@ -455,7 +457,6 @@ angular.module('uiApp').factory('Act4State',
                 },
 
                 updateWorldShadowAndLights: function () {
-                    //  TODO - make this scale as we go
                     var darknessScale = Math.floor(255 - (175 * this.fogHealthPercent));
                     this.shadowTexture.context.fillStyle = 'rgb(' + darknessScale +
                         ', ' + darknessScale +
@@ -472,7 +473,16 @@ angular.module('uiApp').factory('Act4State',
 
                 //  Allies and Enemies - begin
                 enemyHitsBarrier: function (enemy, barrier) {
-                    console.log(JSON.stringify(barrier));
+                    //  TODO - make sure these are right
+                    var tower = [1593, 1594, 1595, 1623, 1624, 1625];
+                    if (barrier.index >= tower[0]) {
+                        if (tower.indexOf(barrier.index) >= 0) {
+                            this.towerHealth -= enemy.damage;
+                            if (this.towerHealth <= 0) {
+                                this.deathEnding();
+                            }
+                        }
+                    }
                 },
                 arrowHitsBarrier: function (arrow) {
                     arrow.kill();

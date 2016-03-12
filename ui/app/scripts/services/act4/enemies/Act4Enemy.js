@@ -30,11 +30,16 @@ Act4Enemy.prototype.updatePathFindingGoal = function () {
     this.randomXPathFindingGoal();
 };
 
-Act4Enemy.prototype.reset = function (x, y, health) {
+Act4Enemy.prototype.resetEnemy = function (x, y, health, damage, size) {
     Phaser.Component.Reset.prototype.reset.call(this, x, y, health);
     this.initialX = x;
     this.initialY = y;
     this.updatePathFindingGoal();
+    this.damage = damage;
+    this.body.height = size * this.state.scale;
+    this.body.width = size * this.state.scale;
+    this.height = size;
+    this.width = size;
 };
 
 Act4Enemy.prototype.activateFunction = function (health, damage, size) {
@@ -46,6 +51,12 @@ Act4Enemy.prototype.activateFunction = function (health, damage, size) {
     this.width = size;
 };
 
+Act4Enemy.prototype.pathFindingGoalReached = function () {
+    this.body.velocity.x = 0;
+    this.body.velocity.y = this.MOVE_SPEED;
+};
+
+
 Act4Enemy.prototype.updateFunction = function () {
     var closestOpponent = this.state.calculator.findClosestOpponent(this, this.state, this.state.alliesGroup, this.state.ENEMY_SEE_DISTANCE);
     if (angular.isDefined(closestOpponent.opponent)) {
@@ -54,8 +65,7 @@ Act4Enemy.prototype.updateFunction = function () {
         var tileX = Math.round(this.x / this.state.map.tileWidth);
         var tileY = Math.round(this.y / this.state.map.tileHeight);
         if (tileX === this.currentPathFindingGoalXTile && tileY === this.currentPathFindingGoalYTile) {
-            this.body.velocity.x = 0;
-            this.body.velocity.y = this.MOVE_SPEED;
+            this.pathFindingGoalReached();
         } else {
             if (this.state.game.time.now > this.nextFindPathTime) {
                 this.nextFindPathTime = this.state.game.time.now + this.state.FIND_PATH_FREQUENCY;
