@@ -15,7 +15,6 @@ angular.module('uiApp').factory('InterludeState',
 
                 init: function (interlude) {
                     this.interlude = InterludeDictionary[interlude];
-                    this.words = this.interlude.text.split(' ');
                     this.count = -1;
                     this.max = this.interlude.text.length;
                 },
@@ -25,7 +24,7 @@ angular.module('uiApp').factory('InterludeState',
                     this.text = this.game.add.text(5, 5, "");
                     this.text.anchor.setTo(0.0);
                     this.text.font = 'Revalia';
-                    this.text.fontSize = 12;
+                    this.text.fontSize = 10;
                     this.text.align = 'left';
                     this.text.stroke = '#000000';
                     this.text.strokeThickness = 5;

@@ -16,6 +16,16 @@ angular.module('uiApp').factory('InterludeDictionary',
                     moveOn: function (game) {
                         game.state.start('Act1', true, false, 0, 0);
                     }
+                },
+                FoundCandlesInterlude: {
+                    text: "Wonder of wonders!\nBuried in this old manor, is a fallen candelabra with 20 lit candles!  Somehow these have escaped the darkness, " +
+                    "and you test that if you put one out, you can relight it from the others, though you cannot seem to light anything else.\n" +
+                    "You know you must bring these to the Council of Magi as fast as possible to see if the last flickers of salvation are in " +
+                    "your hands.  You will need to move quickly before you run out of candles, and your ability to hide from the demons will be " +
+                    "reduced.",
+                    moveOn: function (game) {
+                        game.state.start('Act1', true, false, 2, 20);
+                    }
                 }
             };
         }

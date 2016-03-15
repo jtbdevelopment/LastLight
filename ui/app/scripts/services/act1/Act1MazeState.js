@@ -388,7 +388,11 @@ angular.module('uiApp').factory('Act1MazeState',
                         //  TODO - End of Act
                         //  TODO - interludes
                         //  TODO - retry move on option
-                        this.game.state.start(this.state.current, true, false, this.level + 1, this.currentCandles + this.levelData.addsCandlesAtEnd);
+                        if (this.level === 1) {
+                            this.game.state.start('Interlude', true, false, 'FoundCandlesInterlude');
+                        } else {
+                            this.game.state.start(this.state.current, true, false, this.level + 1, this.currentCandles);
+                        }
                     }, this);
                 }
 
