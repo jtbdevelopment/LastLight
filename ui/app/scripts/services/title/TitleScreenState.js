@@ -17,23 +17,25 @@ angular.module('uiApp').factory('TitleScreenState',
                 create: function () {
                     this.game.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;
                     //  TODO - make a flame for i dot
-                    this.titleText = this.game.add.text(this.world.centerX, this.world.centerY, "Last Light");
-                    this.titleText.anchor.setTo(0.5);
-                    this.titleText.font = 'Revalia';
-                    this.titleText.fontSize = 80;
-                    this.titleText.align = 'center';
-                    this.titleText.stroke = '#000000';
-                    this.titleText.strokeThickness = 5;
-                    var gradient = this.titleText.context.createLinearGradient(0, 0, 0, this.titleText.canvas.height * 2);
+                    this.text = this.game.add.text(this.world.centerX, this.world.centerY, "Last Light");
+                    this.text.anchor.setTo(0.5);
+                    this.text.font = 'Revalia';
+                    this.text.fontSize = 80;
+                    this.text.align = 'center';
+                    this.text.stroke = '#000000';
+                    this.text.strokeThickness = 5;
+                    var gradient = this.text.context.createLinearGradient(0, 0, 0, this.text.canvas.height * 2);
                     gradient.addColorStop(0, '#FFD6AA');
                     gradient.addColorStop(1, '#FF9329');
-                    this.titleText.fill = gradient;
+                    this.text.fill = gradient;
                     this.shadowTexture = this.game.add.bitmapData(this.game.world.width, this.game.world.height);
                     this.lightSprite = this.game.add.image(this.game.camera.x, this.game.camera.y, this.shadowTexture);
                     this.lightSprite.blendMode = Phaser.blendModes.MULTIPLY;
                     this.shadowTexture.context.fillStyle = 'rgb(10, 10, 10)';
                     this.shadowTexture.context.fillRect(0, 0, this.game.world.width, this.game.world.height);
                     this.lightRadius = 400;
+                    this.game.input.keyboard.addCallbacks(this, undefined, undefined, this.moveOn);
+                    this.game.input.onTap.add(this.moveOn, this);
                 },
 
                 update: function () {
@@ -57,9 +59,13 @@ angular.module('uiApp').factory('TitleScreenState',
                         this.shadowTexture.dirty = true;
 
                     } else {
-                        //  TODO - go to picker/levels etc
-                        this.game.state.start('Act1', true, false, 0, 0);
+                        this.moveOn();
                     }
+                },
+
+                moveOn: function () {
+                    //  TODO - go to picker/levels etc
+                    this.game.state.start('Interlude', true, false, 'StartInterlude');
                 }
             };
 

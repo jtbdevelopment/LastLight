@@ -47,7 +47,6 @@ Act4Enemy.prototype.pathFindingGoalReached = function () {
     this.body.velocity.y = this.MOVE_SPEED;
 };
 
-
 Act4Enemy.prototype.updateFunction = function () {
     var closestOpponent = this.state.calculator.findClosestOpponent(this, this.state, this.state.alliesGroup, this.state.ENEMY_SEE_DISTANCE);
     if (angular.isDefined(closestOpponent.opponent)) {
