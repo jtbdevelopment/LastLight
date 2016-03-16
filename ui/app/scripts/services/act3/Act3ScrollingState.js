@@ -1,8 +1,8 @@
 'use strict';
 
 angular.module('uiApp').factory('Act3ScrollingState',
-    ['$timeout', 'Act3Settings', 'Act3Calculator', 'Phaser',
-        function ($timeout, Act3Settings, Act3Calculator, Phaser) {
+    ['$timeout', 'Act3Settings', 'Act3Calculator', 'HelpDisplay', 'Phaser',
+        function ($timeout, Act3Settings, Act3Calculator, HelpDisplay, Phaser) {
             return {
                 game: undefined,
                 load: undefined,
@@ -26,6 +26,7 @@ angular.module('uiApp').factory('Act3ScrollingState',
                 init: function (level, arrowsRemaining) {
                     this.level = level;
                     this.arrowsRemaining = arrowsRemaining;
+                    this.startingArrows = this.arrowsRemaining;
                     this.nextEligibleFiringTime = 0;
                     this.levelData = Act3Settings.levelData[this.level];
                     this.waveCounter = 0;
@@ -62,6 +63,7 @@ angular.module('uiApp').factory('Act3ScrollingState',
                     this.initializeKeyboard();
                     $timeout(this.revivePlayer, this.PLAYER_REVIVE_RATE, true, this);
                     $timeout(this.nextEnemyWave, this.enemyWaves[0].waitTime * 1000, true, this);
+                    HelpDisplay.initializeHelp(this, Act3Settings.helpText, true);
                 },
                 update: function () {
                     if (!this.game.ending) {
@@ -599,6 +601,10 @@ angular.module('uiApp').factory('Act3ScrollingState',
                     });
                     var deathTween = this.game.add.tween(this);
                     deathTween.to({PLAYER_LIGHT_RADIUS: 0}, 1000, Phaser.Easing.Power1, true);
+                    deathTween.onComplete.add(function () {
+                        //  TODO - retry move on option
+                        this.game.state.start(this.state.current, true, false, this.level, this.startingArrows);
+                    }, this);
                 },
 
                 winEnding: function () {
@@ -606,11 +612,12 @@ angular.module('uiApp').factory('Act3ScrollingState',
                     var winTween = this.game.add.tween(this);
                     winTween.to({PLAYER_LIGHT_RADIUS: 100}, 1000, Phaser.Easing.Power1, true);
                     winTween.onComplete.add(function () {
-                        //  TODO - End of Act
-                        //  TODO - interludes
                         //  TODO - retry move on option
-                        //  TODO - add arrows?
-                        this.game.state.start(this.state.current, true, false, this.level + 1, this.arrowsRemaining + this.levelData.addArrowsAtEnd);
+                        if ((this.level + 1) === Act3Settings.levelData.length) {
+                            this.game.state.start('Interlude', true, false, 'Act3EndInterlude');
+                        } else {
+                            this.game.state.start(this.state.current, true, false, this.level + 1, this.arrowsRemaining + this.levelData.addArrowsAtEnd);
+                        }
                     }, this);
                 }
             };

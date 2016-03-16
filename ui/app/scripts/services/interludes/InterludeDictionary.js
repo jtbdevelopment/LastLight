@@ -26,6 +26,25 @@ angular.module('uiApp').factory('InterludeDictionary',
                     moveOn: function (game) {
                         game.state.start('Act1', true, false, 2, 20);
                     }
+                },
+                Act1EndInterlude: {
+                    text: "X",
+                    moveOn: function (game) {
+                        //  TODO - Act 2!!
+                        game.state.start('Act3', true, false, 0, 1000);
+                    }
+                },
+                Act2EndInterlude: {
+                    text: "X",
+                    moveOn: function (game) {
+                        game.state.start('Act3', true, false, 0, 1000);
+                    }
+                },
+                Act3EndInterlude: {
+                    text: "X",
+                    moveOn: function (game) {
+                        game.state.start('Act4', true, false);
+                    }
                 }
             };
         }

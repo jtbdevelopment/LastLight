@@ -25,22 +25,22 @@ angular.module('uiApp').factory('Act1Settings',
                     startingX: 16,
                     startingY: 1264,
                     playerHidingLightRadius: 10,
-                    playerMovingLightRadius: 40
+                    playerMovingLightRadius: 40,
+                    helpText: "Find safety!\nUse arrows to move.\nPress C to take cover.\n? to show this help."
                 },
                 {
                     startingX: 32,
                     startingY: 1050,
                     playerHidingLightRadius: 10,
-                    playerMovingLightRadius: 40
+                    playerMovingLightRadius: 40,
+                    helpText: "Find safety!\nUse arrows to move.\nPress C to take cover.\n? to show this help."
                 }
 
-            ]
+            ],
+            helpText: "Take the candles to the Council before they are gone!\nUse arrows to move.\nPress C to take cover, but you cannot light a new candle while under cover.\n? to show this help."
         };
         act1Data.levels = act1Data.levelData.length;
         angular.forEach(act1Data.levelData, function(level) {
-            if(angular.isUndefined(level.addsCandlesAtEnd)) {
-                level.addsCandlesAtEnd = 0;
-            }
             if(angular.isUndefined(level.playerMovingLightRadius)) {
                 level.playerMovingLightRadius = 60;
             }

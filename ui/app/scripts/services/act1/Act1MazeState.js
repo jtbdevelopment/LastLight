@@ -11,13 +11,14 @@ angular.module('uiApp').factory('Act1MazeState',
 
                 DEBUG: false,
                 //  Phaser state functions - begin
-                init: function (level, startingCandles) {
+                init: function (level, startingCandles, startingTime) {
                     this.tileHits = [];
                     this.level = level;
                     this.levelData = Act1Settings.levelData[level];
-                    this.startingCandles = startingCandles;
-                    this.currentCandles = this.startingCandles;
-                    this.currentCandleTime = Act1Settings.TIME_PER_CANDLE;
+                    this.currentCandles = startingCandles;
+                    this.currentCandleTime = startingTime || Act1Settings.TIME_PER_CANDLE;
+                    this.startingCandles = this.currentCandles;
+                    this.startingCandleTime = this.currentCandleTime;
                 },
                 preload: function () {
                     //  Note tile asset IDs do not match because 0 represents no tile
@@ -206,7 +207,6 @@ angular.module('uiApp').factory('Act1MazeState',
                 },
 
                 createMovableObjects: function (map) {
-                    //  TODO - custom class for logic?
                     this.movableGroup = this.game.add.physicsGroup(Phaser.Physics.P2JS);
                     map.createFromObjects('Object Layer ' + this.level, 214, 'hyptosis_tile-art-batch-1', 214, true, false, this.movableGroup);
                     this.movableGroup.forEach(function (movable) {
@@ -248,6 +248,7 @@ angular.module('uiApp').factory('Act1MazeState',
                 },
 
                 initializeCandleTracker: function () {
+                    this.candleTimeout = undefined;
                     if (this.startingCandles > 0) {
                         var textStyle = {
                             font: '10px Arial',
@@ -257,10 +258,12 @@ angular.module('uiApp').factory('Act1MazeState',
                         this.candleText = this.game.add.text(0, 0, this.makeCandleText(), textStyle);
                         this.candleText.fixedToCamera = true;
                         this.candleText.cameraOffset.setTo(0, 0);
-                        $timeout(this.candleTimeoutHandler, 1000, true, this);
+                        this.candleTimeout = $timeout(this.candleTimeoutHandler, 1000, true, this);
                     }
                 },
                 //  Creation functions - end
+
+                //  help text - end
 
                 //  Candle related - begin
                 makeCandleText: function () {
@@ -285,7 +288,7 @@ angular.module('uiApp').factory('Act1MazeState',
                     }
                     state.candleText.text = state.makeCandleText();
                     if (state.currentCandles > 0 || state.currentCandleTime > 0) {
-                        $timeout(state.candleTimeoutHandler, 1000, true, state);
+                        state.candleTimeout = $timeout(state.candleTimeoutHandler, 1000, true, state);
                     } else {
                         state.deathEnding();
                     }
@@ -376,22 +379,26 @@ angular.module('uiApp').factory('Act1MazeState',
                         this.player.y = this.levelData.startingY;
                         this.player.kill();
                         //  TODO - retry move on option
-                        this.game.state.start(this.state.current, true, false, this.level, this.startingCandles);
+                        this.game.state.start(this.state.current, true, false, this.level, this.startingCandles, this.startingCandleTime);
                     }, this);
                 },
 
                 winEnding: function () {
                     this.game.ending = true;
                     var winTween = this.game.add.tween(this);
+                    if (angular.isDefined(this.candleTimeout)) {
+                        $timeout.cancel(this.candleTimeout);
+                    }
                     winTween.to({playerLightRadius: 100}, 1000, Phaser.Easing.Power1, true);
                     winTween.onComplete.add(function () {
-                        //  TODO - End of Act
-                        //  TODO - interludes
                         //  TODO - retry move on option
-                        if (this.level === 1) {
+                        if ((this.level + 1) === Act1Settings.levelData.length) {
+                            this.game.state.start('Interlude', true, false, 'Act1EndInterlude');
+                        }
+                        else if (this.level === 1) {
                             this.game.state.start('Interlude', true, false, 'FoundCandlesInterlude');
                         } else {
-                            this.game.state.start(this.state.current, true, false, this.level + 1, this.currentCandles);
+                            this.game.state.start(this.state.current, true, false, this.level + 1, this.currentCandles, this.currentCandleTime);
                         }
                     }, this);
                 }

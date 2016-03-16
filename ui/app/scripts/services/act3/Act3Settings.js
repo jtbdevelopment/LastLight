@@ -27,6 +27,7 @@ angular.module('uiApp').factory('Act3Settings',
             //  TODO - different classes with attacks?
             spawnHealthLevels: [1, 2, 5, 10],
 
+            helpText: "Fight your way to the tower!\nUse arrows to move, space to fire.\n1-4 for different unit formations.\n? for this help.",
             levelData: [
                 //  Level 1
                 {
@@ -42,7 +43,7 @@ angular.module('uiApp').factory('Act3Settings',
 
                     enemyWaves: [
                         {
-                            waitTime: 0,
+                            waitTime: 10,
                             x: 800,
                             y: 325,
                             xSpeed: -100,
