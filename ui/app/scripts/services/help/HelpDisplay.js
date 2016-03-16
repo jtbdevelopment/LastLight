@@ -23,9 +23,9 @@ angular.module('uiApp').factory('HelpDisplay',
                     if (show === false) {
                         this.toggleText();
                     } else {
-                        $timeout(toggleTextTimeout, 10000)
+                        $timeout(toggleTextTimeout, 10000);
                     }
-                    state.game.input.keyboard.addKey(Phaser.Keyboard.QUESTION_MARK).onUp.add(this.toggleText, this)
+                    state.game.input.keyboard.addKey(Phaser.Keyboard.QUESTION_MARK).onUp.add(this.toggleText, this);
                 },
 
 
