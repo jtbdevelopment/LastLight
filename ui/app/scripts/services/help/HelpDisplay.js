@@ -9,8 +9,11 @@ angular.module('uiApp').factory('HelpDisplay',
                 initializeHelp: function (state, helpText, show) {
                     this.show = true;
                     this.state = state;
-                    state.helpText = state.game.add.text(state.game.world.centerX, state.game.world.centerY, helpText);
+                    state.helpText = state.game.add.text(state.game.camera.view.centerX, state.game.camera.view.centerY, helpText);
                     state.helpText.anchor.setTo(0.5);
+                    state.helpText.fixedToCamera = true;
+                    state.helpText.cameraOffset.setTo(state.game.camera.view.centerX, state.game.camera.view.centerY);
+
                     state.helpText.font = 'Revalia';
                     state.helpText.fontSize = 18;
                     state.helpText.align = 'center';
@@ -23,7 +26,7 @@ angular.module('uiApp').factory('HelpDisplay',
                     if (show === false) {
                         this.toggleText();
                     } else {
-                        state.game.time.events.repeat(8000, 1, this.turnOffTextTimeout, this)
+                        state.game.time.events.repeat(8000, 1, this.turnOffTextTimeout, this);
                     }
                     state.game.input.keyboard.addKey(Phaser.Keyboard.QUESTION_MARK).onUp.add(this.toggleText, this);
                 },

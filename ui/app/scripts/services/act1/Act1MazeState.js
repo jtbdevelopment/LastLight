@@ -1,8 +1,8 @@
 'use strict';
 
 angular.module('uiApp').factory('Act1MazeState',
-    ['$timeout', 'Act1Settings', 'Phaser',
-        function ($timeout, Act1Settings, Phaser) {
+    ['$timeout', 'Act1Settings', 'HelpDisplay', 'Phaser',
+        function ($timeout, Act1Settings, HelpDisplay, Phaser) {
             return {
                 game: undefined,
                 load: undefined,
@@ -57,6 +57,9 @@ angular.module('uiApp').factory('Act1MazeState',
                     this.initializeWorldShadowing();
                     this.game.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;
                     this.initializeCandleTracker();
+                    HelpDisplay.initializeHelp(this,
+                        (angular.isDefined(this.levelData.helpText) ? this.levelData.helpText : Act1Settings.helpText),
+                        true);
                 },
                 clearTileHitDisplay: function () {
                     if (this.state.DEBUG) {
