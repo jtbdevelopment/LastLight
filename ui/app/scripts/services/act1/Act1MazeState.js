@@ -1,8 +1,8 @@
 'use strict';
 
 angular.module('uiApp').factory('Act1MazeState',
-    ['$timeout', 'Act1Settings', 'HelpDisplay', 'Phaser',
-        function ($timeout, Act1Settings, HelpDisplay, Phaser) {
+    ['Act1Settings', 'HelpDisplay', 'Phaser',
+        function (Act1Settings, HelpDisplay, Phaser) {
             return {
                 game: undefined,
                 load: undefined,
@@ -59,7 +59,7 @@ angular.module('uiApp').factory('Act1MazeState',
                     this.initializeCandleTracker();
                     HelpDisplay.initializeHelp(this,
                         (angular.isDefined(this.levelData.helpText) ? this.levelData.helpText : Act1Settings.helpText),
-                        true);
+                        (this.level === 0 || this.level === 2));
                 },
                 clearTileHitDisplay: function () {
                     if (this.state.DEBUG) {
@@ -261,7 +261,7 @@ angular.module('uiApp').factory('Act1MazeState',
                         this.candleText = this.game.add.text(0, 0, this.makeCandleText(), textStyle);
                         this.candleText.fixedToCamera = true;
                         this.candleText.cameraOffset.setTo(0, 0);
-                        this.candleTimeout = $timeout(this.candleTimeoutHandler, 1000, true, this);
+                        this.candleTimeout = this.game.time.events.repeat(1000, 1, this.candleTimeoutHandler, this);
                     }
                 },
                 //  Creation functions - end
@@ -273,27 +273,27 @@ angular.module('uiApp').factory('Act1MazeState',
                     return 'Candles: ' + this.currentCandles + ', Time: ' + this.currentCandleTime;
                 },
 
-                candleTimeoutHandler: function (state) {
-                    if (state.game.ending) {
+                candleTimeoutHandler: function () {
+                    if (this.game.ending) {
                         return;
                     }
-                    state.currentCandleTime -= 1;
-                    if (state.currentCandleTime === 0) {
-                        if (state.currentCandles > 1) {
-                            if (state.player.isHiding) {
-                                state.deathEnding();
+                    this.currentCandleTime -= 1;
+                    if (this.currentCandleTime === 0) {
+                        if (this.currentCandles > 1) {
+                            if (this.player.isHiding) {
+                                this.deathEnding();
                             } else {
                                 //  TODO - play match type sound?
-                                state.currentCandles -= 1;
-                                state.currentCandleTime = Act1Settings.TIME_PER_CANDLE;
+                                this.currentCandles -= 1;
+                                this.currentCandleTime = Act1Settings.TIME_PER_CANDLE;
                             }
                         }
                     }
-                    state.candleText.text = state.makeCandleText();
-                    if (state.currentCandles > 0 || state.currentCandleTime > 0) {
-                        state.candleTimeout = $timeout(state.candleTimeoutHandler, 1000, true, state);
+                    this.candleText.text = this.makeCandleText();
+                    if (this.currentCandles > 0 || this.currentCandleTime > 0) {
+                        this.candleTimeout = this.game.time.events.repeat(1000, 1, this.candleTimeoutHandler, this);
                     } else {
-                        state.deathEnding();
+                        this.deathEnding();
                     }
                 },
 
@@ -390,7 +390,7 @@ angular.module('uiApp').factory('Act1MazeState',
                     this.game.ending = true;
                     var winTween = this.game.add.tween(this);
                     if (angular.isDefined(this.candleTimeout)) {
-                        $timeout.cancel(this.candleTimeout);
+                        this.game.time.events.remove(this.candleTimeout);
                     }
                     winTween.to({playerLightRadius: 100}, 1000, Phaser.Easing.Power1, true);
                     winTween.onComplete.add(function () {
