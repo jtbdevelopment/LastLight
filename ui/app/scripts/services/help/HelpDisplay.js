@@ -1,8 +1,8 @@
 'use strict';
 
 angular.module('uiApp').factory('HelpDisplay',
-    ['$timeout', 'Phaser',
-        function ($timeout, Phaser) {
+    ['Phaser',
+        function (Phaser) {
             var helpDisplay = {
                 show: false,
 
@@ -23,11 +23,16 @@ angular.module('uiApp').factory('HelpDisplay',
                     if (show === false) {
                         this.toggleText();
                     } else {
-                        $timeout(toggleTextTimeout, 10000);
+                        state.game.time.events.repeat(8000, 1, this.turnOffTextTimeout, this)
                     }
                     state.game.input.keyboard.addKey(Phaser.Keyboard.QUESTION_MARK).onUp.add(this.toggleText, this);
                 },
 
+                turnOffTextTimeout: function () {
+                    if (this.show === true) {
+                        this.toggleText();
+                    }
+                },
 
                 toggleText: function () {
                     this.show = !this.show;
@@ -38,10 +43,6 @@ angular.module('uiApp').factory('HelpDisplay',
                     }
                 }
             };
-
-            function toggleTextTimeout() {
-                helpDisplay.toggleText();
-            }
 
             return helpDisplay;
         }]);
