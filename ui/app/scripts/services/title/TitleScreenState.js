@@ -24,7 +24,7 @@ angular.module('uiApp').factory('TitleScreenState',
                     this.text.align = 'center';
                     this.text.stroke = '#000000';
                     this.text.strokeThickness = 5;
-                    var gradient = this.text.context.createLinearGradient(0, 0, 0, this.text.canvas.height * 2);
+                    var gradient = this.text.context.createLinearGradient(0, this.text.canvas.height / 2, 0, this.text.canvas.height * 2);
                     gradient.addColorStop(0, '#FFD6AA');
                     gradient.addColorStop(1, '#FF9329');
                     this.text.fill = gradient;
