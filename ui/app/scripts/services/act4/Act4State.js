@@ -3,8 +3,8 @@
 'use strict';
 
 angular.module('uiApp').factory('Act4State',
-    ['$timeout', 'Phaser', 'EasyStar', 'Act4Calculator',
-        function ($timeout, Phaser, EasyStar, Act4Calculator) {
+    ['Phaser', 'EasyStar', 'Act4Calculator',
+        function (Phaser, EasyStar, Act4Calculator) {
             return {
                 calculator: Act4Calculator,
                 game: undefined,
@@ -101,7 +101,7 @@ angular.module('uiApp').factory('Act4State',
                     this.initializeInfoText();
                     this.game.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;
                     this.game.camera.follow(this.focusFire);
-                    $timeout(this.addEnemies, this.ENEMY_SPAWN_FREQUENCY, false, this);
+                    this.game.time.events.add(this.ENEMY_SPAWN_FREQUENCY, this.addEnemies, this);
                 },
 
                 clearTileHitDisplay: function () {
@@ -348,23 +348,23 @@ angular.module('uiApp').factory('Act4State',
                     this.enemyGroup.setAll('body.height', 15);
                     this.enemyGroup.setAll('body.width', 15);
                 },
-                addEnemies: function (state) {
-                    var enemiesToAdd = Math.round(Math.max(10 - (state.fogHealthPercent * 10), 1));
+                addEnemies: function () {
+                    var enemiesToAdd = Math.round(Math.max(10 - (this.fogHealthPercent * 10), 1));
 
                     //  TODO - review scaling
-                    var scale = 1 + (1 - state.fogHealthPercent);
+                    var scale = 1 + (1 - this.fogHealthPercent);
                     while (enemiesToAdd > 0) {
-                        var enemy = state.enemyGroup.getFirstExists(false);
+                        var enemy = this.enemyGroup.getFirstExists(false);
                         var y = 265;
                         var x;
                         var looking = true;
                         while (looking) {
-                            x = state.game.rnd.integerInRange(1, state.game.world.width) - 1;
-                            var tiles = state.blockLayer.getTiles(
-                                x * state.scale,
-                                y * state.scale,
-                                enemy.width * state.scale,
-                                enemy.height * state.scale, false, false);
+                            x = this.game.rnd.integerInRange(1, this.game.world.width) - 1;
+                            var tiles = this.blockLayer.getTiles(
+                                x * this.scale,
+                                y * this.scale,
+                                enemy.width * this.scale,
+                                enemy.height * this.scale, false, false);
 
                             if (angular.isDefined(tiles) && tiles.length >= 0) {
                                 looking = angular.isDefined(tiles.find(function (e) {
@@ -375,7 +375,7 @@ angular.module('uiApp').factory('Act4State',
                         enemy.resetEnemy(x, y, 2 * scale, 2 * scale, Math.min(25, 15 * scale));
                         enemiesToAdd -= 1;
                     }
-                    $timeout(state.addEnemies, state.ENEMY_SPAWN_FREQUENCY, false, state);
+                    this.game.time.events.add(this.ENEMY_SPAWN_FREQUENCY, this.addEnemies, this);
                 },
 
                 initializeWorldShadowing: function () {

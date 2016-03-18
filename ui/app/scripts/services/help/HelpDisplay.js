@@ -26,7 +26,7 @@ angular.module('uiApp').factory('HelpDisplay',
                     if (show === false) {
                         this.toggleText();
                     } else {
-                        state.game.time.events.repeat(8000, 1, this.turnOffTextTimeout, this);
+                        state.game.time.events.add(8000, this.turnOffTextTimeout, this);
                     }
                     state.game.input.keyboard.addKey(Phaser.Keyboard.QUESTION_MARK).onUp.add(this.toggleText, this);
                 },

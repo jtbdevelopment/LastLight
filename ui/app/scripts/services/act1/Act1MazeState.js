@@ -261,7 +261,7 @@ angular.module('uiApp').factory('Act1MazeState',
                         this.candleText = this.game.add.text(0, 0, this.makeCandleText(), textStyle);
                         this.candleText.fixedToCamera = true;
                         this.candleText.cameraOffset.setTo(0, 0);
-                        this.candleTimeout = this.game.time.events.repeat(1000, 1, this.candleTimeoutHandler, this);
+                        this.candleTimeout = this.game.time.events.add(1000, this.candleTimeoutHandler, this);
                     }
                 },
                 //  Creation functions - end
@@ -291,7 +291,7 @@ angular.module('uiApp').factory('Act1MazeState',
                     }
                     this.candleText.text = this.makeCandleText();
                     if (this.currentCandles > 0 || this.currentCandleTime > 0) {
-                        this.candleTimeout = this.game.time.events.repeat(1000, 1, this.candleTimeoutHandler, this);
+                        this.candleTimeout = this.game.time.events.add(1000, this.candleTimeoutHandler, this);
                     } else {
                         this.deathEnding();
                     }
