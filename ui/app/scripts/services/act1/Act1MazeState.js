@@ -395,11 +395,11 @@ angular.module('uiApp').factory('Act1MazeState',
                     winTween.to({playerLightRadius: 100}, 1000, Phaser.Easing.Power1, true);
                     winTween.onComplete.add(function () {
                         //  TODO - retry move on option
-                        if ((this.level + 1) === Act1Settings.levelData.length) {
-                            this.game.state.start('Interlude', true, false, 'Act1EndInterlude');
-                        }
-                        else if (this.level === 1) {
+                        if (this.level === 1) {
                             this.game.state.start('Interlude', true, false, 'FoundCandlesInterlude');
+                        }
+                        else if ((this.level + 1) === Act1Settings.levelData.length) {
+                            this.game.state.start('Interlude', true, false, 'Act1EndInterlude');
                         } else {
                             this.game.state.start(this.state.current, true, false, this.level + 1, this.currentCandles, this.currentCandleTime);
                         }
