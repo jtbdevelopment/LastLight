@@ -4,13 +4,13 @@
 var SimpleFiringBoss = function (game, x, y, key, frame) {
     Phaser.Sprite.call(this, game, x, y, key, frame);
     this.state = undefined;
-    this.$timeout = undefined;
 };
 
 SimpleFiringBoss.prototype = Object.create(Phaser.Sprite.prototype);
 SimpleFiringBoss.prototype.constructor = SimpleFiringBoss;
 
-SimpleFiringBoss.prototype.bossLoaded = function () {
+SimpleFiringBoss.prototype.resetBoss = function (x, y, health) {
+    Phaser.Component.Reset.prototype.reset.call(this, x, y, health);
     this.attacks = this.state.game.add.group();
     this.attacks.enableBody = true;
     this.attacks.physicsBodyType = Phaser.Physics.ARCADE;
@@ -50,7 +50,7 @@ SimpleFiringBoss.prototype.updateFunction = function (playerCenter) {
 
 SimpleFiringBoss.prototype.attackHitsPlayer = function (player, attack) {
     this.state.enemyHitsPlayer(player);
-    if(!this.hitsMultiple) {
+    if (!this.hitsMultiple) {
         attack.kill();
     }
 };

@@ -1,8 +1,8 @@
 'use strict';
 
 angular.module('uiApp').factory('Act3ScrollingState',
-    ['$timeout', 'Act3Settings', 'Act3Calculator', 'HelpDisplay', 'Phaser',
-        function ($timeout, Act3Settings, Act3Calculator, HelpDisplay, Phaser) {
+    ['Act3Settings', 'Act3Calculator', 'HelpDisplay', 'Phaser',
+        function (Act3Settings, Act3Calculator, HelpDisplay, Phaser) {
             return {
                 game: undefined,
                 load: undefined,
@@ -61,8 +61,9 @@ angular.module('uiApp').factory('Act3ScrollingState',
                     this.initializeWorldShadowing();
                     this.initializeArrowTracker();
                     this.initializeKeyboard();
-                    $timeout(this.revivePlayer, this.PLAYER_REVIVE_RATE, true, this);
-                    $timeout(this.nextEnemyWave, this.enemyWaves[0].waitTime * 1000, true, this);
+                    this.game.time.events.add(this.PLAYER_REVIVE_RATE, this.revivePlayer, this);
+                    this.game.time.events.add(this.enemyWaves[this.waveCounter].waitTime * 1000, this.nextEnemyWave, this);
+
                     HelpDisplay.initializeHelp(this, Act3Settings.helpText, true);
                 },
                 update: function () {
@@ -232,12 +233,12 @@ angular.module('uiApp').factory('Act3ScrollingState',
                 },
                 //  Arrow related -end
 
-                nextEnemyWave: function (state) {
-                    if (!state.game.ending) {
+                nextEnemyWave: function () {
+                    if (!this.game.ending) {
 
-                        var waveData = state.enemyWaves[state.waveCounter];
+                        var waveData = this.enemyWaves[this.waveCounter];
 
-                        var speed = state.levelData.enemySpeed;
+                        var speed = this.levelData.enemySpeed;
                         var velX = waveData.xSpeed * speed / 100;
                         var xAdjust = velX / -speed;
                         var velY = waveData.ySpeed * speed / 100;
@@ -250,9 +251,9 @@ angular.module('uiApp').factory('Act3ScrollingState',
                         var height = Act3Settings.baseSpawnSize + Math.floor(waveData.health / Act3Settings.maxSpawnHealthLevel * Act3Settings.scaleSpawnSize);
                         var width = Act3Settings.baseSpawnSize + Math.floor(waveData.health / Act3Settings.maxSpawnHealthLevel * Act3Settings.scaleSpawnSize);
                         for (var i = 0; i < enemies; ++i) {
-                            var enemy = state.enemyGroups[className].getFirstExists(false);
-                            state.enemyGroups[className].remove(enemy);
-                            state.enemies.add(enemy);
+                            var enemy = this.enemyGroups[className].getFirstExists(false);
+                            this.enemyGroups[className].remove(enemy);
+                            this.enemies.add(enemy);
                             var x = startX + (width * i * xAdjust),
                                 y = startY - (height * i * yAdjust);
 
@@ -266,23 +267,20 @@ angular.module('uiApp').factory('Act3ScrollingState',
                             enemy.body.height = height;
                             enemy.body.width = width;
                         }
-                        state.waveCounter += 1;
-                        if (state.waveCounter < state.totalWaves) {
-                            $timeout(state.nextEnemyWave, state.enemyWaves[state.waveCounter].waitTime * 1000, true, state);
+                        this.waveCounter += 1;
+                        if (this.waveCounter < this.totalWaves) {
+                            this.game.time.events.add(this.enemyWaves[this.waveCounter].waitTime * 1000, this.nextEnemyWave, this);
                         } else {
-                            $timeout(state.spawnBoss, state.levelData.boss.waitTime * 1000, true, state);
+                            this.game.time.events.add(this.levelData.boss.waitTime * 1000, this.spawnBoss, this);
                         }
                     }
                 },
-                spawnBoss: function (state) {
-                    if (!state.game.ending) {
-                        var boss = state.boss.getFirstExists(false);
-                        boss.reset(state.levelData.boss.x, state.levelData.boss.y);
-                        state.enemies.add(boss);
-                        boss.health = state.levelData.boss.health;
-                        boss.timeout = $timeout;
-                        boss.bossLoaded();
-                        state.boss = boss;
+                spawnBoss: function () {
+                    if (!this.game.ending) {
+                        var boss = this.boss.getFirstExists(false);
+                        boss.resetBoss(this.levelData.boss.x, this.levelData.boss.y, this.levelData.boss.health);
+                        this.enemies.add(boss);
+                        this.boss = boss;
                     }
                 },
 
@@ -291,17 +289,18 @@ angular.module('uiApp').factory('Act3ScrollingState',
                     //  TODO - show
                     player.invulnerable = false;
                 },
-                revivePlayer: function (state) {
-                    if (!state.game.ending) {
-                        var dead = state.players.getFirstDead();
+                revivePlayer: function () {
+                    if (!this.game.ending) {
+                        var dead = this.players.getFirstDead();
                         if (dead !== null && angular.isDefined(dead)) {
                             dead.reset(0, 0);
                             dead.invulnerable = true;
                             //  TODO - sound, make invulnerable visible
-                            $timeout(state.makeVulnerable, state.PLAYER_INVULNERABLE_RATE, true, dead);
-                            state.moveHelpers();
+                            this.game.time.events.add(this.PLAYER_INVULNERABLE_RATE, this.makeVulnerable, this, dead);
+
+                            this.moveHelpers();
                         }
-                        $timeout(state.revivePlayer, state.PLAYER_REVIVE_RATE, true, state);
+                        this.game.time.events.add(this.PLAYER_REVIVE_RATE, this.revivePlayer, this);
                     }
                 },
                 fireArrows: function () {
@@ -581,7 +580,6 @@ angular.module('uiApp').factory('Act3ScrollingState',
                 },
                 enemyHitsPlayer: function (player) {
                     if (!player.invulnerable) {
-                        console.log('Kill');
                         player.kill();
                         this.players.remove(player, false);
                         this.players.add(player);
