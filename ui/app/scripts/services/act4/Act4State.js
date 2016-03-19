@@ -3,8 +3,8 @@
 'use strict';
 
 angular.module('uiApp').factory('Act4State',
-    ['Phaser', 'EasyStar', 'Act4Calculator',
-        function (Phaser, EasyStar, Act4Calculator) {
+    ['Phaser', 'EasyStar', 'Act4Calculator', 'TextFormatter',
+        function (Phaser, EasyStar, Act4Calculator, TextFormatter) {
             return {
                 calculator: Act4Calculator,
                 game: undefined,
@@ -392,29 +392,23 @@ angular.module('uiApp').factory('Act4State',
                 },
 
                 initializeInfoText: function () {
-                    var textStyle = {
-                        font: '12px Arial',
-                        fill: '#FF9329',
-                        align: 'left'
-                    };
-                    this.fogHealthText = this.game.add.text(0, 0, '', textStyle);
-                    this.fogHealthText.fixedToCamera = true;
-                    this.fogHealthText.cameraOffset.setTo(3, 0);
+                    this.fogHealthText = this.game.add.text(0, 0, '');
+                    TextFormatter.formatTracker(this.fogHealthText);
 
-                    this.sunPositionText = this.game.add.text(0, 0, '', textStyle);
-                    this.sunPositionText.fixedToCamera = true;
+                    this.sunPositionText = this.game.add.text(0, 0, '');
+                    TextFormatter.formatTracker(this.sunPositionText);
                     this.sunPositionText.cameraOffset.setTo(3, 15);
 
-                    this.towerHealthText = this.game.add.text(0, 0, '', textStyle);
-                    this.towerHealthText.fixedToCamera = true;
+                    this.towerHealthText = this.game.add.text(0, 0, '');
+                    TextFormatter.formatTracker(this.towerHealthText);
                     this.towerHealthText.cameraOffset.setTo(3, 30);
 
-                    this.alliesText = this.game.add.text(0, 0, '', textStyle);
-                    this.alliesText.fixedToCamera = true;
+                    this.alliesText = this.game.add.text(0, 0, '');
+                    TextFormatter.formatTracker(this.alliesText);
                     this.alliesText.cameraOffset.setTo(3, 45);
 
-                    this.enemiesText = this.game.add.text(0, 0, '', textStyle);
-                    this.enemiesText.fixedToCamera = true;
+                    this.enemiesText = this.game.add.text(0, 0, '');
+                    TextFormatter.formatTracker(this.enemiesText);
                     this.enemiesText.cameraOffset.setTo(3, 60);
                 },
                 //  Creation functions - end

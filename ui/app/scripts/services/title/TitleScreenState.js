@@ -1,8 +1,8 @@
 'use strict';
 
 angular.module('uiApp').factory('TitleScreenState',
-    ['$timeout', 'Phaser',
-        function ($timeout, Phaser) {
+    ['Phaser',
+        function (Phaser) {
             var titleScreen = {
                 game: undefined,
                 load: undefined,

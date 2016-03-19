@@ -26,18 +26,18 @@ angular.module('uiApp').factory('Act1Settings',
                     startingY: 1264,
                     playerHidingLightRadius: 10,
                     playerMovingLightRadius: 40,
-                    helpText: "Find safety!\nUse arrows to move.\nPress C to take cover.\n? to show this help."
+                    helpText: "Find safety!\nUse arrows to move.\nPress C to take cover.\n? to show/hide this help."
                 },
                 {
                     startingX: 32,
                     startingY: 1050,
                     playerHidingLightRadius: 10,
                     playerMovingLightRadius: 40,
-                    helpText: "Find safety!\nUse arrows to move.\nPress C to take cover.\n? to show this help."
+                    helpText: "Find safety!\nUse arrows to move.\nPress C to take cover.\n? to show/hide this help."
                 }
 
             ],
-            helpText: "Take the candles to the Council before they are gone!\nUse arrows to move.\nPress C to take cover, but you cannot light a new candle while under cover.\n? to show this help."
+            helpText: "Take the candles to the Council before they are gone!\nUse arrows to move.\nPress C to take cover, but you cannot light a new candle while under cover.\n? to show/hide this help."
         };
         act1Data.levels = act1Data.levelData.length;
         angular.forEach(act1Data.levelData, function(level) {

@@ -1,8 +1,8 @@
 'use strict';
 
 angular.module('uiApp').factory('Act1MazeState',
-    ['Act1Settings', 'HelpDisplay', 'Phaser',
-        function (Act1Settings, HelpDisplay, Phaser) {
+    ['Act1Settings', 'HelpDisplay', 'Phaser', 'TextFormatter',
+        function (Act1Settings, HelpDisplay, Phaser, TextFormatter) {
             return {
                 game: undefined,
                 load: undefined,
@@ -259,8 +259,7 @@ angular.module('uiApp').factory('Act1MazeState',
                             align: 'left'
                         };
                         this.candleText = this.game.add.text(0, 0, this.makeCandleText(), textStyle);
-                        this.candleText.fixedToCamera = true;
-                        this.candleText.cameraOffset.setTo(0, 0);
+                        TextFormatter.formatTracker(this.candleText);
                         this.candleTimeout = this.game.time.events.add(1000, this.candleTimeoutHandler, this);
                     }
                 },

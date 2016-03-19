@@ -1,8 +1,8 @@
 'use strict';
 
 angular.module('uiApp').factory('Act3ScrollingState',
-    ['Act3Settings', 'Act3Calculator', 'HelpDisplay', 'Phaser',
-        function (Act3Settings, Act3Calculator, HelpDisplay, Phaser) {
+    ['Act3Settings', 'Act3Calculator', 'HelpDisplay', 'Phaser', 'TextFormatter',
+        function (Act3Settings, Act3Calculator, HelpDisplay, Phaser, TextFormatter) {
             return {
                 game: undefined,
                 load: undefined,
@@ -190,14 +190,8 @@ angular.module('uiApp').factory('Act3ScrollingState',
                 },
                 initializeArrowTracker: function () {
                     if (this.arrowsRemaining > 0) {
-                        var textStyle = {
-                            font: '10px Arial',
-                            fill: '#FF9329',
-                            align: 'left'
-                        };
-                        this.arrowText = this.game.add.text(0, 0, this.makeArrowText(), textStyle);
-                        this.arrowText.fixedToCamera = true;
-                        this.arrowText.cameraOffset.setTo(0, 0);
+                        this.arrowText = this.game.add.text(0, 0, this.makeArrowText());
+                        TextFormatter.formatTracker(this.arrowText);
                     }
                 },
                 //  Creation functions - end
