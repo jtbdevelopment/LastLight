@@ -39,6 +39,7 @@ angular.module('uiApp').factory('Act1MazeState',
                     this.load.image('demon', 'images/DemonMinorFighter.png');
                 },
                 create: function () {
+                    this.game.resetDefaultSize();
                     this.playerLightRadius = this.levelData.playerMovingLightRadius;
                     this.demonMaxSight = this.levelData.enemySenseMovingDistance;
                     this.game.ending = false;

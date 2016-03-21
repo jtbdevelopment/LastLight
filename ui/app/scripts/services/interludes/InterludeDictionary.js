@@ -24,9 +24,7 @@ angular.module('uiApp').factory('InterludeDictionary',
                     "your hands.  You will need to move quickly before you run out of candles, and your ability to hide from the demons will be " +
                     "reduced.",
                     moveOn: function (game) {
-                        //  TODO  -go to Act1 next level
-                        //game.state.start('Act1', true, false, 2, 20);
-                        game.state.start('Act3', true, false, 0, 1000);
+                        game.state.start('Act1', true, false, 2, 20);
                     }
                 },
                 Act1EndInterlude: {

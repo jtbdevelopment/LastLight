@@ -34,6 +34,12 @@ angular.module('uiApp').factory('Act1Settings',
                     playerHidingLightRadius: 10,
                     playerMovingLightRadius: 40,
                     helpText: "Find safety!\nUse arrows to move.\nPress C to take cover.\n? to show/hide this help."
+                },
+
+                //  TODO - this is just a junk copy of 1st level
+                {
+                    startingX: 16,
+                    startingY: 1264
                 }
 
             ],

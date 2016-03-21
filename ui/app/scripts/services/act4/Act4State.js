@@ -64,6 +64,7 @@ angular.module('uiApp').factory('Act4State',
                     this.load.image('arrow', 'images/enemy-bullet.png');
                 },
                 create: function () {
+                    this.game.resetDefaultSize();
                     this.tileHits = [];
                     this.game.ending = false;
                     this.scale = this.MAX_ZOOM;

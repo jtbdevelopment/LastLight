@@ -51,6 +51,7 @@ angular.module('uiApp').factory('Act3ScrollingState',
                 create: function () {
                     this.game.ending = false;
                     this.game.physics.startSystem(Phaser.Physics.ARCADE);
+                    this.game.resetDefaultSize();
                     this.game.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;
                     this.game.world.resize(this.game.width, this.game.height);
                     this.game.physics.arcade.setBoundsToWorld();
