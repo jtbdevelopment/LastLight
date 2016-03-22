@@ -3,8 +3,8 @@
 'use strict';
 
 angular.module('uiApp').factory('Act4State',
-    ['Phaser', 'EasyStar', 'Act4Calculator', 'TextFormatter',
-        function (Phaser, EasyStar, Act4Calculator, TextFormatter) {
+    ['Phaser', 'EasyStar', 'Act4Calculator', 'TextFormatter', 'HelpDisplay',
+        function (Phaser, EasyStar, Act4Calculator, TextFormatter, HelpDisplay) {
             return {
                 calculator: Act4Calculator,
                 game: undefined,
@@ -103,6 +103,7 @@ angular.module('uiApp').factory('Act4State',
                     this.game.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;
                     this.game.camera.follow(this.focusFire);
                     this.game.time.events.add(this.ENEMY_SPAWN_FREQUENCY, this.addEnemies, this);
+                    HelpDisplay.initializeHelp(this, 'Use arrows to look around.  Alt+Arrows to move lens.\nUse lens to burn away fog covering the sun before the day ends.\nAllies will try to defend tower, use lens to help.\nZ & X to zoom out/in.\nBut watch out!\n? to show/hide help.', true);
                 },
 
                 clearTileHitDisplay: function () {
@@ -627,6 +628,9 @@ angular.module('uiApp').factory('Act4State',
 
                 winEnding: function () {
                     this.game.ending = true;
+                    this.game.state.start('Interlude', true, false, 'Act4EndInterlude');
+
+                    /*   TODO
                     var winTween = this.game.add.tween(this);
                     winTween.to({playerLightRadius: 100}, 1000, Phaser.Easing.Power1, true);
                     winTween.onComplete.add(function () {
@@ -635,6 +639,7 @@ angular.module('uiApp').factory('Act4State',
                         //  TODO - retry move on option
                         this.game.state.start(this.state.current, true, false);
                     }, this);
+                     */
                 }
 
             };
