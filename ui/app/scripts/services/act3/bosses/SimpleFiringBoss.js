@@ -40,7 +40,7 @@ SimpleFiringBoss.prototype.updateFunction = function (playerCenter) {
         var y = this.y + this.height / 2;
         if (playerCenter.count > 0) {
             attack.reset(x, y);
-            var distance = this.state.calculator.calcDistance(playerCenter, this);
+            var distance = this.state.calculator.calcDistanceFromSpriteToPlayerCenter(playerCenter, this);
             attack.body.velocity.x = this.attackSpeed * distance.distanceX / distance.distance;
             attack.body.velocity.y = this.attackSpeed * distance.distanceY / distance.distance;
         }

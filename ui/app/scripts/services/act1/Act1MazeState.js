@@ -1,9 +1,10 @@
 'use strict';
 
 angular.module('uiApp').factory('Act1MazeState',
-    ['Act1Settings', 'HelpDisplay', 'Phaser', 'TextFormatter',
-        function (Act1Settings, HelpDisplay, Phaser, TextFormatter) {
+    ['Phaser', 'Act1Settings', 'HelpDisplay', 'TextFormatter', 'TiledCalculator',
+        function (Phaser, Act1Settings, HelpDisplay, TextFormatter, TiledCalculator) {
             return {
+                calculator: TiledCalculator,
                 game: undefined,
                 load: undefined,
                 data: undefined,
@@ -44,16 +45,16 @@ angular.module('uiApp').factory('Act1MazeState',
                     this.demonMaxSight = this.levelData.enemySenseMovingDistance;
                     this.game.ending = false;
 
-                    var map = this.createTileMap();
+                    this.createTileMap();
 
                     this.game.physics.startSystem(Phaser.Physics.P2JS);
-                    this.game.physics.p2.convertTilemap(map, this.blockLayer);
+                    this.game.physics.p2.convertTilemap(this.map, this.blockLayer);
                     this.game.physics.p2.setBoundsToWorld(true, true, true, true, false);
                     this.createMaterials();
                     this.createPlayer();
-                    this.createFinishArea(map);
-                    this.createMovableObjects(map);
-                    this.createEnemies(map);
+                    this.createFinishArea();
+                    this.createMovableObjects();
+                    this.createEnemies();
                     this.initializeKeyboard();
                     this.initializeWorldShadowing();
                     this.game.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;
@@ -114,11 +115,11 @@ angular.module('uiApp').factory('Act1MazeState',
 
                 //  Creation functions - begin
                 createTileMap: function () {
-                    var map = this.game.add.tilemap('tilemap');
-                    map.addTilesetImage('hyptosis_tile-art-batch-1');
+                    this.map = this.game.add.tilemap('tilemap');
+                    this.map.addTilesetImage('hyptosis_tile-art-batch-1');
 
-                    map.createLayer('Path Layer ' + this.level);
-                    this.blockLayer = map.createLayer('Block Layer ' + this.level);
+                    this.map.createLayer('Path Layer');
+                    this.blockLayer = this.map.createLayer('Block Layer');
                     this.blockLayer.debug = this.DEBUG;
                     this.blockLayer.resizeWorld();
                     var tileIds = [];
@@ -132,8 +133,7 @@ angular.module('uiApp').factory('Act1MazeState',
                         });
                     });
                     tileIds = tileIds.sort();
-                    map.setCollision(tileIds, true, this.blockLayer);
-                    return map;
+                    this.map.setCollision(tileIds, true, this.blockLayer);
                 },
                 createMaterials: function () {
                     this.playerMaterial = this.game.physics.p2.createMaterial('playerMaterial');
@@ -177,6 +177,7 @@ angular.module('uiApp').factory('Act1MazeState',
                     });
                 },
                 createPlayer: function () {
+                    this.playerGroup = this.game.add.group();
                     this.player = this.game.add.sprite(this.levelData.startingX, this.levelData.startingY, 'player');
                     this.game.physics.p2.enable(this.player);
                     this.player.body.collideWorldBounds = true;
@@ -190,13 +191,13 @@ angular.module('uiApp').factory('Act1MazeState',
                     this.player.isHiding = false;
                     this.game.camera.follow(this.player);
                     this.player.body.onBeginContact.add(this.collisionCheck, this);
-
+                    this.playerGroup.add(this.player);
                 },
 
-                createFinishArea: function (map) {
+                createFinishArea: function () {
                     this.finishGroup = this.game.add.physicsGroup(Phaser.Physics.P2JS);
-                    map.createFromObjects('Object Layer ' + this.level, 742, 'hyptosis_tile-art-batch-1', 741, true, false, this.finishGroup);
-                    map.createFromObjects('Object Layer ' + this.level, 772, 'hyptosis_tile-art-batch-1', 771, true, false, this.finishGroup);
+                    this.map.createFromObjects('Object Layer', 742, 'hyptosis_tile-art-batch-1', 741, true, false, this.finishGroup);
+                    this.map.createFromObjects('Object Layer', 772, 'hyptosis_tile-art-batch-1', 771, true, false, this.finishGroup);
                     this.finishGroup.forEach(function (finish) {
                         finish.body.debug = this.DEBUG;
                         finish.height = 32;
@@ -210,9 +211,9 @@ angular.module('uiApp').factory('Act1MazeState',
                     }, this);
                 },
 
-                createMovableObjects: function (map) {
+                createMovableObjects: function () {
                     this.movableGroup = this.game.add.physicsGroup(Phaser.Physics.P2JS);
-                    map.createFromObjects('Object Layer ' + this.level, 214, 'hyptosis_tile-art-batch-1', 214, true, false, this.movableGroup);
+                    this.map.createFromObjects('Object Layer', 214, 'hyptosis_tile-art-batch-1', 214, true, false, this.movableGroup);
                     this.movableGroup.forEach(function (movable) {
                         movable.body.setMaterial(this.movableMaterial);
                         movable.body.collideWorldBounds = true;
@@ -228,9 +229,9 @@ angular.module('uiApp').factory('Act1MazeState',
                     }, this);
                 },
 
-                createEnemies: function (map) {
+                createEnemies: function () {
                     this.enemyGroup = this.game.add.physicsGroup(Phaser.Physics.P2JS);
-                    map.createFromObjects('Object Layer ' + this.level, 782, 'demon', 0, true, false, this.enemyGroup, this.levelData.patrolEnemyClass, false);
+                    this.map.createFromObjects('Object Layer', 782, 'demon', 0, true, false, this.enemyGroup, this.levelData.patrolEnemyClass, false);
                     this.enemyGroup.forEach(function (enemy) {
                         enemy.state = this;
                         enemy.settings = Act1Settings;

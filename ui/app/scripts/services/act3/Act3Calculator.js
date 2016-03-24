@@ -1,46 +1,42 @@
 'use strict';
 
 angular.module('uiApp').factory('Act3Calculator',
-    [
-        function () {
-            return {
-                calcDistance: function (playerCenter, sprite) {
-                    var distanceX = (playerCenter.attackX - sprite.x + (sprite.width / 2));
-                    var x2 = Math.pow(distanceX, 2);
-                    var distanceY = (playerCenter.attackY - sprite.y + (sprite.height / 2));
-                    var y2 = Math.pow(distanceY, 2);
-                    var distance = Math.floor(Math.sqrt(x2 + y2));
-                    return {distanceX: distanceX, distanceY: distanceY, distance: distance};
-                },
-                calcPlayerGroupCenter: function (state) {
-                    var attackX = 0, attackY = 0, count = 0;
-                    angular.forEach(state.players.children, function (p) {
-                        if (p.alive) {
-                            count += 1;
-                            attackX += p.x + p.width / 2;
-                            attackY += p.y + p.height / 2;
-                        }
+    ['CommonCalculator',
+        function (CommonCalculator) {
 
-                    }, this);
-                    if (count > 0) {
-                        attackX = attackX / count;
-                        attackY = attackY / count;
-                    }
-                    return {attackX: attackX, attackY: attackY, count: count};
-                },
+            var act3Calc = angular.copy(CommonCalculator);
 
-                turnToPlayerCenter: function(playerCenter, sprite, turnRate) {
-                    if (playerCenter.count > 0) {
-                        var speed = (Math.abs(sprite.body.velocity.x) + Math.abs(sprite.body.velocity.y));
-                        var distance = this.calcDistance(playerCenter, sprite);
-                        sprite.body.velocity.x += turnRate * distance.distanceX / distance.distance;
-                        sprite.body.velocity.y += turnRate * distance.distanceY / distance.distance;
-                        var total = speed / (Math.abs(sprite.body.velocity.x) + Math.abs(sprite.body.velocity.y));
-                        sprite.body.velocity.x *= total;
-                        sprite.body.velocity.y *= total;
-                    }
-                }
-
+            act3Calc.calcDistanceFromSpriteToPlayerCenter = function (playerCenter, sprite) {
+                return this.calcDistanceFromSpriteToPoint(sprite, playerCenter.attackX, playerCenter.attackY);
             };
+
+            act3Calc.calcPlayerGroupCenter = function (state) {
+                var attackX = 0, attackY = 0, count = 0;
+                angular.forEach(state.players.children, function (p) {
+                    if (p.alive) {
+                        count += 1;
+                        attackX += p.x + p.width / 2;
+                        attackY += p.y + p.height / 2;
+                    }
+
+                }, this);
+                if (count > 0) {
+                    attackX = attackX / count;
+                    attackY = attackY / count;
+                }
+                return {attackX: attackX, attackY: attackY, count: count};
+            };
+            act3Calc.turnToPlayerCenter = function (playerCenter, sprite, turnRate) {
+                if (playerCenter.count > 0) {
+                    var speed = (Math.abs(sprite.body.velocity.x) + Math.abs(sprite.body.velocity.y));
+                    var distance = this.calcDistanceFromSpriteToPlayerCenter(playerCenter, sprite);
+                    sprite.body.velocity.x += turnRate * distance.distanceX / distance.distance;
+                    sprite.body.velocity.y += turnRate * distance.distanceY / distance.distance;
+                    var total = speed / (Math.abs(sprite.body.velocity.x) + Math.abs(sprite.body.velocity.y));
+                    sprite.body.velocity.x *= total;
+                    sprite.body.velocity.y *= total;
+                }
+            };
+            return act3Calc;
         }
     ]);

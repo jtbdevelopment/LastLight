@@ -10,6 +10,4 @@ var AbstractAct1Enemy = function (game, x, y, key, frame) {
 AbstractAct1Enemy.prototype = Object.create(Phaser.Sprite.prototype);
 AbstractAct1Enemy.prototype.constructor = AbstractAct1Enemy;
 
-AbstractAct1Enemy.prototype.updateFunction = function () {
-};
 

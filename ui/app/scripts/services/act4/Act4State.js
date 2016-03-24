@@ -22,11 +22,11 @@ angular.module('uiApp').factory('Act4State',
 
                 ENEMY_SEE_DISTANCE: 100,
 
-                ALLY_FIRE_DISTANCE: 50,
-                ALLY_FIRE_RATE: 2000, //seconds in millis
-                ALLY_SEE_DISTANCE: 100,
-                ALLY_ARROW_SPEED: 45,
-                ALLY_ARROW_DISTANCE: 75,
+                ALLY_FIRE_DISTANCE: 70,
+                ALLY_FIRE_RATE: 1200, //seconds in millis
+                ALLY_SEE_DISTANCE: 150,
+                ALLY_ARROW_SPEED: 55,
+                ALLY_ARROW_DISTANCE: 85,
 
                 FIND_PATH_FREQUENCY: 2000, // seconds in millis
 
@@ -77,19 +77,7 @@ angular.module('uiApp').factory('Act4State',
 
                     this.createTileMap();
 
-                    this.easyStar = new EasyStar.js();
-                    var easyGrid = [];
-                    angular.forEach(this.blockLayer.layer.data, function (row) {
-                        var easyRow = [];
-                        angular.forEach(row, function (cell) {
-                            easyRow.push(cell.index);
-                        });
-                        easyGrid.push(easyRow);
-                    });
-                    this.easyStar.setGrid(easyGrid);
-                    this.easyStar.setAcceptableTiles([-1]);
-                    this.easyStar.enableDiagonals();
-                    this.easyStar.enableSync();
+                    this.calculator.initializeEasyStar(this);
 
                     this.game.physics.startSystem(Phaser.Physics.ARCADE);
                     this.game.physics.arcade.setBoundsToWorld();
@@ -157,7 +145,7 @@ angular.module('uiApp').factory('Act4State',
                             }
                         });
                         this.arrowsGroup.forEachAlive(function (arrow) {
-                            var arrowDistance = this.calculator.calcDistancePoints(arrow.initialX, arrow.initialY, arrow.x, arrow.y);
+                            var arrowDistance = this.calculator.calcDistanceBetweenPoints(arrow.initialX, arrow.initialY, arrow.x, arrow.y);
                             if (arrowDistance.distance >= this.ALLY_ARROW_DISTANCE) {
                                 arrow.kill();
                             }
@@ -511,7 +499,7 @@ angular.module('uiApp').factory('Act4State',
                 },
 
                 lensHitsSun: function () {
-                    var distance = this.calculator.calcDistanceSprites(this.focusFire, this.sun);
+                    var distance = this.calculator.calcDistanceBetweenSprites(this.focusFire, this.sun);
                     if (distance.distance < this.SUN_HIT_PRECISION) {
                         this.fogHealth -= 1;
                         if (this.fogHealth === 0) {
