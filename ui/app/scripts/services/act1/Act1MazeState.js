@@ -1,8 +1,8 @@
 'use strict';
 
 angular.module('uiApp').factory('Act1MazeState',
-    ['Phaser', 'Act1Settings', 'HelpDisplay', 'TextFormatter', 'TiledCalculator',
-        function (Phaser, Act1Settings, HelpDisplay, TextFormatter, TiledCalculator) {
+    ['Phaser', 'Act1Settings', 'HelpDisplay', 'TextFormatter', 'TiledCalculator', 'DisplayUtilities',
+        function (Phaser, Act1Settings, HelpDisplay, TextFormatter, TiledCalculator, DisplayUtilities) {
             return {
                 calculator: TiledCalculator,
                 game: undefined,
@@ -298,26 +298,13 @@ angular.module('uiApp').factory('Act1MazeState',
                     }
                 },
 
-                drawCircleOfLight: function (sprite, lightRadius) {
-                    var radius = lightRadius + this.game.rnd.integerInRange(1, 10);
-                    var gradient = this.shadowTexture.context.createRadialGradient(
-                        sprite.x, sprite.y, lightRadius * 0.25,
-                        sprite.x, sprite.y, radius);
-                    gradient.addColorStop(0, 'rgba(200, 200, 200, 0.5)');
-                    gradient.addColorStop(1, 'rgba(200, 200, 200, 0.0)');
-
-                    this.shadowTexture.context.beginPath();
-                    this.shadowTexture.context.fillStyle = gradient;
-                    this.shadowTexture.context.arc(sprite.x, sprite.y, radius, 0, Math.PI * 2, false);
-                    this.shadowTexture.context.fill();
-                },
                 updateWorldShadowAndLights: function () {
                     this.shadowTexture.context.fillStyle = 'rgb(50, 70, 100)';
                     this.shadowTexture.context.fillRect(0, 0, this.game.world.width, this.game.world.height);
 
-                    this.drawCircleOfLight(this.player, this.playerLightRadius);
+                    DisplayUtilities.drawCircleOfLight(this, this.player, this.playerLightRadius);
                     this.finishGroup.forEach(function (finish) {
-                        this.drawCircleOfLight(finish, Act1Settings.FINISH_LIGHT_RADIUS);
+                        DisplayUtilities.drawCircleOfLight(finish, Act1Settings.FINISH_LIGHT_RADIUS);
                     }, this);
 
                     this.shadowTexture.dirty = true;

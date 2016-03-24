@@ -67,7 +67,7 @@ angular.module('uiApp').factory('Act4State',
                     this.game.resetDefaultSize();
                     this.tileHits = [];
                     this.game.ending = false;
-                    this.scale = this.MAX_ZOOM;
+                    this.currentScale = this.MAX_ZOOM;
                     this.lastScale = 0;
                     this.fogHealth = this.INITIAL_FOG_HEALTH;
                     this.fogHealthPercent = 1.0;
@@ -351,10 +351,10 @@ angular.module('uiApp').factory('Act4State',
                         while (looking) {
                             x = this.game.rnd.integerInRange(1, this.game.world.width) - 1;
                             var tiles = this.blockLayer.getTiles(
-                                x * this.scale,
-                                y * this.scale,
-                                enemy.width * this.scale,
-                                enemy.height * this.scale, false, false);
+                                x * this.currentScale,
+                                y * this.currentScale,
+                                enemy.width * this.currentScale,
+                                enemy.height * this.currentScale, false, false);
 
                             if (angular.isDefined(tiles) && tiles.length >= 0) {
                                 looking = angular.isDefined(tiles.find(function (e) {
@@ -426,8 +426,8 @@ angular.module('uiApp').factory('Act4State',
 
                 drawCircleOfLight: function (sprite, lightRadius, maxBrightness) {
                     var radius = lightRadius + this.game.rnd.integerInRange(1, 10);
-                    var x = (sprite.x + (sprite.width / 2)) * this.scale;
-                    var y = (sprite.y + (sprite.height / 2)) * this.scale;
+                    var x = (sprite.x + (sprite.width / 2)) * this.currentScale;
+                    var y = (sprite.y + (sprite.height / 2)) * this.currentScale;
                     var gradient = this.shadowTexture.context.createRadialGradient(
                         x, y, lightRadius * 0.25,
                         x, y, radius);
@@ -513,46 +513,46 @@ angular.module('uiApp').factory('Act4State',
                 //  Player action and movement - begin
                 handleZoomChange: function () {
                     if (this.zoomIn.isDown) {
-                        this.scale += this.ZOOM_STEP;
+                        this.currentScale += this.ZOOM_STEP;
                     }
                     if (this.zoomOut.isDown) {
-                        this.scale -= this.ZOOM_STEP;
+                        this.currentScale -= this.ZOOM_STEP;
                     }
-                    this.scale = Math.min(Math.max(this.MIN_ZOOM, this.scale), this.MAX_ZOOM);
-                    if (this.scale !== this.lastScale) {
-                        this.playerGroup.scale.setTo(this.scale);
+                    this.currentScale = Math.min(Math.max(this.MIN_ZOOM, this.currentScale), this.MAX_ZOOM);
+                    if (this.currentScale !== this.lastScale) {
+                        this.playerGroup.scale.setTo(this.currentScale);
                         this.playerGroup.forEach(function (e) {
-                            e.body.width = e.width * this.scale;
-                            e.body.height = e.height * this.scale;
+                            e.body.width = e.width * this.currentScale;
+                            e.body.height = e.height * this.currentScale;
                         }, this);
-                        this.alliesGroup.scale.setTo(this.scale);
+                        this.alliesGroup.scale.setTo(this.currentScale);
                         this.alliesGroup.forEach(function (e) {
-                            e.body.width = e.width * this.scale;
-                            e.body.height = e.height * this.scale;
+                            e.body.width = e.width * this.currentScale;
+                            e.body.height = e.height * this.currentScale;
                         }, this);
-                        this.enemyGroup.scale.setTo(this.scale);
+                        this.enemyGroup.scale.setTo(this.currentScale);
                         this.enemyGroup.forEach(function (e) {
-                            e.body.width = e.width * this.scale;
-                            e.body.height = e.height * this.scale;
+                            e.body.width = e.width * this.currentScale;
+                            e.body.height = e.height * this.currentScale;
                         }, this);
-                        this.arrowsGroup.scale.setTo(this.scale);
+                        this.arrowsGroup.scale.setTo(this.currentScale);
                         this.arrowsGroup.forEach(function (e) {
-                            e.body.width = e.width * this.scale;
-                            e.body.height = e.height * this.scale;
+                            e.body.width = e.width * this.currentScale;
+                            e.body.height = e.height * this.currentScale;
                         }, this);
-                        this.sunGroup.scale.setTo(this.scale);
+                        this.sunGroup.scale.setTo(this.currentScale);
                         this.sunGroup.forEach(function (e) {
-                            e.body.width = e.width * this.scale;
-                            e.body.height = e.height * this.scale;
+                            e.body.width = e.width * this.currentScale;
+                            e.body.height = e.height * this.currentScale;
                         }, this);
-                        this.blockLayer.setScale(this.scale, this.scale);
-                        this.pathLayer.setScale(this.scale, this.scale);
-                        this.blockLayer.resize(this.game.scale.width / this.scale, this.game.scale.height / this.scale);
-                        this.pathLayer.resize(this.game.scale.width / this.scale, this.game.scale.height / this.scale);
+                        this.blockLayer.setScale(this.currentScale, this.currentScale);
+                        this.pathLayer.setScale(this.currentScale, this.currentScale);
+                        this.blockLayer.resize(this.game.scale.width / this.currentScale, this.game.scale.height / this.currentScale);
+                        this.pathLayer.resize(this.game.scale.width / this.currentScale, this.game.scale.height / this.currentScale);
                         this.game.camera.bounds.width = this.game.world.width * this.blockLayer.scale.x;
                         this.game.camera.bounds.height = this.game.world.height * this.blockLayer.scale.y;
                         this.game.physics.arcade.setBoundsToWorld();
-                        this.lastScale = this.scale;
+                        this.lastScale = this.currentScale;
                     }
                 },
 
@@ -577,7 +577,7 @@ angular.module('uiApp').factory('Act4State',
                         this.focusFire.body.velocity.x = 0;
                     } else {
                         this.game.camera.follow(this.focusFire);
-                        move = 2 * this.scale;
+                        move = 2 * this.currentScale;
                         var max = move * 200;
                         if (this.cursors.up.isDown) {
                             this.focusFire.body.velocity.y = Math.min(0, this.focusFire.body.velocity.y);

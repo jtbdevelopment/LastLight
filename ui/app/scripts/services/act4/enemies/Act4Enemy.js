@@ -36,8 +36,8 @@ Act4Enemy.prototype.resetEnemy = function (x, y, health, damage, size) {
     this.initialY = y;
     this.updatePathFindingGoal();
     this.damage = damage;
-    this.body.height = size * this.state.scale;
-    this.body.width = size * this.state.scale;
+    this.body.height = size * this.state.currentScale;
+    this.body.width = size * this.state.currentScale;
     this.height = size;
     this.width = size;
 };
