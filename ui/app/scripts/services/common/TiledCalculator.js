@@ -48,14 +48,14 @@ angular.module('uiApp').factory('TiledCalculator',
                 }
             };
 
-            tiledCalc.findClosestOpponent = function (me, state, opponents, maxDistance, rayHasNoOtherHits) {
+            tiledCalc.findClosestOpponent = function (me, state, opponents, maxDistance, additionalCollisionCheck) {
                 var closestOpponent = {distance: undefined, opponent: undefined};
                 opponents.forEachAlive(function (e) {
                     var ray = new Phaser.Line(me.x + (me.width / 2), me.y + (me.height / 2), e.x + (e.width / 2), e.y + (e.height / 2));
                     if (ray.length <= maxDistance) {
                         var tileHits = state.blockLayer.getRayCastTiles(ray, undefined, true);
                         if (tileHits.length === 0) {
-                            if (angular.isUndefined(rayHasNoOtherHits) || rayHasNoOtherHits.call(me, ray)) {
+                            if (angular.isUndefined(additionalCollisionCheck) || additionalCollisionCheck.call(me, ray)) {
                                 var distance = this.calcDistanceBetweenSprites(me, e);
                                 if (angular.isUndefined(closestOpponent.opponent) || distance.distance < closestOpponent.distance.distance) {
                                     closestOpponent.distance = distance;
