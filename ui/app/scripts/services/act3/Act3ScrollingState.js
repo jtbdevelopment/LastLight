@@ -1,8 +1,8 @@
 'use strict';
 
 angular.module('uiApp').factory('Act3ScrollingState',
-    ['Act3Settings', 'Act3Calculator', 'HelpDisplay', 'Phaser', 'TextFormatter',
-        function (Act3Settings, Act3Calculator, HelpDisplay, Phaser, TextFormatter) {
+    ['Act3Settings', 'Act3Calculator', 'HelpDisplay', 'Phaser', 'TextFormatter', 'DisplayUtilities',
+        function (Act3Settings, Act3Calculator, HelpDisplay, Phaser, TextFormatter, DisplayUtilities) {
             return {
                 game: undefined,
                 load: undefined,
@@ -50,17 +50,18 @@ angular.module('uiApp').factory('Act3ScrollingState',
                 },
                 create: function () {
                     this.game.ending = false;
+                    this.game.stage.backgroundColor = '#182d3b';
                     this.game.physics.startSystem(Phaser.Physics.ARCADE);
                     this.game.resetDefaultSize();
                     this.game.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;
                     this.game.world.resize(this.game.width, this.game.height);
                     this.game.physics.arcade.setBoundsToWorld();
+                    this.initializeArrowTracker();
                     this.createPlayerGroup();
                     this.createArrowGroup();
                     this.createEnemies();
                     this.createBoss();
                     this.initializeWorldShadowing();
-                    this.initializeArrowTracker();
                     this.initializeKeyboard();
                     this.game.time.events.add(this.PLAYER_REVIVE_RATE, this.revivePlayer, this);
                     this.game.time.events.add(this.enemyWaves[this.waveCounter].waitTime * 1000, this.nextEnemyWave, this);
@@ -202,19 +203,6 @@ angular.module('uiApp').factory('Act3ScrollingState',
                     return 'Arrows: ' + this.arrowsRemaining;
                 },
 
-                drawCircleOfLight: function (sprite, lightRadius) {
-                    var radius = lightRadius + this.game.rnd.integerInRange(1, 10);
-                    var gradient = this.shadowTexture.context.createRadialGradient(
-                        sprite.x, sprite.y, lightRadius * 0.25,
-                        sprite.x, sprite.y, radius);
-                    gradient.addColorStop(0, 'rgba(225, 225, 225, 0.5)');
-                    gradient.addColorStop(1, 'rgba(225, 225, 225, 0.0)');
-
-                    this.shadowTexture.context.beginPath();
-                    this.shadowTexture.context.fillStyle = gradient;
-                    this.shadowTexture.context.arc(sprite.x, sprite.y, radius, 0, Math.PI * 2, false);
-                    this.shadowTexture.context.fill();
-                },
                 updateWorldShadowAndLights: function () {
                     //  TODO - make a gamma slider  (10, 20,50)
 
@@ -222,7 +210,7 @@ angular.module('uiApp').factory('Act3ScrollingState',
                     this.shadowTexture.context.fillRect(0, 0, this.game.world.width, this.game.world.height);
 
                     angular.forEach(this.players.children, function (p) {
-                        this.drawCircleOfLight(p, this.PLAYER_LIGHT_RADIUS);
+                        DisplayUtilities.drawCircleOfLight(this, p, this.PLAYER_LIGHT_RADIUS);
                     }, this);
                     this.shadowTexture.dirty = true;
                 },

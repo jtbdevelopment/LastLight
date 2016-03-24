@@ -21,6 +21,7 @@ angular.module('uiApp').factory('InterludeState',
 
                 create: function () {
                     this.game.resetDefaultSize();
+                    this.game.stage.backgroundColor = '#000000';
                     this.game.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;
                     this.text = this.game.add.text(5, 5, "");
                     TextFormatter.formatText(this.text);

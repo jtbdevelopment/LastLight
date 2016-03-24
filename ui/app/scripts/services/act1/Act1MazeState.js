@@ -50,6 +50,7 @@ angular.module('uiApp').factory('Act1MazeState',
                     this.game.physics.startSystem(Phaser.Physics.P2JS);
                     this.game.physics.p2.convertTilemap(this.map, this.blockLayer);
                     this.game.physics.p2.setBoundsToWorld(true, true, true, true, false);
+                    this.initializeCandleTracker();
                     this.createMaterials();
                     this.createPlayer();
                     this.createFinishArea();
@@ -58,7 +59,6 @@ angular.module('uiApp').factory('Act1MazeState',
                     this.initializeKeyboard();
                     this.initializeWorldShadowing();
                     this.game.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;
-                    this.initializeCandleTracker();
                     HelpDisplay.initializeHelp(this,
                         (angular.isDefined(this.levelData.helpText) ? this.levelData.helpText : Act1Settings.helpText),
                         (this.level === 0 || this.level === 2));
@@ -299,12 +299,12 @@ angular.module('uiApp').factory('Act1MazeState',
                 },
 
                 updateWorldShadowAndLights: function () {
-                    this.shadowTexture.context.fillStyle = 'rgb(50, 70, 100)';
+                    this.shadowTexture.context.fillStyle = 'rgb(100, 120, 150)';
                     this.shadowTexture.context.fillRect(0, 0, this.game.world.width, this.game.world.height);
 
                     DisplayUtilities.drawCircleOfLight(this, this.player, this.playerLightRadius);
                     this.finishGroup.forEach(function (finish) {
-                        DisplayUtilities.drawCircleOfLight(finish, Act1Settings.FINISH_LIGHT_RADIUS);
+                        DisplayUtilities.drawCircleOfLight(this, finish, Act1Settings.FINISH_LIGHT_RADIUS);
                     }, this);
 
                     this.shadowTexture.dirty = true;

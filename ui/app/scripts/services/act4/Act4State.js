@@ -3,8 +3,8 @@
 'use strict';
 
 angular.module('uiApp').factory('Act4State',
-    ['Phaser', 'EasyStar', 'Act4Calculator', 'TextFormatter', 'HelpDisplay',
-        function (Phaser, EasyStar, Act4Calculator, TextFormatter, HelpDisplay) {
+    ['Phaser', 'EasyStar', 'Act4Calculator', 'TextFormatter', 'HelpDisplay', 'DisplayUtilities',
+        function (Phaser, EasyStar, Act4Calculator, TextFormatter, HelpDisplay, DisplayUtilities) {
             return {
                 calculator: Act4Calculator,
                 game: undefined,
@@ -448,8 +448,8 @@ angular.module('uiApp').factory('Act4State',
                         ')';
                     this.shadowTexture.context.fillRect(0, 0, this.game.world.width, this.game.world.height);
 
-                    this.drawCircleOfLight(this.focusFire, this.focusFire.width * 2, 1.0);
-                    this.drawCircleOfLight(this.sun, 1, Math.min(0.1, 1 - this.fogHealthPercent));
+                    DisplayUtilities.drawCircleOfLight(this, this.focusFire, this.focusFire.width * 2, 1.0);
+                    DisplayUtilities.drawCircleOfLight(this, this.sun, 1, Math.min(0.1, 1 - this.fogHealthPercent));
 
                     this.shadowTexture.dirty = true;
                 },
