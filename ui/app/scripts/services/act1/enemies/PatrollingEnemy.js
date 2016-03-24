@@ -77,6 +77,7 @@ PatrollingEnemy.prototype.rayDoesNotHitAnyRocks = function (ray) {
     }, this);
     return rocksHit.length === 0;
 };
+
 PatrollingEnemy.prototype.chasePlayer = function () {
     this.state.calculator.moveToPoint(this, this.state.calculator.calcDistanceBetweenSprites(this, this.state.player), this.settings.ENEMY_CHASE_SPEED);
 };
@@ -100,11 +101,11 @@ PatrollingEnemy.prototype.patrol = function () {
 };
 
 PatrollingEnemy.prototype.randomizeDirection = function () {
-    var signX = this.state.game.rnd.integerInRange(1, 2);
-    var signY = this.state.game.rnd.integerInRange(1, 2);
+    var signX = this.state.game.rnd.sign();
+    var signY = this.state.game.rnd.sign();
     var percent = this.state.game.rnd.integerInRange(0, 100) / 100;
-    this.body.velocity.x = this.settings.ENEMY_PATROL_SPEED * percent * (signX === 2 ? -1 : 1);
-    this.body.velocity.y = this.settings.ENEMY_PATROL_SPEED * (1 - percent) * (signY === 2 ? -1 : 1);
+    this.body.velocity.x = this.settings.ENEMY_PATROL_SPEED * percent * signX;
+    this.body.velocity.y = this.settings.ENEMY_PATROL_SPEED * (1 - percent) * signY;
 };
 
 
