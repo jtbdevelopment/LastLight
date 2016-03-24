@@ -1,9 +1,25 @@
 'use strict';
 
 angular.module('uiApp').factory('DisplayUtilities',
-    [
-        function () {
+    ['Phaser',
+        function (Phaser) {
             return {
+                initializeWorldShadowing: function (state) {
+                    state.shadowTexture = state.game.add.bitmapData(state.game.world.width, state.game.world.height);
+                    state.lightSprite = state.game.add.image(state.game.camera.x, state.game.camera.y, state.shadowTexture);
+                    state.lightSprite.blendMode = Phaser.blendModes.MULTIPLY;
+                },
+
+                updateShadows: function (state, r, g, b) {
+                    //  TODO - make a gamma slider  (10, 20,50)
+                    r = r || 100;
+                    g = g || 120;
+                    b = b || 150;
+
+                    state.shadowTexture.context.fillStyle = 'rgb(' + r + ', ' + g + ', ' + b + ')';
+                    state.shadowTexture.context.fillRect(0, 0, state.game.world.width, state.game.world.height);
+                    state.shadowTexture.dirty = true;
+                },
                 drawCircleOfLight: function (state, sprite, lightRadius, maxBrightness) {
                     if (angular.isUndefined(maxBrightness)) {
                         maxBrightness = 0.5;

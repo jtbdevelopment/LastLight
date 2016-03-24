@@ -84,10 +84,10 @@ angular.module('uiApp').factory('Act4State',
                     this.createSun();
                     this.createAllies();
                     this.createEnemies();
+                    DisplayUtilities.initializeWorldShadowing(this);
+                    this.initializeInfoText();
                     this.createPlayer();
                     this.initializeKeyboard();
-                    this.initializeWorldShadowing();
-                    this.initializeInfoText();
                     this.game.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;
                     this.game.camera.follow(this.focusFire);
                     this.game.time.events.add(this.ENEMY_SPAWN_FREQUENCY, this.addEnemies, this);
@@ -368,12 +368,6 @@ angular.module('uiApp').factory('Act4State',
                     this.game.time.events.add(this.ENEMY_SPAWN_FREQUENCY, this.addEnemies, this);
                 },
 
-                initializeWorldShadowing: function () {
-                    this.shadowTexture = this.game.add.bitmapData(this.game.world.width, this.game.world.height);
-                    this.lightSprite = this.game.add.image(this.game.camera.x, this.game.camera.y, this.shadowTexture);
-                    this.lightSprite.blendMode = Phaser.blendModes.MULTIPLY;
-                },
-
                 initializeKeyboard: function () {
                     this.cursors = this.game.input.keyboard.createCursorKeys();
                     this.altKey = this.game.input.keyboard.addKey(Phaser.Keyboard.ALT);
@@ -424,34 +418,11 @@ angular.module('uiApp').factory('Act4State',
                     return 'Demons: ' + this.enemiesLiving;
                 },
 
-                drawCircleOfLight: function (sprite, lightRadius, maxBrightness) {
-                    var radius = lightRadius + this.game.rnd.integerInRange(1, 10);
-                    var x = (sprite.x + (sprite.width / 2)) * this.currentScale;
-                    var y = (sprite.y + (sprite.height / 2)) * this.currentScale;
-                    var gradient = this.shadowTexture.context.createRadialGradient(
-                        x, y, lightRadius * 0.25,
-                        x, y, radius);
-                    gradient.addColorStop(0, 'rgba(255, 255, 255, ' + maxBrightness + ')');
-                    gradient.addColorStop(1, 'rgba(255, 255, 200, 0.0)');
-
-                    this.shadowTexture.context.beginPath();
-                    this.shadowTexture.context.fillStyle = gradient;
-                    this.shadowTexture.context.arc(x, y, radius, 0, Math.PI * 2, false);
-                    this.shadowTexture.context.fill();
-                },
-
                 updateWorldShadowAndLights: function () {
                     var darknessScale = Math.floor(255 - (175 * this.fogHealthPercent));
-                    this.shadowTexture.context.fillStyle = 'rgb(' + darknessScale +
-                        ', ' + darknessScale +
-                        ', ' + darknessScale +
-                        ')';
-                    this.shadowTexture.context.fillRect(0, 0, this.game.world.width, this.game.world.height);
-
+                    DisplayUtilities.updateShadows(this, darknessScale, darknessScale, darknessScale);
                     DisplayUtilities.drawCircleOfLight(this, this.focusFire, this.focusFire.width * 2, 1.0);
                     DisplayUtilities.drawCircleOfLight(this, this.sun, 1, Math.min(0.1, 1 - this.fogHealthPercent));
-
-                    this.shadowTexture.dirty = true;
                 },
                 //  Light related - end
 

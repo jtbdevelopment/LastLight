@@ -56,12 +56,12 @@ angular.module('uiApp').factory('Act3ScrollingState',
                     this.game.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;
                     this.game.world.resize(this.game.width, this.game.height);
                     this.game.physics.arcade.setBoundsToWorld();
-                    this.initializeArrowTracker();
-                    this.createPlayerGroup();
                     this.createArrowGroup();
                     this.createEnemies();
                     this.createBoss();
-                    this.initializeWorldShadowing();
+                    DisplayUtilities.initializeWorldShadowing(this);
+                    this.initializeArrowTracker();
+                    this.createPlayerGroup();
                     this.initializeKeyboard();
                     this.game.time.events.add(this.PLAYER_REVIVE_RATE, this.revivePlayer, this);
                     this.game.time.events.add(this.enemyWaves[this.waveCounter].waitTime * 1000, this.nextEnemyWave, this);
@@ -173,11 +173,6 @@ angular.module('uiApp').factory('Act3ScrollingState',
                     this.boss.setAll('state', this);
                     this.boss.setAll('health', this.levelData.boss.health);
                 },
-                initializeWorldShadowing: function () {
-                    this.shadowTexture = this.game.add.bitmapData(this.game.world.width * 2, this.game.world.height * 2);
-                    this.lightSprite = this.game.add.image(0, 0, this.shadowTexture);
-                    this.lightSprite.blendMode = Phaser.blendModes.MULTIPLY;
-                },
                 initializeKeyboard: function () {
                     this.cursors = this.game.input.keyboard.createCursorKeys();
                     this.formationKeys = [];
@@ -204,15 +199,10 @@ angular.module('uiApp').factory('Act3ScrollingState',
                 },
 
                 updateWorldShadowAndLights: function () {
-                    //  TODO - make a gamma slider  (10, 20,50)
-
-                    this.shadowTexture.context.fillStyle = 'rgb(100, 120, 150)';
-                    this.shadowTexture.context.fillRect(0, 0, this.game.world.width, this.game.world.height);
-
+                    DisplayUtilities.updateShadows(this);
                     angular.forEach(this.players.children, function (p) {
                         DisplayUtilities.drawCircleOfLight(this, p, this.PLAYER_LIGHT_RADIUS);
                     }, this);
-                    this.shadowTexture.dirty = true;
                 },
                 //  Arrow related -end
 
