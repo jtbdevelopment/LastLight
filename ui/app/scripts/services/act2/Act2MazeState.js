@@ -1,8 +1,8 @@
 'use strict';
 
-angular.module('uiApp').factory('Act1MazeState',
-    ['Phaser', 'Act1Settings', 'HelpDisplay', 'TextFormatter', 'TiledCalculator',
-        function (Phaser, Act1Settings, HelpDisplay, TextFormatter, TiledCalculator) {
+angular.module('uiApp').factory('Act2MazeState',
+    ['Phaser', 'Act2Settings', 'HelpDisplay', 'TextFormatter', 'TiledCalculator',
+        function (Phaser, Act2Settings, HelpDisplay, TextFormatter, TiledCalculator) {
             return {
                 calculator: TiledCalculator,
                 game: undefined,
@@ -12,21 +12,19 @@ angular.module('uiApp').factory('Act1MazeState',
 
                 DEBUG: false,
                 //  Phaser state functions - begin
-                init: function (level, startingCandles, startingTime) {
+                init: function (level, startingTorches) {
                     this.tileHits = [];
                     this.level = level;
-                    this.levelData = Act1Settings.levelData[level];
-                    this.currentCandles = startingCandles;
-                    this.currentCandleTime = startingTime || Act1Settings.TIME_PER_CANDLE;
-                    this.startingCandles = this.currentCandles;
-                    this.startingCandleTime = this.currentCandleTime;
+                    this.levelData = Act2Settings.levelData[level];
+                    this.currentTorches = startingTorches;
+                    this.startingTorches = this.currentTorches;
                 },
                 preload: function () {
                     //  Note tile asset IDs do not match because 0 represents no tile
                     //  So in tiled - a tile will be asset id 535
                     //  In json file it will be 536
                     //  When remapping images from one to another you would need to say 536 -> 535
-                    this.load.tilemap('tilemap', 'assets/tilemaps/act1level' + (this.level + 1) + '.json', null, Phaser.Tilemap.TILED_JSON);
+                    this.load.tilemap('tilemap', 'assets/tilemaps/act2level' + (this.level + 1) + '.json', null, Phaser.Tilemap.TILED_JSON);
 
                     //  TODO - actual art
                     //  TODO - physics for art
@@ -35,8 +33,9 @@ angular.module('uiApp').factory('Act1MazeState',
                     //  TODO - real boundary layer ?
                     //  TODO - music
                     this.load.spritesheet('hyptosis_tile-art-batch-1', 'images/hyptosis_tile-art-batch-1.png', 32, 32);
+                    this.load.spritesheet('hyptosis_tile-art-batch-2', 'images/hyptosis_tile-art-batch-2.png', 32, 32);
+                    this.load.spritesheet('hyptosis_tile-art-batch-3', 'images/hyptosis_tile-art-batch-3.png', 32, 32);
                     this.load.image('player', 'images/HB_Dwarf05.png');
-                    this.load.image('playerHiding', 'images/HB_Dwarf05Hiding.png');
                     this.load.image('demon', 'images/DemonMinorFighter.png');
                 },
                 create: function () {
@@ -45,22 +44,24 @@ angular.module('uiApp').factory('Act1MazeState',
                     this.demonMaxSight = this.levelData.enemySenseMovingDistance;
                     this.game.ending = false;
 
-                    this.calculator.initializeTileMap(this, ['hyptosis_tile-art-batch-1']);
+                    this.calculator.initializeTileMap(this, ['hyptosis_tile-art-batch-1', 'hyptosis_tile-art-batch-2', 'hyptosis_tile-art-batch-3']);
 
                     this.game.physics.startSystem(Phaser.Physics.P2JS);
                     this.game.physics.p2.convertTilemap(this.map, this.blockLayer);
                     this.game.physics.p2.setBoundsToWorld(true, true, true, true, false);
-                    this.createFinishArea();
-                    this.createMovableObjects();
+                    /*
+                     this.createFinishArea();
+                     this.createMovableObjects();
+                     */
                     this.createEnemies();
                     this.calculator.initializeWorldShadowing(this);
-                    this.initializeCandleTracker();
+                    this.initializeTorchTracker();
                     this.createMaterials();
                     this.createPlayer();
                     this.initializeKeyboard();
                     this.game.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;
                     HelpDisplay.initializeHelp(this,
-                        (angular.isDefined(this.levelData.helpText) ? this.levelData.helpText : Act1Settings.helpText),
+                        (angular.isDefined(this.levelData.helpText) ? this.levelData.helpText : Act2Settings.helpText),
                         (this.level === 0 || this.level === 2));
                 },
                 clearTileHitDisplay: function () {
@@ -166,8 +167,7 @@ angular.module('uiApp').factory('Act1MazeState',
                     this.player.height = 32;
                     this.player.width = 32;
                     this.player.body.setCircle(10);
-                    this.player.body.mass = Act1Settings.PLAYER_MASS;
-                    this.player.isHiding = false;
+                    this.player.body.mass = Act2Settings.PLAYER_MASS;
                     this.game.camera.follow(this.player);
                     this.player.body.onBeginContact.add(this.collisionCheck, this);
                     this.playerGroup.add(this.player);
@@ -196,7 +196,7 @@ angular.module('uiApp').factory('Act1MazeState',
                     this.movableGroup.forEach(function (movable) {
                         movable.body.setMaterial(this.movableMaterial);
                         movable.body.collideWorldBounds = true;
-                        movable.body.mass = Act1Settings.MOVABLE_MASS;
+                        movable.body.mass = Act2Settings.MOVABLE_MASS;
                         movable.body.damping = 0.95;
                         movable.body.angularDamping = 0.85;
                         movable.body.debug = this.DEBUG;
@@ -213,7 +213,7 @@ angular.module('uiApp').factory('Act1MazeState',
                     this.map.createFromObjects('Object Layer', 782, 'demon', 0, true, false, this.enemyGroup, this.levelData.patrolEnemyClass, false);
                     this.enemyGroup.forEach(function (enemy) {
                         enemy.state = this;
-                        enemy.settings = Act1Settings;
+                        enemy.settings = Act2Settings;
                         enemy.body.setMaterial(this.enemyMaterial);
                         enemy.initialize();
                     }, this);
@@ -221,59 +221,32 @@ angular.module('uiApp').factory('Act1MazeState',
 
                 initializeKeyboard: function () {
                     this.cursors = this.game.input.keyboard.createCursorKeys();
-                    this.coverKey = this.game.input.keyboard.addKey(Phaser.Keyboard.C);
-                    this.coverKey.onUp.add(this.switchTakingCover, this);
+                    this.stunKey = this.game.input.keyboard.addKey(Phaser.Keyboard.S);
+                    //  TODO
+                    //this.stunKey.onUp.add(this.switchTakingCover, this);
                 },
 
-                initializeCandleTracker: function () {
-                    this.candleTimeout = undefined;
-                    if (this.startingCandles > 0) {
-                        this.candleText = this.game.add.text(0, 0, this.makeCandleText());
-                        TextFormatter.formatTracker(this.candleText);
-                        this.candleTimeout = this.game.time.events.add(1000, this.candleTimeoutHandler, this);
+                initializeTorchTracker: function () {
+                    if (this.startingTorches > 0) {
+                        this.torchText = this.game.add.text(0, 0, this.makeTorchText());
+                        TextFormatter.formatTracker(this.torchText);
                     }
                 },
                 //  Creation functions - end
 
                 //  help text - end
 
-                //  Candle related - begin
-                makeCandleText: function () {
-                    return 'Candles: ' + this.currentCandles + ', Time: ' + this.currentCandleTime;
-                },
-
-                candleTimeoutHandler: function () {
-                    if (this.game.ending) {
-                        return;
-                    }
-                    this.currentCandleTime -= 1;
-                    if (this.currentCandleTime === 0) {
-                        if (this.currentCandles > 1) {
-                            if (this.player.isHiding) {
-                                this.deathEnding();
-                            } else {
-                                //  TODO - play match type sound?
-                                this.currentCandles -= 1;
-                                this.currentCandleTime = Act1Settings.TIME_PER_CANDLE;
-                            }
-                        }
-                    }
-                    this.candleText.text = this.makeCandleText();
-                    if (this.currentCandles > 0 || this.currentCandleTime > 0) {
-                        this.candleTimeout = this.game.time.events.add(1000, this.candleTimeoutHandler, this);
-                    } else {
-                        this.deathEnding();
-                    }
+                //  Torch related - begin
+                makeTorchText: function () {
+                    return 'Torches: ' + this.currentTorches;
                 },
 
                 updateWorldShadowAndLights: function () {
                     this.calculator.updateShadows(this);
                     this.calculator.drawCircleOfLight(this, this.player, this.playerLightRadius);
-                    this.finishGroup.forEach(function (finish) {
-                        this.calculator.drawCircleOfLight(this, finish, Act1Settings.FINISH_LIGHT_RADIUS);
-                    }, this);
+                    //  TODO - draw lit fires
                 },
-                //  Candle related -end
+                //  Torch related -end
 
                 //  Player action and movement - begin
                 collisionCheck: function (body) {
@@ -292,33 +265,19 @@ angular.module('uiApp').factory('Act1MazeState',
                         }
                     }
                 },
-                switchTakingCover: function () {
-                    this.player.isHiding = !this.player.isHiding;
-                    if (this.player.isHiding) {
-                        this.playerLightRadius = this.levelData.playerHidingLightRadius;
-                        this.demonMaxSight = this.levelData.enemySenseHidingDistance;
-                        this.player.loadTexture('playerHiding');
-                    } else {
-                        this.playerLightRadius = this.levelData.playerMovingLightRadius;
-                        this.demonMaxSight = this.levelData.enemySenseMovingDistance;
-                        this.player.loadTexture('player');
-                    }
-                },
 
                 handlePlayerMovement: function () {
-                    if (!this.player.isHiding) {
-                        if (this.cursors.up.isDown) {
-                            this.player.body.moveUp(Act1Settings.PLAYER_MOVE_SPEED);
-                        }
-                        if (this.cursors.down.isDown) {
-                            this.player.body.moveDown(Act1Settings.PLAYER_MOVE_SPEED);
-                        }
-                        if (this.cursors.left.isDown) {
-                            this.player.body.moveLeft(Act1Settings.PLAYER_MOVE_SPEED);
-                        }
-                        if (this.cursors.right.isDown) {
-                            this.player.body.moveRight(Act1Settings.PLAYER_MOVE_SPEED);
-                        }
+                    if (this.cursors.up.isDown) {
+                        this.player.body.moveUp(Act2Settings.PLAYER_MOVE_SPEED);
+                    }
+                    if (this.cursors.down.isDown) {
+                        this.player.body.moveDown(Act2Settings.PLAYER_MOVE_SPEED);
+                    }
+                    if (this.cursors.left.isDown) {
+                        this.player.body.moveLeft(Act2Settings.PLAYER_MOVE_SPEED);
+                    }
+                    if (this.cursors.right.isDown) {
+                        this.player.body.moveRight(Act2Settings.PLAYER_MOVE_SPEED);
                     }
                 },
                 //  Player action and movement - end
@@ -334,26 +293,20 @@ angular.module('uiApp').factory('Act1MazeState',
                         this.player.y = this.levelData.startingY;
                         this.player.kill();
                         //  TODO - retry move on option
-                        this.game.state.start(this.state.current, true, false, this.level, this.startingCandles, this.startingCandleTime);
+                        this.game.state.start(this.state.current, true, false, this.level, this.startingTorches);
                     }, this);
                 },
 
                 winEnding: function () {
                     this.game.ending = true;
                     var winTween = this.game.add.tween(this);
-                    if (angular.isDefined(this.candleTimeout)) {
-                        this.game.time.events.remove(this.candleTimeout);
-                    }
                     winTween.to({playerLightRadius: 100}, 1000, Phaser.Easing.Power1, true);
                     winTween.onComplete.add(function () {
                         //  TODO - retry move on option
-                        if (this.level === 1) {
-                            this.game.state.start('Interlude', true, false, 'FoundCandlesInterlude');
-                        }
-                        else if ((this.level + 1) === Act1Settings.levelData.length) {
-                            this.game.state.start('Interlude', true, false, 'Act1EndInterlude');
+                        if ((this.level + 1) === Act2Settings.levelData.length) {
+                            this.game.state.start('Interlude', true, false, 'Act2EndInterlude');
                         } else {
-                            this.game.state.start(this.state.current, true, false, this.level + 1, this.currentCandles, this.currentCandleTime);
+                            this.game.state.start(this.state.current, true, false, this.level + 1, this.currentTorches);
                         }
                     }, this);
                 }
