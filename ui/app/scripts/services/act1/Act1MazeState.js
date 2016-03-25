@@ -1,8 +1,8 @@
 'use strict';
 
 angular.module('uiApp').factory('Act1MazeState',
-    ['Phaser', 'Act1Settings', 'HelpDisplay', 'TextFormatter', 'TiledCalculator', 'DisplayUtilities',
-        function (Phaser, Act1Settings, HelpDisplay, TextFormatter, TiledCalculator, DisplayUtilities) {
+    ['Phaser', 'Act1Settings', 'HelpDisplay', 'TextFormatter', 'TiledCalculator',
+        function (Phaser, Act1Settings, HelpDisplay, TextFormatter, TiledCalculator) {
             return {
                 calculator: TiledCalculator,
                 game: undefined,
@@ -45,7 +45,7 @@ angular.module('uiApp').factory('Act1MazeState',
                     this.demonMaxSight = this.levelData.enemySenseMovingDistance;
                     this.game.ending = false;
 
-                    this.createTileMap();
+                    this.calculator.initializeTileMap(this, ['hyptosis_tile-art-batch-1']);
 
                     this.game.physics.startSystem(Phaser.Physics.P2JS);
                     this.game.physics.p2.convertTilemap(this.map, this.blockLayer);
@@ -53,7 +53,7 @@ angular.module('uiApp').factory('Act1MazeState',
                     this.createFinishArea();
                     this.createMovableObjects();
                     this.createEnemies();
-                    DisplayUtilities.initializeWorldShadowing(this);
+                    this.calculator.initializeWorldShadowing(this);
                     this.initializeCandleTracker();
                     this.createMaterials();
                     this.createPlayer();
@@ -114,27 +114,6 @@ angular.module('uiApp').factory('Act1MazeState',
                 //  Phaser state functions - end
 
                 //  Creation functions - begin
-                createTileMap: function () {
-                    this.map = this.game.add.tilemap('tilemap');
-                    this.map.addTilesetImage('hyptosis_tile-art-batch-1');
-
-                    this.map.createLayer('Path Layer');
-                    this.blockLayer = this.map.createLayer('Block Layer');
-                    this.blockLayer.debug = this.DEBUG;
-                    this.blockLayer.resizeWorld();
-                    var tileIds = [];
-                    this.blockLayer.layer.data.forEach(function (layerRow) {
-                        layerRow.forEach(function (layerCell) {
-                            if (layerCell.index > 0) {
-                                if (tileIds.indexOf(layerCell.index) < 0) {
-                                    tileIds.push(layerCell.index);
-                                }
-                            }
-                        });
-                    });
-                    tileIds = tileIds.sort();
-                    this.map.setCollision(tileIds, true, this.blockLayer);
-                },
                 createMaterials: function () {
                     this.playerMaterial = this.game.physics.p2.createMaterial('playerMaterial');
                     this.worldMaterial = this.game.physics.p2.createMaterial('worldMaterial');
@@ -293,10 +272,10 @@ angular.module('uiApp').factory('Act1MazeState',
                 },
 
                 updateWorldShadowAndLights: function () {
-                    DisplayUtilities.updateShadows(this);
-                    DisplayUtilities.drawCircleOfLight(this, this.player, this.playerLightRadius);
+                    this.calculator.updateShadows(this);
+                    this.calculator.drawCircleOfLight(this, this.player, this.playerLightRadius);
                     this.finishGroup.forEach(function (finish) {
-                        DisplayUtilities.drawCircleOfLight(this, finish, Act1Settings.FINISH_LIGHT_RADIUS);
+                        this.calculator.drawCircleOfLight(this, finish, Act1Settings.FINISH_LIGHT_RADIUS);
                     }, this);
                 },
                 //  Candle related -end

@@ -3,10 +3,10 @@
 'use strict';
 
 angular.module('uiApp').factory('Act4State',
-    ['Phaser', 'EasyStar', 'Act4Calculator', 'TextFormatter', 'HelpDisplay', 'DisplayUtilities',
-        function (Phaser, EasyStar, Act4Calculator, TextFormatter, HelpDisplay, DisplayUtilities) {
+    ['Phaser', 'EasyStar', 'TiledCalculator', 'TextFormatter', 'HelpDisplay',
+        function (Phaser, EasyStar, TiledCalculator, TextFormatter, HelpDisplay) {
             return {
-                calculator: Act4Calculator,
+                calculator: TiledCalculator,
                 game: undefined,
                 load: undefined,
                 data: undefined,
@@ -75,7 +75,7 @@ angular.module('uiApp').factory('Act4State',
                     this.towerHealthPercent = 1.0;
                     this.sunPositionPercent = 1.0;
 
-                    this.createTileMap();
+                    this.calculator.initializeTileMap(this, ['hyptosis_tile-art-batch-1', 'hyptosis_tile-art-batch-2', 'hyptosis_tile-art-batch-3']);
 
                     this.calculator.initializeEasyStar(this);
 
@@ -84,7 +84,7 @@ angular.module('uiApp').factory('Act4State',
                     this.createSun();
                     this.createAllies();
                     this.createEnemies();
-                    DisplayUtilities.initializeWorldShadowing(this);
+                    this.calculator.initializeWorldShadowing(this);
                     this.initializeInfoText();
                     this.createPlayer();
                     this.initializeKeyboard();
@@ -116,7 +116,6 @@ angular.module('uiApp').factory('Act4State',
                 },
 
                 update: function () {
-                    //this.player.body.setZeroVelocity();
                     this.clearTileHitDisplay();
                     if (!this.game.ending) {
                         this.handleZoomChange();
@@ -162,10 +161,6 @@ angular.module('uiApp').factory('Act4State',
                         this.game.physics.arcade.collide(this.alliesGroup, this.blockLayer);
                         this.game.physics.arcade.collide(this.arrowsGroup, this.blockLayer, this.arrowHitsBarrier, undefined, this);
                         this.game.physics.arcade.collide(this.enemyGroup, this.blockLayer, this.enemyHitsBarrier, undefined, this);
-                    } else {
-//                        this.enemyGroup.forEach(function (enemy) {
-//                            enemy.body.setZeroVelocity();
-//                        });
                     }
                 },
                 render: function () {
@@ -193,29 +188,6 @@ angular.module('uiApp').factory('Act4State',
                 //  Phaser state functions - end
 
                 //  Creation functions - begin
-                createTileMap: function () {
-                    this.map = this.game.add.tilemap('tilemap');
-                    this.map.addTilesetImage('hyptosis_tile-art-batch-1');
-                    this.map.addTilesetImage('hyptosis_tile-art-batch-2');
-                    this.map.addTilesetImage('hyptosis_tile-art-batch-3');
-
-                    this.pathLayer = this.map.createLayer('Path Layer');
-                    this.blockLayer = this.map.createLayer('Block Layer');
-                    this.blockLayer.debug = this.DEBUG;
-                    this.blockLayer.resizeWorld();
-                    this.collisionTileIds = [];
-                    this.blockLayer.layer.data.forEach(function (layerRow) {
-                        layerRow.forEach(function (layerCell) {
-                            if (layerCell.index > 0) {
-                                if (this.collisionTileIds.indexOf(layerCell.index) < 0) {
-                                    this.collisionTileIds.push(layerCell.index);
-                                }
-                            }
-                        }, this);
-                    }, this);
-                    this.collisionTileIds = this.collisionTileIds.sort();
-                    this.map.setCollision(this.collisionTileIds, true, this.blockLayer, false);
-                },
                 createAllies: function () {
                     this.arrowsGroup = this.game.add.physicsGroup();
                     this.arrowsGroup.createMultiple(300, 'arrow');
@@ -420,9 +392,9 @@ angular.module('uiApp').factory('Act4State',
 
                 updateWorldShadowAndLights: function () {
                     var darknessScale = Math.floor(255 - (175 * this.fogHealthPercent));
-                    DisplayUtilities.updateShadows(this, darknessScale, darknessScale, darknessScale);
-                    DisplayUtilities.drawCircleOfLight(this, this.focusFire, this.focusFire.width * 2, 1.0);
-                    DisplayUtilities.drawCircleOfLight(this, this.sun, 1, Math.min(0.1, 1 - this.fogHealthPercent));
+                    this.calculator.updateShadows(this, darknessScale, darknessScale, darknessScale);
+                    this.calculator.drawCircleOfLight(this, this.focusFire, this.focusFire.width * 2, 1.0);
+                    this.calculator.drawCircleOfLight(this, this.sun, 1, Math.min(0.1, 1 - this.fogHealthPercent));
                 },
                 //  Light related - end
 

@@ -1,8 +1,8 @@
 'use strict';
 
 angular.module('uiApp').factory('Act3ScrollingState',
-    ['Act3Settings', 'Act3Calculator', 'HelpDisplay', 'Phaser', 'TextFormatter', 'DisplayUtilities',
-        function (Act3Settings, Act3Calculator, HelpDisplay, Phaser, TextFormatter, DisplayUtilities) {
+    ['Act3Settings', 'Act3Calculator', 'HelpDisplay', 'Phaser', 'TextFormatter',
+        function (Act3Settings, Act3Calculator, HelpDisplay, Phaser, TextFormatter) {
             return {
                 game: undefined,
                 load: undefined,
@@ -59,7 +59,7 @@ angular.module('uiApp').factory('Act3ScrollingState',
                     this.createArrowGroup();
                     this.createEnemies();
                     this.createBoss();
-                    DisplayUtilities.initializeWorldShadowing(this);
+                    this.calculator.initializeWorldShadowing(this);
                     this.initializeArrowTracker();
                     this.createPlayerGroup();
                     this.initializeKeyboard();
@@ -199,9 +199,9 @@ angular.module('uiApp').factory('Act3ScrollingState',
                 },
 
                 updateWorldShadowAndLights: function () {
-                    DisplayUtilities.updateShadows(this);
+                    this.calculator.updateShadows(this);
                     angular.forEach(this.players.children, function (p) {
-                        DisplayUtilities.drawCircleOfLight(this, p, this.PLAYER_LIGHT_RADIUS);
+                        this.calculator.drawCircleOfLight(this, p, this.PLAYER_LIGHT_RADIUS);
                     }, this);
                 },
                 //  Arrow related -end

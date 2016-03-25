@@ -10,6 +10,30 @@ angular.module('uiApp').factory('TiledCalculator',
                 sprite.body.velocity.y = speed * distance.distanceY / distance.distance;
             };
 
+            tiledCalc.initializeTileMap = function (state, artworkArray) {
+                state.map = state.game.add.tilemap('tilemap');
+                angular.forEach(artworkArray, function (artwork) {
+                    state.map.addTilesetImage(artwork);
+                });
+
+                state.pathLayer = state.map.createLayer('Path Layer');
+                state.blockLayer = state.map.createLayer('Block Layer');
+                state.blockLayer.debug = state.DEBUG;
+                state.blockLayer.resizeWorld();
+                var tileIds = [];
+                state.blockLayer.layer.data.forEach(function (layerRow) {
+                    layerRow.forEach(function (layerCell) {
+                        if (layerCell.index > 0) {
+                            if (tileIds.indexOf(layerCell.index) < 0) {
+                                tileIds.push(layerCell.index);
+                            }
+                        }
+                    });
+                });
+                tileIds = tileIds.sort();
+                state.map.setCollision(tileIds, true, state.blockLayer);
+            };
+
             tiledCalc.initializeEasyStar = function (state) {
                 state.easyStar = new EasyStar.js();
                 var easyGrid = [];
