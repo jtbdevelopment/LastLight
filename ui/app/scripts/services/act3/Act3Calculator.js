@@ -15,8 +15,8 @@ angular.module('uiApp').factory('Act3Calculator',
                 angular.forEach(state.players.children, function (p) {
                     if (p.alive) {
                         count += 1;
-                        attackX += p.x + p.width / 2;
-                        attackY += p.y + p.height / 2;
+                        attackX += this.calcSpriteCenterX(p);
+                        attackY += this.calcSpriteCenterY(p);
                     }
 
                 }, this);

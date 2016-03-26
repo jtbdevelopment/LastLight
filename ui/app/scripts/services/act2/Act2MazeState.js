@@ -1,8 +1,8 @@
 'use strict';
 
 angular.module('uiApp').factory('Act2MazeState',
-    ['Phaser', 'Act2Settings', 'HelpDisplay', 'TextFormatter', 'TiledCalculator',
-        function (Phaser, Act2Settings, HelpDisplay, TextFormatter, TiledCalculator) {
+    ['Phaser', 'Act2Settings', 'HelpDisplay', 'TextFormatter', 'TiledCalculator', 'TiledDisplay',
+        function (Phaser, Act2Settings, HelpDisplay, TextFormatter, TiledCalculator, TiledDisplay) {
             return {
                 calculator: TiledCalculator,
                 game: undefined,
@@ -13,7 +13,6 @@ angular.module('uiApp').factory('Act2MazeState',
                 DEBUG: false,
                 //  Phaser state functions - begin
                 init: function (level, startingTorches) {
-                    this.tileHits = [];
                     this.level = level;
                     this.levelData = Act2Settings.levelData[level];
                     this.currentTorches = startingTorches;
@@ -44,18 +43,18 @@ angular.module('uiApp').factory('Act2MazeState',
                     this.demonMaxSight = this.levelData.enemySenseMovingDistance;
                     this.game.ending = false;
 
-                    this.calculator.initializeTileMap(this, ['hyptosis_tile-art-batch-1', 'hyptosis_tile-art-batch-2', 'hyptosis_tile-art-batch-3']);
+                    TiledDisplay.initializeTileMap(this, ['hyptosis_tile-art-batch-1', 'hyptosis_tile-art-batch-2', 'hyptosis_tile-art-batch-3']);
+                    TiledDisplay.initializeEasyStar(this);
 
                     this.game.physics.startSystem(Phaser.Physics.P2JS);
                     this.game.physics.p2.convertTilemap(this.map, this.blockLayer);
                     this.game.physics.p2.setBoundsToWorld(true, true, true, true, false);
                     /*
-                     this.createFinishArea();
                      this.createMovableObjects();
                      */
                     this.createEnemies();
                     this.calculator.initializeWorldShadowing(this);
-                    this.initializeTorchTracker();
+                    this.initializeInfoTracker();
                     this.createMaterials();
                     this.createPlayer();
                     this.initializeKeyboard();
@@ -64,29 +63,9 @@ angular.module('uiApp').factory('Act2MazeState',
                         (angular.isDefined(this.levelData.helpText) ? this.levelData.helpText : Act2Settings.helpText),
                         (this.level === 0 || this.level === 2));
                 },
-                clearTileHitDisplay: function () {
-                    if (this.state.DEBUG) {
-                        angular.forEach(this.tileHits, function (tileHit) {
-                            tileHit.debug = false;
-                        });
-                        this.blockLayer.dirty = this.tileHits.length > 0;
-                    }
-                    this.tileHits = [];
-                },
-                addTileHitsToDisplay: function (moreTileHits) {
-                    this.tileHits = this.tileHits.concat(moreTileHits);
-                },
-                showTileHitsDisplay: function () {
-                    if (this.DEBUG) {
-                        angular.forEach(this.tileHits, function (tileHit) {
-                            tileHit.debug = this.DEBUG;
-                        }, this);
-                        this.blockLayer.dirty = this.tileHits.length > 0;
-                    }
-                },
                 update: function () {
                     this.player.body.setZeroVelocity();
-                    this.clearTileHitDisplay();
+                    TiledDisplay.clearTileHitDisplay(this);
                     if (!this.game.ending) {
                         this.enemyGroup.forEach(function (enemy) {
                             enemy.updateFunction(this.player);
@@ -97,7 +76,7 @@ angular.module('uiApp').factory('Act2MazeState',
                             enemy.body.setZeroVelocity();
                         });
                     }
-                    this.showTileHitsDisplay();
+                    TiledDisplay.showTileHitsDisplay(this);
                     this.updateWorldShadowAndLights();
                 },
                 render: function () {
@@ -118,12 +97,19 @@ angular.module('uiApp').factory('Act2MazeState',
                 createMaterials: function () {
                     this.playerMaterial = this.game.physics.p2.createMaterial('playerMaterial');
                     this.worldMaterial = this.game.physics.p2.createMaterial('worldMaterial');
+                    this.bonfireMaterial = this.game.physics.p2.createMaterial('bonfireMaterial');
                     this.movableMaterial = this.game.physics.p2.createMaterial('movableMaterial');
                     this.enemyMaterial = this.game.physics.p2.createMaterial('enemyMaterial');
 
                     this.game.physics.p2.setWorldMaterial(this.worldMaterial, true, true, true, true);
+                    this.game.physics.p2.setWorldMaterial(this.bonfireMaterial, true, true, true, true);
 
                     this.game.physics.p2.createContactMaterial(this.playerMaterial, this.worldMaterial, {
+                        friction: 0.01,
+                        restitution: 1,
+                        stiffness: 0
+                    });
+                    this.game.physics.p2.createContactMaterial(this.playerMaterial, this.bonfireMaterial, {
                         friction: 0.01,
                         restitution: 1,
                         stiffness: 0
@@ -173,23 +159,6 @@ angular.module('uiApp').factory('Act2MazeState',
                     this.playerGroup.add(this.player);
                 },
 
-                createFinishArea: function () {
-                    this.finishGroup = this.game.add.physicsGroup(Phaser.Physics.P2JS);
-                    this.map.createFromObjects('Object Layer', 742, 'hyptosis_tile-art-batch-1', 741, true, false, this.finishGroup);
-                    this.map.createFromObjects('Object Layer', 772, 'hyptosis_tile-art-batch-1', 771, true, false, this.finishGroup);
-                    this.finishGroup.forEach(function (finish) {
-                        finish.body.debug = this.DEBUG;
-                        finish.height = 32;
-                        finish.width = 32;
-                        finish.anchor.setTo(0.5);
-                        finish.body.x += finish.width / 2;
-                        finish.body.y += finish.height / 2;
-                        finish.body.setRectangle(finish.width, finish.height, 0, 0);
-                        finish.body.static = true;
-                        finish.body.debug = this.DEBUG;
-                    }, this);
-                },
-
                 createMovableObjects: function () {
                     this.movableGroup = this.game.add.physicsGroup(Phaser.Physics.P2JS);
                     this.map.createFromObjects('Object Layer', 214, 'hyptosis_tile-art-batch-1', 214, true, false, this.movableGroup);
@@ -226,11 +195,12 @@ angular.module('uiApp').factory('Act2MazeState',
                     //this.stunKey.onUp.add(this.switchTakingCover, this);
                 },
 
-                initializeTorchTracker: function () {
-                    if (this.startingTorches > 0) {
-                        this.torchText = this.game.add.text(0, 0, this.makeTorchText());
-                        TextFormatter.formatTracker(this.torchText);
-                    }
+                initializeInfoTracker: function () {
+                    this.torchText = this.game.add.text(0, 0, this.makeTorchText());
+                    TextFormatter.formatTracker(this.torchText);
+                    this.peopleText = this.game.add.text(0, 0, '');
+                    TextFormatter.formatTracker(this.peopleText);
+                    this.peopleText.cameraOffset.setTo(3, 15);
                 },
                 //  Creation functions - end
 
@@ -239,6 +209,11 @@ angular.module('uiApp').factory('Act2MazeState',
                 //  Torch related - begin
                 makeTorchText: function () {
                     return 'Torches: ' + this.currentTorches;
+                },
+
+                makePeopleText: function () {
+                    //  TODO
+                    return 'People: ' + this.currentTorches;
                 },
 
                 updateWorldShadowAndLights: function () {
@@ -258,9 +233,6 @@ angular.module('uiApp').factory('Act2MazeState',
                         switch (body.sprite.parent) {
                             case this.enemyGroup:
                                 this.deathEnding();
-                                break;
-                            case this.finishGroup:
-                                this.winEnding();
                                 break;
                         }
                     }

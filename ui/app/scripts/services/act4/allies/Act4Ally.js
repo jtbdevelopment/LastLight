@@ -42,7 +42,7 @@ Act4Ally.prototype.fireAtEnemy = function (closestOpponent) {
     this.body.velocity.x = 0;
     this.body.velocity.y = 0;
     var arrow = this.state.arrowsGroup.getFirstExists(false);
-    arrow.reset(Math.floor(this.x + (this.width / 2)), Math.floor(this.y + (this.height / 2)));
+    arrow.reset(this.state.calculator.calcSpriteCenterX(this), this.state.calculator.calcSpriteCenterY(this));
     arrow.initialX = arrow.x;
     arrow.initialY = arrow.y;
     arrow.firer = this;

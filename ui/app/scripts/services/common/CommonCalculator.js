@@ -4,17 +4,26 @@ angular.module('uiApp').factory('CommonCalculator',
     ['Phaser',
         function (Phaser) {
             return {
+                calcSpriteCenterX: function (sprite, scale) {
+                    scale = scale || 1.0;
+                    return Math.round((sprite.x + ((0.5 - sprite.anchor.x) * sprite.width)) * scale);
+                },
+                calcSpriteCenterY: function (sprite, scale) {
+                    scale = scale || 1.0;
+                    return Math.round((sprite.y + ((0.5 - sprite.anchor.y) * sprite.height)) * scale);
+                },
+
                 calcDistanceBetweenSprites: function (from, to) {
                     return this.calcDistanceFromSpriteToPoint(
                         from,
-                        (to.x + (to.width / 2)),
-                        (to.y + (to.height / 2))
+                        this.calcSpriteCenterX(to),
+                        this.calcSpriteCenterY(to)
                     );
                 },
                 calcDistanceFromSpriteToPoint: function (from, toX, toY) {
                     return this.calcDistanceBetweenPoints(
-                        (from.x + (from.width / 2)),
-                        (from.y + (from.height / 2)),
+                        this.calcSpriteCenterX(from),
+                        this.calcSpriteCenterY(from),
                         (toX),
                         (toY)
                     );
@@ -55,8 +64,8 @@ angular.module('uiApp').factory('CommonCalculator',
                     }
                     var scale = state.currentScale || 1.0;
                     var radius = lightRadius + state.game.rnd.integerInRange(1, 10);
-                    var x = (sprite.x + ((0.5 - sprite.anchor.x) * sprite.width)) * scale;
-                    var y = (sprite.y + ((0.5 - sprite.anchor.y) * sprite.height)) * scale;
+                    var x = this.calcSpriteCenterX(sprite, scale);
+                    var y = this.calcSpriteCenterY(sprite, scale);
                     var gradient = state.shadowTexture.context.createRadialGradient(
                         x, y, lightRadius * 0.25,
                         x, y, radius);

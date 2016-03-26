@@ -3,8 +3,8 @@
 'use strict';
 
 angular.module('uiApp').factory('Act4State',
-    ['Phaser', 'EasyStar', 'TiledCalculator', 'TextFormatter', 'HelpDisplay',
-        function (Phaser, EasyStar, TiledCalculator, TextFormatter, HelpDisplay) {
+    ['Phaser', 'EasyStar', 'TiledCalculator', 'TextFormatter', 'HelpDisplay', 'TiledDisplay',
+        function (Phaser, EasyStar, TiledCalculator, TextFormatter, HelpDisplay, TiledDisplay) {
             return {
                 calculator: TiledCalculator,
                 game: undefined,
@@ -65,7 +65,6 @@ angular.module('uiApp').factory('Act4State',
                 },
                 create: function () {
                     this.game.resetDefaultSize();
-                    this.tileHits = [];
                     this.game.ending = false;
                     this.currentScale = this.MAX_ZOOM;
                     this.lastScale = 0;
@@ -75,9 +74,9 @@ angular.module('uiApp').factory('Act4State',
                     this.towerHealthPercent = 1.0;
                     this.sunPositionPercent = 1.0;
 
-                    this.calculator.initializeTileMap(this, ['hyptosis_tile-art-batch-1', 'hyptosis_tile-art-batch-2', 'hyptosis_tile-art-batch-3']);
+                    TiledDisplay.initializeTileMap(this, ['hyptosis_tile-art-batch-1', 'hyptosis_tile-art-batch-2', 'hyptosis_tile-art-batch-3']);
 
-                    this.calculator.initializeEasyStar(this);
+                    TiledDisplay.initializeEasyStar(this);
 
                     this.game.physics.startSystem(Phaser.Physics.ARCADE);
                     this.game.physics.arcade.setBoundsToWorld();
@@ -94,29 +93,8 @@ angular.module('uiApp').factory('Act4State',
                     HelpDisplay.initializeHelp(this, 'Use arrows to look around.  Alt+Arrows to move lens.\nUse lens to burn away fog covering the sun before the day ends.\nAllies will try to defend tower, use lens to help.\nZ & X to zoom out/in.\nBut watch out!\n? to show/hide help.', true);
                 },
 
-                clearTileHitDisplay: function () {
-                    if (this.state.DEBUG) {
-                        angular.forEach(this.tileHits, function (tileHit) {
-                            tileHit.debug = false;
-                        });
-                        this.blockLayer.dirty = this.tileHits.length > 0;
-                    }
-                    this.tileHits = [];
-                },
-                addTileHitsToDisplay: function (moreTileHits) {
-                    this.tileHits = this.tileHits.concat(moreTileHits);
-                },
-                showTileHitsDisplay: function () {
-                    if (this.DEBUG) {
-                        angular.forEach(this.tileHits, function (tileHit) {
-                            tileHit.debug = this.DEBUG;
-                        }, this);
-                        this.blockLayer.dirty = this.tileHits.length > 0;
-                    }
-                },
-
                 update: function () {
-                    this.clearTileHitDisplay();
+                    TiledDisplay.clearTileHitDisplay(this);
                     if (!this.game.ending) {
                         this.handleZoomChange();
                         this.handlePlayerMovement();
@@ -157,7 +135,7 @@ angular.module('uiApp').factory('Act4State',
                         this.alliesText.text = this.makeAlliesText();
                         this.enemiesText.text = this.makeEnemiesText();
                         this.updateWorldShadowAndLights();
-                        this.showTileHitsDisplay();
+                        TiledDisplay.showTileHitsDisplay(this);
                         this.game.physics.arcade.collide(this.alliesGroup, this.blockLayer);
                         this.game.physics.arcade.collide(this.arrowsGroup, this.blockLayer, this.arrowHitsBarrier, undefined, this);
                         this.game.physics.arcade.collide(this.enemyGroup, this.blockLayer, this.enemyHitsBarrier, undefined, this);

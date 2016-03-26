@@ -5,6 +5,8 @@ angular.module('uiApp').factory('Act2Settings',
     [function () {
         var act1Data = {
             PLAYER_MOVE_SPEED: 75,
+
+            //  TODO - decide if masses needed in Act2
             PLAYER_MASS: 10,
 
             MOVABLE_MASS: 200,

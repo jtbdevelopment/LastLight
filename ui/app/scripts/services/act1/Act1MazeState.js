@@ -1,8 +1,8 @@
 'use strict';
 
 angular.module('uiApp').factory('Act1MazeState',
-    ['Phaser', 'Act1Settings', 'HelpDisplay', 'TextFormatter', 'TiledCalculator',
-        function (Phaser, Act1Settings, HelpDisplay, TextFormatter, TiledCalculator) {
+    ['Phaser', 'Act1Settings', 'HelpDisplay', 'TextFormatter', 'TiledCalculator', 'TiledDisplay',
+        function (Phaser, Act1Settings, HelpDisplay, TextFormatter, TiledCalculator, TiledDisplay) {
             return {
                 calculator: TiledCalculator,
                 game: undefined,
@@ -13,7 +13,6 @@ angular.module('uiApp').factory('Act1MazeState',
                 DEBUG: false,
                 //  Phaser state functions - begin
                 init: function (level, startingCandles, startingTime) {
-                    this.tileHits = [];
                     this.level = level;
                     this.levelData = Act1Settings.levelData[level];
                     this.currentCandles = startingCandles;
@@ -45,7 +44,7 @@ angular.module('uiApp').factory('Act1MazeState',
                     this.demonMaxSight = this.levelData.enemySenseMovingDistance;
                     this.game.ending = false;
 
-                    this.calculator.initializeTileMap(this, ['hyptosis_tile-art-batch-1']);
+                    TiledDisplay.initializeTileMap(this, ['hyptosis_tile-art-batch-1']);
 
                     this.game.physics.startSystem(Phaser.Physics.P2JS);
                     this.game.physics.p2.convertTilemap(this.map, this.blockLayer);
@@ -63,29 +62,9 @@ angular.module('uiApp').factory('Act1MazeState',
                         (angular.isDefined(this.levelData.helpText) ? this.levelData.helpText : Act1Settings.helpText),
                         (this.level === 0 || this.level === 2));
                 },
-                clearTileHitDisplay: function () {
-                    if (this.state.DEBUG) {
-                        angular.forEach(this.tileHits, function (tileHit) {
-                            tileHit.debug = false;
-                        });
-                        this.blockLayer.dirty = this.tileHits.length > 0;
-                    }
-                    this.tileHits = [];
-                },
-                addTileHitsToDisplay: function (moreTileHits) {
-                    this.tileHits = this.tileHits.concat(moreTileHits);
-                },
-                showTileHitsDisplay: function () {
-                    if (this.DEBUG) {
-                        angular.forEach(this.tileHits, function (tileHit) {
-                            tileHit.debug = this.DEBUG;
-                        }, this);
-                        this.blockLayer.dirty = this.tileHits.length > 0;
-                    }
-                },
                 update: function () {
                     this.player.body.setZeroVelocity();
-                    this.clearTileHitDisplay();
+                    TiledDisplay.clearTileHitDisplay(this);
                     if (!this.game.ending) {
                         this.enemyGroup.forEach(function (enemy) {
                             enemy.updateFunction(this.player);
@@ -96,7 +75,7 @@ angular.module('uiApp').factory('Act1MazeState',
                             enemy.body.setZeroVelocity();
                         });
                     }
-                    this.showTileHitsDisplay();
+                    TiledDisplay.showTileHitsDisplay(this);
                     this.updateWorldShadowAndLights();
                 },
                 render: function () {

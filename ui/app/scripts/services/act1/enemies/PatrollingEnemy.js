@@ -66,20 +66,24 @@ PatrollingEnemy.prototype.checkIfEnemySeesPlayer = function () {
 
 PatrollingEnemy.prototype.rayDoesNotHitAnyRocks = function (ray) {
     var rocksHit = [];
-    var lineCoordinates = ray.coordinatesOnLine(1);
-    angular.forEach(lineCoordinates, function (point) {
-        this.game.physics.p2.hitTest({
-            x: point[0],
-            y: point[1]
-        }, this.state.movableGroup.children, undefined, true).forEach(function (hit) {
-            rocksHit.push(hit);
-        });
-    }, this);
+    if (angular.isDefined(this.state.movableGroup)) {
+        var lineCoordinates = ray.coordinatesOnLine(1);
+        angular.forEach(lineCoordinates, function (point) {
+            this.game.physics.p2.hitTest({
+                x: point[0],
+                y: point[1]
+            }, this.state.movableGroup.children, undefined, true).forEach(function (hit) {
+                rocksHit.push(hit);
+            });
+        }, this);
+    }
     return rocksHit.length === 0;
 };
 
 PatrollingEnemy.prototype.chasePlayer = function () {
-    this.state.calculator.moveToPoint(this, this.state.calculator.calcDistanceBetweenSprites(this, this.state.player), this.settings.ENEMY_CHASE_SPEED);
+    this.currentPathFindingGoalSprite = this.state.player;
+    this.MOVE_SPEED = this.settings.ENEMY_CHASE_SPEED;
+    this.state.calculator.performPathFind(this);
 };
 
 PatrollingEnemy.prototype.patrol = function () {

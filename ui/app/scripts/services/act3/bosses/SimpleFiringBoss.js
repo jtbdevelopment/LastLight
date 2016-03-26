@@ -36,8 +36,8 @@ SimpleFiringBoss.prototype.updateFunction = function (playerCenter) {
         this.nextFireTime = this.state.game.time.now + this.firePause;
 
         var attack = this.attacks.getFirstExists(false);
-        var x = this.x + this.width / 2;
-        var y = this.y + this.height / 2;
+        var x = this.state.calculator.calcSpriteCenterX(this);
+        var y = this.state.calculator.calcSpriteCenterY(this);
         if (playerCenter.count > 0) {
             attack.reset(x, y);
             var distance = this.state.calculator.calcDistanceFromSpriteToPlayerCenter(playerCenter, this);
