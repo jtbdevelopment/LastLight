@@ -5,8 +5,8 @@
 angular.module('uiApp').factory('Act3Settings',
     [function () {
         // TODO - real height/width
-        var PLAYER_HEIGHT = 32;
-        var PLAYER_WIDTH = 32;
+        var PLAYER_HEIGHT = 18;
+        var PLAYER_WIDTH = 18;
         var VERTICAL_FORMATION = 1;
         var HORIZONTAL_FORMATION = 2;
         var WEDGE_FORMATION = 3;
@@ -20,8 +20,8 @@ angular.module('uiApp').factory('Act3Settings',
             PLAYER_HEIGHT: PLAYER_HEIGHT,
             PLAYER_WIDTH: PLAYER_WIDTH,
 
-            baseSpawnSize: 20,
-            scaleSpawnSize: 24,
+            baseSpawnSize: 11,
+            scaleSpawnSize: 16,
 
             //  TODO - diff images per health?
             //  TODO - different classes with attacks?
@@ -38,12 +38,12 @@ angular.module('uiApp').factory('Act3Settings',
                     startingY: 175 - PLAYER_HEIGHT * 1.5,
                     startingFormation: 3,
 
-                    enemySpeed: 100,
+                    enemySpeed: 90,
                     enemyTurnRate: 0.5,
 
                     enemyWaves: [
                         {
-                            waitTime: 10,
+                            waitTime: 8,
                             x: 800,
                             y: 325,
                             xSpeed: -100,
@@ -133,8 +133,8 @@ angular.module('uiApp').factory('Act3Settings',
                         x: 725,
                         y: 200,
                         health: 50,
-                        height: 50,
-                        width: 50
+                        height: 32,
+                        width: 32
                     },
                     addArrowsAtEnd: 10
                 }

@@ -142,8 +142,8 @@ angular.module('uiApp').factory('Act1MazeState',
                     this.player.body.fixedRotation = true;
                     this.player.body.debug = this.DEBUG;
                     this.player.body.setMaterial(this.playerMaterial);
-                    this.player.height = 32;
-                    this.player.width = 32;
+                    this.player.height = 20;
+                    this.player.width = 20;
                     this.player.body.setCircle(10);
                     this.player.body.mass = Act1Settings.PLAYER_MASS;
                     this.player.isHiding = false;
@@ -213,8 +213,6 @@ angular.module('uiApp').factory('Act1MazeState',
                     }
                 },
                 //  Creation functions - end
-
-                //  help text - end
 
                 //  Candle related - begin
                 makeCandleText: function () {

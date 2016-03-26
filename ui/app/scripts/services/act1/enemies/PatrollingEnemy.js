@@ -6,8 +6,8 @@ var PatrollingEnemy = function (game, x, y, key, frame) {
     this.name = 'PatrollingEnemy';
     this.state = undefined;
     this.settings = undefined;
-    this.height = 32;
-    this.width = 32;
+    this.height = 20;
+    this.width = 20;
     this.x += 16;
     this.y -= 16;
 };
@@ -16,7 +16,7 @@ PatrollingEnemy.prototype = Object.create(AbstractAct1Enemy.prototype);
 PatrollingEnemy.prototype.constructor = PatrollingEnemy;
 
 PatrollingEnemy.prototype.initialize = function () {
-    this.body.setCircle(11);
+    this.body.setCircle(10);
     this.initialX = this.x;
     this.initialY = this.y;
     this.minX = this.initialX - this.settings.ENEMY_PATROL_RANGE;
