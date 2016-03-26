@@ -6,10 +6,11 @@ angular.module('uiApp').factory('Act2Settings',
         var act1Data = {
             PLAYER_MOVE_SPEED: 75,
 
-            //  TODO - decide if masses needed in Act2
-            PLAYER_MASS: 10,
+            PLAYER_MASS: 2,
+            BONFIRE_MASS: 20000000,
+            ENEMY_MASS: 1,
+            PEOPLE_MASS: 2000,
 
-            MOVABLE_MASS: 200,
 
             ENEMY_PATROL_SPEED: 40,
             ENEMY_CHASE_SPEED: 90,

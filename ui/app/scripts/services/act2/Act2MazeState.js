@@ -36,6 +36,8 @@ angular.module('uiApp').factory('Act2MazeState',
                     this.load.spritesheet('hyptosis_tile-art-batch-3', 'images/hyptosis_tile-art-batch-3.png', 32, 32);
                     this.load.image('player', 'images/HB_Dwarf05.png');
                     this.load.image('demon', 'images/DemonMinorFighter.png');
+                    this.load.image('people', 'images/PeopleFarmer.png');
+                    this.load.image('logs', 'images/unlitbonfire.png');
                 },
                 create: function () {
                     this.game.resetDefaultSize();
@@ -52,7 +54,9 @@ angular.module('uiApp').factory('Act2MazeState',
                     /*
                      this.createMovableObjects();
                      */
+                    this.createPeople();
                     this.createEnemies();
+                    this.createBonfires();
                     this.calculator.initializeWorldShadowing(this);
                     this.initializeInfoTracker();
                     this.createMaterials();
@@ -96,13 +100,12 @@ angular.module('uiApp').factory('Act2MazeState',
                 //  Creation functions - begin
                 createMaterials: function () {
                     this.playerMaterial = this.game.physics.p2.createMaterial('playerMaterial');
+                    this.peopleMaterial = this.game.physics.p2.createMaterial('peopleMaterial');
                     this.worldMaterial = this.game.physics.p2.createMaterial('worldMaterial');
                     this.bonfireMaterial = this.game.physics.p2.createMaterial('bonfireMaterial');
-                    this.movableMaterial = this.game.physics.p2.createMaterial('movableMaterial');
                     this.enemyMaterial = this.game.physics.p2.createMaterial('enemyMaterial');
 
                     this.game.physics.p2.setWorldMaterial(this.worldMaterial, true, true, true, true);
-                    this.game.physics.p2.setWorldMaterial(this.bonfireMaterial, true, true, true, true);
 
                     this.game.physics.p2.createContactMaterial(this.playerMaterial, this.worldMaterial, {
                         friction: 0.01,
@@ -110,18 +113,18 @@ angular.module('uiApp').factory('Act2MazeState',
                         stiffness: 0
                     });
                     this.game.physics.p2.createContactMaterial(this.playerMaterial, this.bonfireMaterial, {
-                        friction: 0.01,
+                        friction: 0,
                         restitution: 1,
-                        stiffness: 0
-                    });
-                    this.game.physics.p2.createContactMaterial(this.movableMaterial, this.worldMaterial, {
-                        friction: 0.9,
-                        restitution: 0.1,
-                        stiffness: 1e7,
-                        relaxation: 3,
-                        frictionStiffness: 1e7,
-                        frictionRelaxation: 3,
+                        stiffness: 0,
+                        relaxation: 0,
+                        frictionStiffness: 0,
+                        frictionRelaxation: 0,
                         surfaceVelocity: 0
+                    });
+                    this.game.physics.p2.createContactMaterial(this.playerMaterial, this.peopleMaterial, {
+                        friction: 1,
+                        restitution: 0,
+                        surfaceVelocity: 10
                     });
                     this.game.physics.p2.createContactMaterial(this.enemyMaterial, this.worldMaterial, {
                         friction: 0,
@@ -132,13 +135,22 @@ angular.module('uiApp').factory('Act2MazeState',
                         frictionRelaxation: 0,
                         surfaceVelocity: 0
                     });
-                    this.game.physics.p2.createContactMaterial(this.enemyMaterial, this.movableMaterial, {
-                        friction: 1.0,
-                        restitution: 0.0,
-                        stiffness: 1e7,
-                        relaxation: 3,
-                        frictionStiffness: 1e7,
-                        frictionRelaxation: 3,
+                    this.game.physics.p2.createContactMaterial(this.enemyMaterial, this.bonfireMaterial, {
+                        friction: 0,
+                        restitution: 1,
+                        stiffness: 0,
+                        relaxation: 0,
+                        frictionStiffness: 0,
+                        frictionRelaxation: 0,
+                        surfaceVelocity: 0
+                    });
+                    this.game.physics.p2.createContactMaterial(this.peopleMaterial, this.bonfireMaterial, {
+                        friction: 0,
+                        restitution: 1,
+                        stiffness: 0,
+                        relaxation: 0,
+                        frictionStiffness: 0,
+                        frictionRelaxation: 0,
                         surfaceVelocity: 0
                     });
                 },
@@ -150,8 +162,8 @@ angular.module('uiApp').factory('Act2MazeState',
                     this.player.body.fixedRotation = true;
                     this.player.body.debug = this.DEBUG;
                     this.player.body.setMaterial(this.playerMaterial);
-                    this.player.height = 32;
-                    this.player.width = 32;
+                    this.player.height = 20;
+                    this.player.width = 20;
                     this.player.body.setCircle(10);
                     this.player.body.mass = Act2Settings.PLAYER_MASS;
                     this.game.camera.follow(this.player);
@@ -159,21 +171,51 @@ angular.module('uiApp').factory('Act2MazeState',
                     this.playerGroup.add(this.player);
                 },
 
-                createMovableObjects: function () {
-                    this.movableGroup = this.game.add.physicsGroup(Phaser.Physics.P2JS);
-                    this.map.createFromObjects('Object Layer', 214, 'hyptosis_tile-art-batch-1', 214, true, false, this.movableGroup);
-                    this.movableGroup.forEach(function (movable) {
-                        movable.body.setMaterial(this.movableMaterial);
-                        movable.body.collideWorldBounds = true;
-                        movable.body.mass = Act2Settings.MOVABLE_MASS;
-                        movable.body.damping = 0.95;
-                        movable.body.angularDamping = 0.85;
-                        movable.body.debug = this.DEBUG;
-                        movable.height = 30;
-                        movable.width = 30;
-                        movable.body.x += movable.width / 2;
-                        movable.body.y += movable.height / 2;
-                        movable.body.setRectangle(movable.width, movable.width, 0, 0);
+                createPeople: function () {
+                    this.peopleGroup = this.game.add.physicsGroup(Phaser.Physics.P2JS);
+                    this.map.createFromObjects('Object Layer', 1867, 'people', 0, true, false, this.peopleGroup/*, this.levelData.patrolEnemyClass, false*/);
+                    this.peopleGroup.forEach(function (person) {
+                        person.state = this;
+                        person.settings = Act2Settings;
+                        //  TODO - make it so player hitting people stops player
+                        person.body.setMaterial(this.peopleMaterial);
+                        person.body.collideWorldBounds = true;
+                        person.body.fixedRotation = true;
+                        person.body.debug = this.DEBUG;
+                        person.height = 20;
+                        person.width = 20;
+                        person.reset(person.x + 16, person.y + 16);
+                        person.body.setCircle(10);
+                        person.body.mass = Act2Settings.PEOPLE_MASS;
+                        //this.player.body.onBeginContact.add(this.collisionCheck, this);
+                        //this.playerGroup.add(this.player);
+                        //person.initialize();
+                    }, this);
+                },
+
+                createBonfires: function () {
+                    this.fireGroup = this.game.add.physicsGroup(Phaser.Physics.P2JS);
+                    this.map.createFromObjects('Object Layer', 964, 'logs', 0, true, false, this.fireGroup/*, this.levelData.patrolEnemyClass, false*/);
+                    this.fireGroup.forEach(function (fire) {
+                        fire.state = this;
+                        fire.settings = Act2Settings;
+                        fire.lit = false;
+                        fire.reset(fire.x + 16, fire.y + 16);
+                        //  TODO - make it so player hitting people stops player
+                        fire.body.setMaterial(this.bonfireMaterial);
+                        fire.body.mass = Act2Settings.BONFIRE_MASS;
+
+                        /*
+                         person.body.collideWorldBounds = true;
+                         person.body.fixedRotation = true;
+                         person.body.debug = this.DEBUG;
+                         person.height = 20;
+                         person.width = 20;
+                         person.body.setCircle(10);
+                         */
+                        //this.player.body.onBeginContact.add(this.collisionCheck, this);
+                        //this.playerGroup.add(this.player);
+                        //person.initialize();
                     }, this);
                 },
 

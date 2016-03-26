@@ -4996,7 +4996,7 @@
               "visible": true,
               "width": 32,
               "x": 283,
-              "y": 963
+              "y": 959
             },
             {
               "gid": 1867,
@@ -5079,8 +5079,8 @@
               "type": "",
               "visible": true,
               "width": 32,
-              "x": 165,
-              "y": 1836
+              "x": 167,
+              "y": 1837
             },
             {
               "gid": 1867,
@@ -5093,7 +5093,7 @@
               "type": "",
               "visible": true,
               "width": 32,
-              "x": 707,
+              "x": 703,
               "y": 1758
             },
             {
@@ -5108,7 +5108,7 @@
               "visible": true,
               "width": 32,
               "x": 910,
-              "y": 1744
+              "y": 1751
             },
             {
               "gid": 1867,
@@ -5122,7 +5122,7 @@
               "visible": true,
               "width": 32,
               "x": 670,
-              "y": 1508
+              "y": 1543
             },
             {
               "gid": 1867,
@@ -5135,8 +5135,8 @@
               "type": "",
               "visible": true,
               "width": 32,
-              "x": 700,
-              "y": 1506
+              "x": 702,
+              "y": 1500
             },
             {
               "gid": 1867,
@@ -5150,7 +5150,7 @@
               "visible": true,
               "width": 32,
               "x": 975,
-              "y": 1313
+              "y": 1307
             },
             {
               "gid": 1867,
@@ -5233,7 +5233,7 @@
               "type": "",
               "visible": true,
               "width": 32,
-              "x": 713,
+              "x": 711,
               "y": 533
             },
             {
@@ -5248,7 +5248,7 @@
               "visible": true,
               "width": 32,
               "x": 674,
-              "y": 348
+              "y": 351
             },
             {
               "gid": 1867,
@@ -5261,8 +5261,8 @@
               "type": "",
               "visible": true,
               "width": 32,
-              "x": 714,
-              "y": 306
+              "x": 722,
+              "y": 322
             },
             {
               "gid": 1867,
@@ -5448,51 +5448,56 @@
   "renderorder": "right-down",
   "tileheight": 32,
   "tilesets": [
-        {
-          "firstgid": 1,
-          "image": "..\/..\/..\/art\/hyptosis\/hyptosis_tile-art-batch-1.png",
-          "imageheight": 960,
-          "imagewidth": 960,
-          "margin": 0,
-          "name": "hyptosis_tile-art-batch-1",
-          "properties": {
-          },
-          "spacing": 0,
-          "tilecount": 900,
-          "tileheight": 32,
-          "tilewidth": 32,
-          "transparentcolor": "#ff00ff"
-        },
-        {
-          "firstgid": 901,
-          "image": "..\/..\/..\/art\/hyptosis\/hyptosis_tile-art-batch-2.png",
-          "imageheight": 960,
-          "imagewidth": 960,
-          "margin": 0,
-          "name": "hyptosis_tile-art-batch-2",
-          "properties": {
-          },
-          "spacing": 0,
-          "tilecount": 900,
-          "tileheight": 32,
-          "tilewidth": 32,
-          "transparentcolor": "#ff00ff"
-        },
-        {
-          "firstgid": 1801,
-          "image": "..\/..\/..\/art\/hyptosis\/hyptosis_tile-art-batch-3.png",
-          "imageheight": 960,
-          "imagewidth": 960,
-          "margin": 0,
-          "name": "hyptosis_tile-art-batch-3",
-          "properties": {
-          },
-          "spacing": 0,
-          "tilecount": 900,
-          "tileheight": 32,
-          "tilewidth": 32,
-          "transparentcolor": "#ff00ff"
-        }
+    {
+      "firstgid": 1,
+      "image": "..\/..\/..\/art\/hyptosis\/hyptosis_tile-art-batch-1.png",
+      "imageheight": 960,
+      "imagewidth": 960,
+      "margin": 0,
+      "name": "hyptosis_tile-art-batch-1",
+      "properties":
+            {
+
+            },
+      "spacing": 0,
+      "tilecount": 900,
+      "tileheight": 32,
+      "tilewidth": 32,
+      "transparentcolor": "#ff00ff"
+    },
+    {
+      "firstgid": 901,
+      "image": "..\/..\/..\/art\/hyptosis\/hyptosis_tile-art-batch-2.png",
+      "imageheight": 960,
+      "imagewidth": 960,
+      "margin": 0,
+      "name": "hyptosis_tile-art-batch-2",
+      "properties":
+            {
+
+            },
+      "spacing": 0,
+      "tilecount": 900,
+      "tileheight": 32,
+      "tilewidth": 32,
+      "transparentcolor": "#ff00ff"
+    },
+    {
+      "firstgid": 1801,
+      "image": "..\/..\/..\/art\/hyptosis\/hyptosis_tile-art-batch-3.png",
+      "imageheight": 960,
+      "imagewidth": 960,
+      "margin": 0,
+      "name": "hyptosis_tile-art-batch-3",
+      "properties":
+            {
+            },
+      "spacing": 0,
+      "tilecount": 900,
+      "tileheight": 32,
+      "tilewidth": 32,
+      "transparentcolor": "#ff00ff"
+    }
   ],
   "tilewidth": 32,
   "version": 1,
