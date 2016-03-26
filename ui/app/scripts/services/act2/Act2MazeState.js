@@ -186,6 +186,7 @@ angular.module('uiApp').factory('Act2MazeState',
                         person.width = 20;
                         person.reset(person.x + 16, person.y + 16);
                         person.body.setCircle(10);
+                        person.body.setZeroDamping();
                         person.body.mass = Act2Settings.PEOPLE_MASS;
                         //this.player.body.onBeginContact.add(this.collisionCheck, this);
                         //this.playerGroup.add(this.player);
@@ -204,6 +205,7 @@ angular.module('uiApp').factory('Act2MazeState',
                         //  TODO - make it so player hitting people stops player
                         fire.body.setMaterial(this.bonfireMaterial);
                         fire.body.mass = Act2Settings.BONFIRE_MASS;
+                        fire.body.setZeroDamping();
 
                         /*
                          person.body.collideWorldBounds = true;

@@ -160,9 +160,8 @@ angular.module('uiApp').factory('Act1MazeState',
                         finish.body.debug = this.DEBUG;
                         finish.height = 32;
                         finish.width = 32;
-                        finish.anchor.setTo(0.5);
-                        finish.body.x += finish.width / 2;
-                        finish.body.y += finish.height / 2;
+                        //finish.anchor.setTo(0.5);
+                        finish.reset(finish.x + 16, finish.y + 16);
                         finish.body.setRectangle(finish.width, finish.height, 0, 0);
                         finish.body.static = true;
                         finish.body.debug = this.DEBUG;
@@ -179,10 +178,9 @@ angular.module('uiApp').factory('Act1MazeState',
                         movable.body.damping = 0.95;
                         movable.body.angularDamping = 0.85;
                         movable.body.debug = this.DEBUG;
+                        movable.reset(movable.x + 16, movable.y + 16);
                         movable.height = 30;
                         movable.width = 30;
-                        movable.body.x += movable.width / 2;
-                        movable.body.y += movable.height / 2;
                         movable.body.setRectangle(movable.width, movable.width, 0, 0);
                     }, this);
                 },
@@ -194,6 +192,7 @@ angular.module('uiApp').factory('Act1MazeState',
                         enemy.state = this;
                         enemy.settings = Act1Settings;
                         enemy.body.setMaterial(this.enemyMaterial);
+                        enemy.reset(enemy.x + 16, enemy.y + 16);
                         enemy.initialize();
                     }, this);
                 },

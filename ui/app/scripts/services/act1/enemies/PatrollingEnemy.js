@@ -8,8 +8,6 @@ var PatrollingEnemy = function (game, x, y, key, frame) {
     this.settings = undefined;
     this.height = 20;
     this.width = 20;
-    this.x += 16;
-    this.y -= 16;
 };
 
 PatrollingEnemy.prototype = Object.create(AbstractAct1Enemy.prototype);
