@@ -41,8 +41,8 @@ angular.module('uiApp').factory('Act2MazeState',
                 },
                 create: function () {
                     this.game.resetDefaultSize();
-                    this.playerLightRadius = this.levelData.playerMovingLightRadius;
-                    this.demonMaxSight = this.levelData.enemySenseMovingDistance;
+                    this.playerLightRadius = Act2Settings.PLAYER_LIGHT_RADIUS;
+                    this.demonMaxSight = Act2Settings.DEMON_SENSE_PLAYER_MAX_DISTANCE;
                     this.game.ending = false;
 
                     TiledDisplay.initializeTileMap(this, ['hyptosis_tile-art-batch-1', 'hyptosis_tile-art-batch-2', 'hyptosis_tile-art-batch-3']);
@@ -51,9 +51,6 @@ angular.module('uiApp').factory('Act2MazeState',
                     this.game.physics.startSystem(Phaser.Physics.P2JS);
                     this.game.physics.p2.convertTilemap(this.map, this.blockLayer);
                     this.game.physics.p2.setBoundsToWorld(true, true, true, true, false);
-                    /*
-                     this.createMovableObjects();
-                     */
                     this.createPeople();
                     this.createEnemies();
                     this.createBonfires();
@@ -63,21 +60,27 @@ angular.module('uiApp').factory('Act2MazeState',
                     this.createPlayer();
                     this.initializeKeyboard();
                     this.game.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;
-                    HelpDisplay.initializeHelp(this,
-                        (angular.isDefined(this.levelData.helpText) ? this.levelData.helpText : Act2Settings.helpText),
-                        (this.level === 0 || this.level === 2));
+                    HelpDisplay.initializeHelp(this, Act2Settings.helpText, this.level === 0);
+                    this.peopleText.text = this.makePeopleText();
+                    this.bonfireText.text = this.makeBonfireText();
                 },
                 update: function () {
                     this.player.body.setZeroVelocity();
                     TiledDisplay.clearTileHitDisplay(this);
                     if (!this.game.ending) {
                         this.enemyGroup.forEach(function (enemy) {
-                            enemy.updateFunction(this.player);
-                        }, this);
+                            enemy.updateFunction();
+                        });
+                        this.peopleGroup.forEachAlive(function (person) {
+                            person.updateFunction();
+                        });
                         this.handlePlayerMovement();
                     } else {
                         this.enemyGroup.forEach(function (enemy) {
                             enemy.body.setZeroVelocity();
+                        });
+                        this.peopleGroup.forEachAlive(function (person) {
+                            person.body.setZeroVelocity();
                         });
                     }
                     TiledDisplay.showTileHitsDisplay(this);
@@ -85,14 +88,8 @@ angular.module('uiApp').factory('Act2MazeState',
                 },
                 render: function () {
                     if (this.DEBUG) {
-                        this.game.debug.cameraInfo(this.game.camera, 0, 0);
-                        this.game.debug.spriteInfo(this.player, 400, 0);
-                        angular.forEach(this.enemyGroup.children, function (child, index) {
-                            this.game.debug.spriteInfo(child, index * 350, 100);
-                        }, this);
-                        angular.forEach(this.movableGroup.children, function (child, index) {
-                            this.game.debug.spriteInfo(child, index * 350, 200);
-                        }, this);
+                        this.game.debug.cameraInfo(this.game.camera, 0, 100);
+                        this.game.debug.spriteInfo(this.player, 400, 100);
                     }
                 },
                 //  Phaser state functions - end
@@ -167,37 +164,28 @@ angular.module('uiApp').factory('Act2MazeState',
                     this.player.body.setCircle(10);
                     this.player.body.mass = Act2Settings.PLAYER_MASS;
                     this.game.camera.follow(this.player);
-                    this.player.body.onBeginContact.add(this.collisionCheck, this);
+                    this.player.body.onBeginContact.add(this.playerCollisionCheck, this);
                     this.playerGroup.add(this.player);
                 },
 
                 createPeople: function () {
                     this.peopleGroup = this.game.add.physicsGroup(Phaser.Physics.P2JS);
-                    this.map.createFromObjects('Object Layer', 1867, 'people', 0, true, false, this.peopleGroup/*, this.levelData.patrolEnemyClass, false*/);
+                    this.map.createFromObjects('Object Layer', 1867, 'people', 0, true, false, this.peopleGroup, this.levelData.townPersonClass, false);
                     this.peopleGroup.forEach(function (person) {
                         person.state = this;
                         person.settings = Act2Settings;
-                        //  TODO - make it so player hitting people stops player
                         person.body.setMaterial(this.peopleMaterial);
-                        person.body.collideWorldBounds = true;
-                        person.body.fixedRotation = true;
-                        person.body.debug = this.DEBUG;
                         person.height = 20;
                         person.width = 20;
-                        person.reset(person.x + 16, person.y + 16);
-                        person.body.setCircle(10);
-                        person.body.setZeroDamping();
                         person.body.mass = Act2Settings.PEOPLE_MASS;
-                        //this.player.body.onBeginContact.add(this.collisionCheck, this);
-                        //this.playerGroup.add(this.player);
-                        //person.initialize();
+                        person.reset(person.x + 16, person.y - 16);
                     }, this);
                 },
 
                 createBonfires: function () {
-                    this.fireGroup = this.game.add.physicsGroup(Phaser.Physics.P2JS);
-                    this.map.createFromObjects('Object Layer', 964, 'logs', 0, true, false, this.fireGroup/*, this.levelData.patrolEnemyClass, false*/);
-                    this.fireGroup.forEach(function (fire) {
+                    this.bonfireGroup = this.game.add.physicsGroup(Phaser.Physics.P2JS);
+                    this.map.createFromObjects('Object Layer', 964, 'logs', 0, true, false, this.bonfireGroup);
+                    this.bonfireGroup.forEach(function (fire) {
                         fire.state = this;
                         fire.settings = Act2Settings;
                         fire.lit = false;
@@ -205,19 +193,8 @@ angular.module('uiApp').factory('Act2MazeState',
                         //  TODO - make it so player hitting people stops player
                         fire.body.setMaterial(this.bonfireMaterial);
                         fire.body.mass = Act2Settings.BONFIRE_MASS;
+                        fire.body.debug = this.DEBUG;
                         fire.body.setZeroDamping();
-
-                        /*
-                         person.body.collideWorldBounds = true;
-                         person.body.fixedRotation = true;
-                         person.body.debug = this.DEBUG;
-                         person.height = 20;
-                         person.width = 20;
-                         person.body.setCircle(10);
-                         */
-                        //this.player.body.onBeginContact.add(this.collisionCheck, this);
-                        //this.playerGroup.add(this.player);
-                        //person.initialize();
                     }, this);
                 },
 
@@ -228,7 +205,10 @@ angular.module('uiApp').factory('Act2MazeState',
                         enemy.state = this;
                         enemy.settings = Act2Settings;
                         enemy.body.setMaterial(this.enemyMaterial);
-                        enemy.initialize();
+                        enemy.stunTime = 0;
+                        enemy.height = 20;
+                        enemy.width = 20;
+                        enemy.reset(enemy.x + 16, enemy.y - 16);
                     }, this);
                 },
 
@@ -245,6 +225,9 @@ angular.module('uiApp').factory('Act2MazeState',
                     this.peopleText = this.game.add.text(0, 0, '');
                     TextFormatter.formatTracker(this.peopleText);
                     this.peopleText.cameraOffset.setTo(3, 15);
+                    this.bonfireText = this.game.add.text(0, 0, '');
+                    TextFormatter.formatTracker(this.bonfireText);
+                    this.bonfireText.cameraOffset.setTo(3, 30);
                 },
                 //  Creation functions - end
 
@@ -255,20 +238,37 @@ angular.module('uiApp').factory('Act2MazeState',
                     return 'Torches: ' + this.currentTorches;
                 },
 
+                //  Torch related - begin
+                makeBonfireText: function () {
+                    return 'Bonfires: ' +
+                        this.bonfireGroup.filter(function (fire) {
+                            return fire.lit;
+                        }, true).total +
+                        ' lit, ' +
+                        this.bonfireGroup.filter(function (fire) {
+                            return !fire.lit;
+                        }, true).total +
+                        ' unlit';
+                },
+
                 makePeopleText: function () {
                     //  TODO
-                    return 'People: ' + this.currentTorches;
+                    return 'People: ' + this.peopleGroup.countLiving() + ' left, ' + this.peopleGroup.countDead() + ' killed';
                 },
 
                 updateWorldShadowAndLights: function () {
                     this.calculator.updateShadows(this);
                     this.calculator.drawCircleOfLight(this, this.player, this.playerLightRadius);
-                    //  TODO - draw lit fires
+                    this.bonfireGroup.forEachAlive(function (fire) {
+                        if (fire.lit) {
+                            this.calculator.drawCircleOfLight(this, fire, Act2Settings.BONFIRE_LIGHT_DISTANCE);
+                        }
+                    }, this);
                 },
                 //  Torch related -end
 
                 //  Player action and movement - begin
-                collisionCheck: function (body) {
+                playerCollisionCheck: function (body) {
                     if (angular.isDefined(body) &&
                         body !== null &&
                         angular.isDefined(body.sprite) &&
@@ -278,6 +278,28 @@ angular.module('uiApp').factory('Act2MazeState',
                             case this.enemyGroup:
                                 this.deathEnding();
                                 break;
+                            case this.bonfireGroup:
+                                if (!body.sprite.lit && this.currentTorches >= Act2Settings.TORCHES_TO_LIGHT_BONFIRE) {
+                                    this.currentTorches -= Act2Settings.TORCHES_TO_LIGHT_BONFIRE;
+                                    body.sprite.lit = true;
+                                    this.torchText.text = this.makeTorchText();
+                                    this.bonfireText.text = this.makeBonfireText();
+                                    this.enemyGroup.forEachAlive(function (enemy) {
+                                        if (this.calculator.calcDistanceBetweenSprites(body.sprite, enemy).distance <= Act2Settings.BONFIRE_LIGHT_DISTANCE) {
+                                            enemy.kill();
+                                        }
+                                    }, this);
+                                    if (this.bonfireGroup.checkAll('lit', true)) {
+                                        this.winEnding();
+                                    } else {
+                                        if (this.currentTorches < Act2Settings.TORCHES_TO_LIGHT_BONFIRE) {
+                                            this.deathEnding();
+                                        }
+                                    }
+                                    //  TODO - change image to lit
+                                    //  TODO - mark easy star grid tiles as off limits
+
+                                }
                         }
                     }
                 },

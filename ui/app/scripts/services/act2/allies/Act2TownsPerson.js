@@ -1,22 +1,21 @@
 /* globals AbstractAct1Enemy: false */
 'use strict';
 
-var PatrollingEnemy = function (game, x, y, key, frame) {
-    AbstractAct1Enemy.call(this, game, x, y, key, frame);
-    this.name = 'PatrollingEnemy';
+var Act2TownsPerson = function (game, x, y, key, frame) {
+    Phaser.Sprite.call(this, game, x, y, key, frame);
+    this.name = 'Act2TownsPerson';
     this.state = undefined;
     this.settings = undefined;
-    this.height = 20;
-    this.width = 20;
 };
 
-PatrollingEnemy.prototype = Object.create(AbstractAct1Enemy.prototype);
-PatrollingEnemy.prototype.constructor = PatrollingEnemy;
+Act2TownsPerson.prototype = Object.create(Phaser.Sprite.prototype);
+Act2TownsPerson.prototype.constructor = Act2TownsPerson;
 
-PatrollingEnemy.prototype.initialize = function () {
+Act2TownsPerson.prototype.reset = function (x, y, health) {
+    Phaser.Component.Reset.prototype.reset.call(this, x, y, health);
     this.body.setCircle(10);
-    this.initialX = this.x;
-    this.initialY = this.y;
+    this.initialX = x;
+    this.initialY = y;
     this.minX = this.initialX - this.settings.ENEMY_PATROL_RANGE;
     this.maxX = this.initialX + this.settings.ENEMY_PATROL_RANGE;
     this.minY = this.initialY - this.settings.ENEMY_PATROL_RANGE;
@@ -27,19 +26,22 @@ PatrollingEnemy.prototype.initialize = function () {
     this.body.debug = this.state.DEBUG;
     this.body.collideWorldBounds = true;
     this.body.fixedRotation = true;
-    this.randomizeDirection();
+    //this.randomizeDirection();
     this.body.setZeroDamping();
+    this.safe = false;
 };
 
-PatrollingEnemy.prototype.updateFunction = function () {
-    if (this.checkIfEnemyWillChasePlayer()) {
-        this.chasePlayer();
-    } else {
-        this.patrol();
-    }
+Act2TownsPerson.prototype.updateFunction = function () {
+    /*
+     if (this.checkIfEnemyWillChasePlayer()) {
+     this.chasePlayer();
+     } else {
+     this.patrol();
+     }
+     */
 };
 
-PatrollingEnemy.prototype.checkIfEnemyWillChasePlayer = function () {
+Act2TownsPerson.prototype.checkIfEnemyWillChasePlayer = function () {
     //  TODO - Play sound while chasing or play sound when chase begins?
     var wasChasing = this.isChasing;
     this.isChasing = false;
@@ -57,12 +59,12 @@ PatrollingEnemy.prototype.checkIfEnemyWillChasePlayer = function () {
     return this.isChasing;
 };
 
-PatrollingEnemy.prototype.checkIfEnemySeesPlayer = function () {
+Act2TownsPerson.prototype.checkIfEnemySeesPlayer = function () {
     this.closestOpponent = this.state.calculator.findClosestOpponent(this, this.state, this.state.playerGroup, this.state.demonMaxSight, this.rayDoesNotHitAnyRocks);
     return angular.isDefined(this.closestOpponent.opponent);
 };
 
-PatrollingEnemy.prototype.rayDoesNotHitAnyRocks = function (ray) {
+Act2TownsPerson.prototype.rayDoesNotHitAnyRocks = function (ray) {
     var rocksHit = [];
     if (angular.isDefined(this.state.movableGroup)) {
         var lineCoordinates = ray.coordinatesOnLine(1);
@@ -78,13 +80,13 @@ PatrollingEnemy.prototype.rayDoesNotHitAnyRocks = function (ray) {
     return rocksHit.length === 0;
 };
 
-PatrollingEnemy.prototype.chasePlayer = function () {
+Act2TownsPerson.prototype.chasePlayer = function () {
     this.currentPathFindingGoalSprite = this.state.player;
     this.MOVE_SPEED = this.settings.ENEMY_CHASE_SPEED;
     this.state.calculator.performPathFind(this);
 };
 
-PatrollingEnemy.prototype.patrol = function () {
+Act2TownsPerson.prototype.patrol = function () {
     var compareX = Math.round(this.x * 100) / 100;
     var compareY = Math.round(this.y * 100) / 100;
     if ((compareX <= this.minX && this.body.velocity.x < 0) ||
@@ -102,7 +104,7 @@ PatrollingEnemy.prototype.patrol = function () {
 
 };
 
-PatrollingEnemy.prototype.randomizeDirection = function () {
+Act2TownsPerson.prototype.randomizeDirection = function () {
     var signX = this.state.game.rnd.sign();
     var signY = this.state.game.rnd.sign();
     var percent = this.state.game.rnd.integerInRange(0, 100) / 100;

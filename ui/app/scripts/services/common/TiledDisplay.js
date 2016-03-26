@@ -1,8 +1,8 @@
 'use strict';
 
 angular.module('uiApp').factory('TiledDisplay',
-    ['Phaser', 'EasyStar', 'CommonCalculator',
-        function (Phaser, EasyStar, CommonCalculator) {
+    ['Phaser', 'EasyStar',
+        function (Phaser, EasyStar) {
             return {
                 initializeTileMap: function (state, artworkArray) {
                     state.tileHits = [];

@@ -3,71 +3,53 @@
 
 angular.module('uiApp').factory('Act2Settings',
     [function () {
-        var act1Data = {
-            PLAYER_MOVE_SPEED: 75,
-
+        var act2Data = {
             PLAYER_MASS: 2,
             BONFIRE_MASS: 20000000,
             ENEMY_MASS: 1,
             PEOPLE_MASS: 2000,
 
 
+            //  TODO - review all
+            PLAYER_MOVE_SPEED: 75,
+
             ENEMY_PATROL_SPEED: 40,
             ENEMY_CHASE_SPEED: 90,
             ENEMY_PATROL_RANGE: 64,
-            ENEMY_MAX_SIGHT_PLAYER_MOVING: 90,
 
             ENEMY_STOP_CHASING_AFTER: 10,  // loops out of sight
 
             FINISH_LIGHT_RADIUS: 50,
 
-            TIME_PER_CANDLE: 60,    //  seconds
+            PLAYER_LIGHT_RADIUS: 100,
+
+            DEMON_SENSE_PLAYER_MAX_DISTANCE: 120,
+            DEMON_SENSE_PEOPLE_MAX_DISTANCE: 80,
+
+            BONFIRE_LIGHT_DISTANCE: 32 * 5,
+
+            TORCHES_TO_LIGHT_BONFIRE: 5,
 
             levelData: [
                 {
                     startingX: 16,
-                    startingY: 16,
-                    playerHidingLightRadius: 10,
-                    playerMovingLightRadius: 40,
-                    helpText: "Find safety!\nUse arrows to move.\nPress C to take cover.\n? to show/hide this help."
-                },
-                {
-                    startingX: 32,
-                    startingY: 1050,
-                    playerHidingLightRadius: 10,
-                    playerMovingLightRadius: 40,
-                    helpText: "Find safety!\nUse arrows to move.\nPress C to take cover.\n? to show/hide this help."
+                    startingY: 16
                 },
 
-                //  TODO - this is just a junk copy of 1st level
-                {
-                    startingX: 16,
-                    startingY: 1264
-                }
-
-            ],
-            helpText: "Take the candles to the Council before they are gone!\nUse arrows to move.\nPress C to take cover, but you cannot light a new candle while under cover.\n? to show/hide this help."
+            ]
         };
-        act1Data.levels = act1Data.levelData.length;
-        angular.forEach(act1Data.levelData, function (level) {
-            if (angular.isUndefined(level.playerMovingLightRadius)) {
-                level.playerMovingLightRadius = 60;
-            }
-            if (angular.isUndefined(level.enemySenseMovingDistance)) {
-                level.enemySenseMovingDistance = level.playerMovingLightRadius + 20;
-            }
-            if (angular.isUndefined(level.playerHidingLightRadius)) {
-                level.playerHidingLightRadius = 20;
-            }
-            if (angular.isUndefined(level.enemySenseHidingDistance)) {
-                level.enemySenseHidingDistance = level.playerHidingLightRadius + 20;
-            }
+
+        act2Data.helpText = "Light the bonfires and protect the people!  You need at least " + act2Data.TORCHES_TO_LIGHT_BONFIRE + " torches to light a bonfire.\n  Use arrows to move.\nS to stun a nearby demon, uses a torch.\n? to show/hide this help.";
+        act2Data.levels = act2Data.levelData.length;
+        angular.forEach(act2Data.levelData, function (level) {
             if (angular.isUndefined(level.patrolEnemyClass)) {
-                level.patrolEnemyClass = PatrollingEnemy;
+                level.patrolEnemyClass = Act2PatrollingEnemy;
+            }
+            if (angular.isUndefined(level.townPersonClass)) {
+                level.townPersonClass = Act2TownsPerson;
             }
         });
 
-        return act1Data;
+        return act2Data;
     }
-    ]
-);
+    ]);

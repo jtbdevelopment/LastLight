@@ -12,7 +12,6 @@ angular.module('uiApp').factory('Act1Settings',
             ENEMY_PATROL_SPEED: 40,
             ENEMY_CHASE_SPEED: 90,
             ENEMY_PATROL_RANGE: 64,
-            ENEMY_MAX_SIGHT_PLAYER_MOVING: 90,
 
             ENEMY_STOP_CHASING_AFTER: 10,  // loops out of sight
 
@@ -60,7 +59,7 @@ angular.module('uiApp').factory('Act1Settings',
                 level.enemySenseHidingDistance = level.playerHidingLightRadius + 20;
             }
             if(angular.isUndefined(level.patrolEnemyClass)) {
-                level.patrolEnemyClass = PatrollingEnemy;
+                level.patrolEnemyClass = Act1PatrollingEnemy;
             }
         });
 

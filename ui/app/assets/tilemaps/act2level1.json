@@ -5387,8 +5387,8 @@
               "type": "",
               "visible": true,
               "width": 32,
-              "x": 684,
-              "y": 218
+              "x": 681,
+              "y": 215
             },
             {
               "gid": 1867,
@@ -5402,7 +5402,7 @@
               "visible": true,
               "width": 32,
               "x": 710,
-              "y": 175
+              "y": 169
             },
             {
               "gid": 1867,
@@ -5441,10 +5441,11 @@
           "y": 0
         }
   ],
-  "nextobjectid": 48,
+  "nextobjectid": 50,
   "orientation": "orthogonal",
-  "properties": {
-  },
+  "properties":
+    {
+    },
   "renderorder": "right-down",
   "tileheight": 32,
   "tilesets": [
@@ -5491,6 +5492,7 @@
       "name": "hyptosis_tile-art-batch-3",
       "properties":
             {
+
             },
       "spacing": 0,
       "tilecount": 900,
