@@ -12,8 +12,8 @@ angular.module('uiApp').factory('TiledCalculator',
 
             tiledCalc.performPathFind = function (body) {
                 if (angular.isDefined(body.state.easyStar)) {
-                    var tileX = Math.round(body.x / body.state.map.tileWidth);
-                    var tileY = Math.round(body.y / body.state.map.tileHeight);
+                    var tileX = Math.floor(body.x / body.state.map.tileWidth);
+                    var tileY = Math.floor(body.y / body.state.map.tileHeight);
                     if (tileX === body.currentPathFindingGoalXTile && tileY === body.currentPathFindingGoalYTile) {
                         body.pathFindingGoalReached();
                     }

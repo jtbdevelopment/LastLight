@@ -324,7 +324,7 @@ angular.module('uiApp').factory('Act2MazeState',
                 },
 
                 //event.bodyA.parent, event.bodyA, event.shapeB, event.shapeA, event.contactEquations
-                personCollisionCheck: function (otherBody, otherBody2, myShape, otherShape, equations) {
+                personCollisionCheck: function (otherBody) {
                     if (angular.isDefined(otherBody) &&
                         otherBody !== null &&
                         angular.isDefined(otherBody.sprite) &&
@@ -333,12 +333,6 @@ angular.module('uiApp').factory('Act2MazeState',
                         switch (otherBody.sprite.parent) {
                             case this.enemyGroup:
                                 otherBody.sprite.kill();
-                                break;
-                            case this.bonfireGroup:
-                                if (otherBody.sprite.lit) {
-                                    equations[0].bodyA.parent.sprite.safe = true;
-                                    equations[0].bodyA.parent.setZeroVelocity();
-                                }
                                 break;
                         }
                     }

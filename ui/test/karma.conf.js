@@ -32,7 +32,7 @@ module.exports = function(config) {
       'bower_components/angular-sanitize/angular-sanitize.js',
       'bower_components/angular-touch/angular-touch.js',
       'bower_components/phaser/build/phaser.js',
-      'bower_components/easystarjs/bin/easystar-0.2.3.min.js',
+      'bower_components/easystarjs/bin/easystar-0.2.3.js',
       'bower_components/angular-mocks/angular-mocks.js',
       // endbower
       "app/scripts/**/*.js",

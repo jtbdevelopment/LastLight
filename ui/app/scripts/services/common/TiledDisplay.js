@@ -41,7 +41,7 @@ angular.module('uiApp').factory('TiledDisplay',
                     });
                     state.easyStar.setGrid(easyGrid);
                     state.easyStar.setAcceptableTiles([-1]);
-                    state.easyStar.enableDiagonals();
+                    //state.easyStar.enableDiagonals();
                     state.easyStar.enableSync();
                 },
 
