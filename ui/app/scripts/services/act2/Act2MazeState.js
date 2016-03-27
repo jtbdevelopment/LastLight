@@ -76,7 +76,6 @@ angular.module('uiApp').factory('Act2MazeState',
                             } catch (ex) {
                                 console.log(ex);
                             }
-                            enemy.updateFunction();
                         });
                         this.peopleGroup.forEachAlive(function (person) {
                             try {
@@ -167,6 +166,7 @@ angular.module('uiApp').factory('Act2MazeState',
                     this.playerGroup = this.game.add.group();
                     this.player = this.game.add.sprite(this.levelData.startingX, this.levelData.startingY, 'player');
                     this.game.physics.p2.enable(this.player);
+                    this.player.state = this;
                     this.player.body.collideWorldBounds = true;
                     this.player.body.fixedRotation = true;
                     this.player.body.debug = this.DEBUG;
@@ -191,7 +191,6 @@ angular.module('uiApp').factory('Act2MazeState',
                         person.width = 20;
                         person.body.mass = Act2Settings.PEOPLE_MASS;
                         person.reset(person.x + 16, person.y - 16);
-                        person.body.onBeginContact.add(this.personCollisionCheck, this);
                     }, this);
                 },
 
@@ -222,6 +221,7 @@ angular.module('uiApp').factory('Act2MazeState',
                         enemy.height = 20;
                         enemy.width = 20;
                         enemy.reset(enemy.x + 16, enemy.y - 16);
+                        enemy.body.onBeginContact.add(this.personCollisionCheck, this);
                     }, this);
                 },
 
@@ -331,8 +331,9 @@ angular.module('uiApp').factory('Act2MazeState',
                         otherBody.sprite !== null &&
                         angular.isDefined(otherBody.sprite.key)) {
                         switch (otherBody.sprite.parent) {
-                            case this.enemyGroup:
+                            case this.peopleGroup:
                                 otherBody.sprite.kill();
+                                this.peopleText.text = this.makePeopleText();
                                 break;
                         }
                     }

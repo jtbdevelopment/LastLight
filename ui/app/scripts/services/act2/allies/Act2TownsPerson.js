@@ -16,8 +16,9 @@ Act2TownsPerson.prototype.reset = function (x, y, health) {
     this.body.setCircle(10);
     this.initialX = x;
     this.initialY = y;
-    this.initialTileX = Math.floor(this.state.calculator.calcSpriteCenterX(this) / this.state.map.tileWidth);
-    this.initialTileY = Math.floor(this.state.calculator.calcSpriteCenterY(this) / this.state.map.tileHeight);
+    var initialTiles = this.state.calculator.calcSpriteTiles(this);
+    this.initialTileX = initialTiles.tileX;
+    this.initialTileY = initialTiles.tileY;
 
     this.body.debug = this.state.DEBUG;
     this.body.collideWorldBounds = true;
@@ -32,8 +33,9 @@ Act2TownsPerson.prototype.reset = function (x, y, health) {
     this.moveSpeed = 15;
 
     this.closestFire = this.state.calculator.findClosestGroupMember(this, this.state, this.state.bonfireGroup).member;
-    this.closestFireTileX = Math.floor(this.state.calculator.calcSpriteCenterX(this.closestFire) / this.state.map.tileWidth);
-    this.closestFireTileY = Math.floor(this.state.calculator.calcSpriteCenterY(this.closestFire) / this.state.map.tileHeight);
+    var fireTiles = this.state.calculator.calcSpriteTiles(this.closestFire);
+    this.closestFireTileX = fireTiles.tileX;
+    this.closestFireTileY = fireTiles.tileY;
     this.updatePathFindingGoal();
 };
 

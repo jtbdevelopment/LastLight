@@ -10,16 +10,21 @@ angular.module('uiApp').factory('TiledCalculator',
                 sprite.body.velocity.y = speed * distance.distanceY / distance.distance;
             };
 
+            tiledCalc.calcSpriteTiles = function (body) {
+                var tileX = Math.floor(body.x / body.state.map.tileWidth);
+                var tileY = Math.floor(body.y / body.state.map.tileHeight);
+                return {tileX: tileX, tileY: tileY};
+            };
+
             tiledCalc.performPathFind = function (body) {
                 if (angular.isDefined(body.state.easyStar)) {
-                    var tileX = Math.floor(body.x / body.state.map.tileWidth);
-                    var tileY = Math.floor(body.y / body.state.map.tileHeight);
-                    if (tileX === body.currentPathFindingGoalXTile && tileY === body.currentPathFindingGoalYTile) {
+                    var tiles = this.calcSpriteTiles(body);
+                    if (tiles.tileX === body.currentPathFindingGoalXTile && tiles.tileY === body.currentPathFindingGoalYTile) {
                         body.pathFindingGoalReached();
                     }
                     if (body.state.game.time.now > body.nextFindPathTime) {
                         body.nextFindPathTime = body.state.game.time.now + body.state.FIND_PATH_FREQUENCY;
-                        body.state.easyStar.findPath(tileX, tileY, body.currentPathFindingGoalXTile, body.currentPathFindingGoalYTile, function (path) {
+                        body.state.easyStar.findPath(tiles.tileX, tiles.tileY, body.currentPathFindingGoalXTile, body.currentPathFindingGoalYTile, function (path) {
                             if (angular.isDefined(path) && path !== null && path.length > 1) {
                                 var calculated = path[1];
                                 var xGoal = (calculated.x * body.state.map.tileWidth) + (body.state.map.tileWidth / 2);
@@ -37,6 +42,18 @@ angular.module('uiApp').factory('TiledCalculator',
                         body.state.calculator.calcDistanceBetweenSprites(body, body.currentPathFindingGoalSprite),
                         body.moveSpeed);
                 }
+            };
+
+            tiledCalc.findClosest = function (me, state, others) {
+                var closest = {distance: undefined, member: undefined};
+                angular.forEach(others, function (member) {
+                    var distance = this.calcDistanceBetweenSprites(me, member);
+                    if (angular.isUndefined(closest.member) || distance.distance < closest.distance.distance) {
+                        closest.distance = distance;
+                        closest.member = member;
+                    }
+                }, this);
+                return closest;
             };
 
             tiledCalc.findClosestGroupMember = function (me, state, group) {
