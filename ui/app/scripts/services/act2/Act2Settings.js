@@ -1,4 +1,5 @@
-/* globals PatrollingEnemy: false */
+/* globals Act2PatrollingEnemy: false */
+/* globals Act2TownsPerson: false */
 'use strict';
 
 angular.module('uiApp').factory('Act2Settings',
@@ -30,6 +31,11 @@ angular.module('uiApp').factory('Act2Settings',
 
             TORCHES_TO_LIGHT_BONFIRE: 5,
 
+            STUN_DISTANCE: 60,
+            STUN_DURATION: 2000, // in millis
+
+            DEFAULT_PERSON_MAX_MOVE: 1,
+
             levelData: [
                 {
                     startingX: 16,
@@ -47,6 +53,9 @@ angular.module('uiApp').factory('Act2Settings',
             }
             if (angular.isUndefined(level.townPersonClass)) {
                 level.townPersonClass = Act2TownsPerson;
+            }
+            if (angular.isUndefined(level.townPersonMoveTiles)) {
+                level.townPersonMoveTiles = act2Data.DEFAULT_PERSON_MAX_MOVE;
             }
         });
 

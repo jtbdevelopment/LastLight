@@ -6,7 +6,7 @@ var Act4Enemy = function (game, x, y, key, frame) {
     this.state = undefined;
     this.name = 'Act4Enemy';
 
-    this.MOVE_SPEED = 30;
+    this.moveSpeed = 30;
     this.SEE_WALL_TILE = 26;
     this.nextFireTime = 0;
     this.nextFindPathTime = 0;
@@ -44,13 +44,13 @@ Act4Enemy.prototype.resetEnemy = function (x, y, health, damage, size) {
 
 Act4Enemy.prototype.pathFindingGoalReached = function () {
     this.body.velocity.x = 0;
-    this.body.velocity.y = this.MOVE_SPEED;
+    this.body.velocity.y = this.moveSpeed;
 };
 
 Act4Enemy.prototype.updateFunction = function () {
-    var closestOpponent = this.state.calculator.findClosestOpponent(this, this.state, this.state.alliesGroup, this.state.ENEMY_SEE_DISTANCE);
-    if (angular.isDefined(closestOpponent.opponent)) {
-        this.state.calculator.moveToPoint(this, closestOpponent.distance, this.MOVE_SPEED);
+    var closestOpponent = this.state.calculator.findClosestVisibleGroupMember(this, this.state, this.state.alliesGroup, this.state.ENEMY_SEE_DISTANCE);
+    if (angular.isDefined(closestOpponent.member)) {
+        this.state.calculator.moveToPoint(this, closestOpponent.distance, this.moveSpeed);
     } else {
         this.state.calculator.performPathFind(this);
     }

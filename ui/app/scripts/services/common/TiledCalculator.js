@@ -25,9 +25,9 @@ angular.module('uiApp').factory('TiledCalculator',
                                 var xGoal = (calculated.x * body.state.map.tileWidth) + (body.state.map.tileWidth / 2);
                                 var yGoal = (calculated.y * body.state.map.tileHeight) + (body.state.map.tileHeight / 2);
                                 var distance = body.state.calculator.calcDistanceFromSpriteToPoint(body, xGoal, yGoal);
-                                body.state.calculator.moveToPoint(body, distance, body.MOVE_SPEED);
+                                body.state.calculator.moveToPoint(body, distance, body.moveSpeed);
                             } else {
-                                body.randomXPathFindingGoal();
+                                body.updatePathFindingGoal();
                             }
                         });
                     }
@@ -35,22 +35,34 @@ angular.module('uiApp').factory('TiledCalculator',
                     body.state.calculator.moveToPoint(
                         body,
                         body.state.calculator.calcDistanceBetweenSprites(body, body.currentPathFindingGoalSprite),
-                        body.MOVE_SPEED);
+                        body.moveSpeed);
                 }
             };
 
-            tiledCalc.findClosestOpponent = function (me, state, opponents, maxDistance, additionalCollisionCheck) {
-                var closestOpponent = {distance: undefined, opponent: undefined};
-                opponents.forEachAlive(function (e) {
-                    var ray = new Phaser.Line(this.calcSpriteCenterX(me), this.calcSpriteCenterY(me), this.calcSpriteCenterX(e), this.calcSpriteCenterY(e));
+            tiledCalc.findClosestGroupMember = function (me, state, group) {
+                var closest = {distance: undefined, member: undefined};
+                group.forEachAlive(function (member) {
+                    var distance = this.calcDistanceBetweenSprites(me, member);
+                    if (angular.isUndefined(closest.member) || distance.distance < closest.distance.distance) {
+                        closest.distance = distance;
+                        closest.member = member;
+                    }
+                }, this);
+                return closest;
+            };
+
+            tiledCalc.findClosestVisibleGroupMember = function (me, state, group, maxDistance, additionalCollisionCheck) {
+                var closest = {distance: undefined, member: undefined};
+                group.forEachAlive(function (member) {
+                    var ray = new Phaser.Line(this.calcSpriteCenterX(me), this.calcSpriteCenterY(me), this.calcSpriteCenterX(member), this.calcSpriteCenterY(member));
                     if (ray.length <= maxDistance) {
                         var tileHits = state.blockLayer.getRayCastTiles(ray, undefined, true);
                         if (tileHits.length === 0) {
                             if (angular.isUndefined(additionalCollisionCheck) || additionalCollisionCheck.call(me, ray)) {
-                                var distance = this.calcDistanceBetweenSprites(me, e);
-                                if (angular.isUndefined(closestOpponent.opponent) || distance.distance < closestOpponent.distance.distance) {
-                                    closestOpponent.distance = distance;
-                                    closestOpponent.opponent = e;
+                                var distance = this.calcDistanceBetweenSprites(me, member);
+                                if (angular.isUndefined(closest.member) || distance.distance < closest.distance.distance) {
+                                    closest.distance = distance;
+                                    closest.member = member;
                                 }
                             }
                         } else {
@@ -58,7 +70,7 @@ angular.module('uiApp').factory('TiledCalculator',
                         }
                     }
                 }, this);
-                return closestOpponent;
+                return closest;
             };
             return tiledCalc;
         }

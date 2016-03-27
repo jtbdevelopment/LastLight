@@ -10,6 +10,8 @@ angular.module('uiApp').factory('Act2MazeState',
                 data: undefined,
                 state: undefined,
 
+                FIND_PATH_FREQUENCY: 500, // seconds in millis
+
                 DEBUG: false,
                 //  Phaser state functions - begin
                 init: function (level, startingTorches) {
@@ -51,9 +53,9 @@ angular.module('uiApp').factory('Act2MazeState',
                     this.game.physics.startSystem(Phaser.Physics.P2JS);
                     this.game.physics.p2.convertTilemap(this.map, this.blockLayer);
                     this.game.physics.p2.setBoundsToWorld(true, true, true, true, false);
-                    this.createPeople();
                     this.createEnemies();
                     this.createBonfires();
+                    this.createPeople();
                     this.calculator.initializeWorldShadowing(this);
                     this.initializeInfoTracker();
                     this.createMaterials();
@@ -69,11 +71,21 @@ angular.module('uiApp').factory('Act2MazeState',
                     TiledDisplay.clearTileHitDisplay(this);
                     if (!this.game.ending) {
                         this.enemyGroup.forEach(function (enemy) {
+                            try {
+                                enemy.updateFunction();
+                            } catch (ex) {
+                                console.log(ex);
+                            }
                             enemy.updateFunction();
                         });
                         this.peopleGroup.forEachAlive(function (person) {
-                            person.updateFunction();
+                            try {
+                                person.updateFunction();
+                            } catch (ex) {
+                                console.log(ex);
+                            }
                         });
+                        this.easyStar.calculate();
                         this.handlePlayerMovement();
                     } else {
                         this.enemyGroup.forEach(function (enemy) {
@@ -179,6 +191,7 @@ angular.module('uiApp').factory('Act2MazeState',
                         person.width = 20;
                         person.body.mass = Act2Settings.PEOPLE_MASS;
                         person.reset(person.x + 16, person.y - 16);
+                        person.body.onBeginContact.add(this.personCollisionCheck, this);
                     }, this);
                 },
 
@@ -215,8 +228,7 @@ angular.module('uiApp').factory('Act2MazeState',
                 initializeKeyboard: function () {
                     this.cursors = this.game.input.keyboard.createCursorKeys();
                     this.stunKey = this.game.input.keyboard.addKey(Phaser.Keyboard.S);
-                    //  TODO
-                    //this.stunKey.onUp.add(this.switchTakingCover, this);
+                    this.stunKey.onUp.add(this.useStunMove, this);
                 },
 
                 initializeInfoTracker: function () {
@@ -266,6 +278,14 @@ angular.module('uiApp').factory('Act2MazeState',
                     }, this);
                 },
                 //  Torch related -end
+                checkIfEnoughTorchesRemain: function () {
+                    var torchesNeeded = Act2Settings.TORCHES_TO_LIGHT_BONFIRE * this.bonfireGroup.filter(function (fire) {
+                            return !fire.lit;
+                        }, true).total;
+                    if (this.currentTorches < torchesNeeded) {
+                        this.deathEnding();
+                    }
+                },
 
                 //  Player action and movement - begin
                 playerCollisionCheck: function (body) {
@@ -292,16 +312,47 @@ angular.module('uiApp').factory('Act2MazeState',
                                     if (this.bonfireGroup.checkAll('lit', true)) {
                                         this.winEnding();
                                     } else {
-                                        if (this.currentTorches < Act2Settings.TORCHES_TO_LIGHT_BONFIRE) {
-                                            this.deathEnding();
-                                        }
+                                        this.checkIfEnoughTorchesRemain();
                                     }
                                     //  TODO - change image to lit
                                     //  TODO - mark easy star grid tiles as off limits
 
                                 }
+                                break;
                         }
                     }
+                },
+
+                personCollisionCheck: function (body) {
+                    if (angular.isDefined(body) &&
+                        body !== null &&
+                        angular.isDefined(body.sprite) &&
+                        body.sprite !== null &&
+                        angular.isDefined(body.sprite.key)) {
+                        switch (body.sprite.parent) {
+                            case this.enemyGroup:
+                                body.sprite.kill();
+                                break;
+                            case this.bonfireGroup:
+                                if (body.sprite.lit) {
+                                    body.sprite.safe = true;
+                                    body.setZeroVelocity();
+                                }
+                                break;
+                        }
+                    }
+                },
+
+                useStunMove: function () {
+                    this.enemyGroup.forEachAlive(function (enemy) {
+                        if (this.calculator.calcDistanceBetweenSprites(this.player, enemy).distance <= Act2Settings.STUN_DISTANCE) {
+                            enemy.stunTime = this.game.time.now + Act2Settings.STUN_DURATION;
+                            enemy.stunned = true;
+                            enemy.body.setZeroVelocity();
+                        }
+                    }, this);
+                    this.currentTorches -= 1;
+                    this.checkIfEnoughTorchesRemain();
                 },
 
                 handlePlayerMovement: function () {

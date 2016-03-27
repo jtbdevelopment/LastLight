@@ -1,4 +1,4 @@
-/* globals PatrollingEnemy: false */
+/* globals Act1PatrollingEnemy: false */
 'use strict';
 
 angular.module('uiApp').factory('Act1Settings',

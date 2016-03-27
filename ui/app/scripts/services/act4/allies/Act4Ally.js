@@ -6,7 +6,7 @@ var Act4Ally = function (game, x, y, key, frame) {
     this.state = undefined;
     this.name = 'Act4Ally';
 
-    this.MOVE_SPEED = 15;
+    this.moveSpeed = 15;
     this.MAX_PATROL_Y_TILE = 26;
     this.MIN_PATROL_Y_TILE = 7;
     this.nextFireTime = 0;
@@ -55,8 +55,8 @@ Act4Ally.prototype.pathFindingGoalReached = function () {
 };
 
 Act4Ally.prototype.updateFunction = function () {
-    var closestOpponent = this.state.calculator.findClosestOpponent(this, this.state, this.state.enemyGroup, this.state.ALLY_SEE_DISTANCE);
-    if (angular.isDefined(closestOpponent.opponent) && closestOpponent.distance.distance <= this.state.ALLY_SEE_DISTANCE) {
+    var closestOpponent = this.state.calculator.findClosestVisibleGroupMember(this, this.state, this.state.enemyGroup, this.state.ALLY_SEE_DISTANCE);
+    if (angular.isDefined(closestOpponent.member) && closestOpponent.distance.distance <= this.state.ALLY_SEE_DISTANCE) {
         this.nextFindPathTime = 0;
         if (closestOpponent.distance.distance <= this.state.ALLY_FIRE_DISTANCE) {
             if (this.state.game.time.now > this.nextFireTime) {
@@ -64,10 +64,10 @@ Act4Ally.prototype.updateFunction = function () {
                 this.fireAtEnemy(closestOpponent);
             }
             else {
-                this.state.calculator.moveToPoint(this, closestOpponent.distance, -this.MOVE_SPEED);
+                this.state.calculator.moveToPoint(this, closestOpponent.distance, -this.moveSpeed);
             }
         } else if (closestOpponent.distance.distance <= this.state.ALLY_SEE_DISTANCE) {
-            this.state.calculator.moveToPoint(this, closestOpponent.distance, this.MOVE_SPEED);
+            this.state.calculator.moveToPoint(this, closestOpponent.distance, this.moveSpeed);
         }
     } else {
         this.state.calculator.performPathFind(this);

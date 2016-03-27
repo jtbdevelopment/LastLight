@@ -1,4 +1,4 @@
-/* globals AbstractAct1Enemy: false */
+/* globals Phaser: false */
 'use strict';
 
 var Act2PatrollingEnemy = function (game, x, y, key, frame) {
@@ -6,8 +6,6 @@ var Act2PatrollingEnemy = function (game, x, y, key, frame) {
     this.name = 'Act2PatrollingEnemy';
     this.state = undefined;
     this.settings = undefined;
-    this.height = 20;
-    this.width = 20;
 };
 
 Act2PatrollingEnemy.prototype = Object.create(Phaser.Sprite.prototype);
@@ -18,6 +16,8 @@ Act2PatrollingEnemy.prototype.reset = function (x, y, health) {
     this.body.setCircle(10);
     this.initialX = x;
     this.initialY = y;
+    this.stunTime = 0;
+    this.stunned = false;
     this.minX = this.initialX - this.settings.ENEMY_PATROL_RANGE;
     this.maxX = this.initialX + this.settings.ENEMY_PATROL_RANGE;
     this.minY = this.initialY - this.settings.ENEMY_PATROL_RANGE;
@@ -28,15 +28,21 @@ Act2PatrollingEnemy.prototype.reset = function (x, y, health) {
     this.body.debug = this.state.DEBUG;
     this.body.collideWorldBounds = true;
     this.body.fixedRotation = true;
-//    this.randomizeDirection();
+    this.randomizeDirection();
     this.body.setZeroDamping();
 };
 
 Act2PatrollingEnemy.prototype.updateFunction = function () {
-    if (this.checkIfEnemyWillChasePlayer()) {
-        this.chasePlayer();
-    } else {
-        this.patrol();
+    if (this.stunned && this.state.game.time.now > this.stunTime) {
+        this.stunned = false;
+        this.randomizeDirection();
+    }
+    if (this.stunned === false) {
+        if (this.checkIfEnemyWillChasePlayer()) {
+            this.chasePlayer();
+        } else {
+            this.patrol();
+        }
     }
 };
 
@@ -59,8 +65,8 @@ Act2PatrollingEnemy.prototype.checkIfEnemyWillChasePlayer = function () {
 };
 
 Act2PatrollingEnemy.prototype.checkIfEnemySeesPlayer = function () {
-    this.closestOpponent = this.state.calculator.findClosestOpponent(this, this.state, this.state.playerGroup, this.state.demonMaxSight, this.rayDoesNotHitAnyRocks);
-    return angular.isDefined(this.closestOpponent.opponent);
+    this.closestOpponent = this.state.calculator.findClosestVisibleGroupMember(this, this.state, this.state.playerGroup, this.state.demonMaxSight, this.rayDoesNotHitAnyRocks);
+    return angular.isDefined(this.closestOpponent.member);
 };
 
 Act2PatrollingEnemy.prototype.rayDoesNotHitAnyRocks = function (ray) {
@@ -81,7 +87,7 @@ Act2PatrollingEnemy.prototype.rayDoesNotHitAnyRocks = function (ray) {
 
 Act2PatrollingEnemy.prototype.chasePlayer = function () {
     this.currentPathFindingGoalSprite = this.state.player;
-    this.MOVE_SPEED = this.settings.ENEMY_CHASE_SPEED;
+    this.moveSpeed = this.settings.ENEMY_CHASE_SPEED;
     this.state.calculator.performPathFind(this);
 };
 
