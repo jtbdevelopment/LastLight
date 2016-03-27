@@ -38,8 +38,7 @@ angular.module('uiApp').factory('InterludeDictionary',
                     "With this knowledge, they ask if you can try to save as many people as possible, bringing them cleansed torches to towns and villages to " +
                     "light bonfires to hold back the night while they plan the next steps.\n",
                     moveOn: function (game) {
-                        //  TODO - Act 2!!
-                        game.state.start('Act3', true, false, 0, 1000);
+                        game.state.start('Act2', true, false, 0, 100);
                     }
                 },
                 Act2EndInterlude: {

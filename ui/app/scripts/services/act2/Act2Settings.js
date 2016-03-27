@@ -34,7 +34,7 @@ angular.module('uiApp').factory('Act2Settings',
             STUN_DISTANCE: 60,
             STUN_DURATION: 2000, // in millis
 
-            DEFAULT_PERSON_MAX_MOVE: 1,
+            DEFAULT_PERSON_MAX_MOVE: 5,
 
             levelData: [
                 {

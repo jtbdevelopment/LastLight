@@ -323,20 +323,21 @@ angular.module('uiApp').factory('Act2MazeState',
                     }
                 },
 
-                personCollisionCheck: function (body) {
-                    if (angular.isDefined(body) &&
-                        body !== null &&
-                        angular.isDefined(body.sprite) &&
-                        body.sprite !== null &&
-                        angular.isDefined(body.sprite.key)) {
-                        switch (body.sprite.parent) {
+                //event.bodyA.parent, event.bodyA, event.shapeB, event.shapeA, event.contactEquations
+                personCollisionCheck: function (otherBody, otherBody2, myShape, otherShape, equations) {
+                    if (angular.isDefined(otherBody) &&
+                        otherBody !== null &&
+                        angular.isDefined(otherBody.sprite) &&
+                        otherBody.sprite !== null &&
+                        angular.isDefined(otherBody.sprite.key)) {
+                        switch (otherBody.sprite.parent) {
                             case this.enemyGroup:
-                                body.sprite.kill();
+                                otherBody.sprite.kill();
                                 break;
                             case this.bonfireGroup:
-                                if (body.sprite.lit) {
-                                    body.sprite.safe = true;
-                                    body.setZeroVelocity();
+                                if (otherBody.sprite.lit) {
+                                    equations[0].bodyA.parent.sprite.safe = true;
+                                    equations[0].bodyA.parent.setZeroVelocity();
                                 }
                                 break;
                         }
