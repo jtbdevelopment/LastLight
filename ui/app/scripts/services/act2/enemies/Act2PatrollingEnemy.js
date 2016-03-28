@@ -51,7 +51,7 @@ Act2PatrollingEnemy.prototype.updatePathFindingGoal = function () {
     }
     if (angular.isDefined(this.state.peopleGroup)) {
         possibleAttacks = possibleAttacks.concat(this.state.peopleGroup.filter(function (person) {
-            return !person.safe && person.alive
+            return !person.safe && person.alive;
         }, true).list);
     }
     var closest = this.state.calculator.findClosest(this, this.state, possibleAttacks).member;

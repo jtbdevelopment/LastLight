@@ -8,7 +8,7 @@ var Act4Ally = function (game, x, y, key, frame) {
 
     this.moveSpeed = 15;
     this.MAX_PATROL_Y_TILE = 26;
-    this.MIN_PATROL_Y_TILE = 7;
+    this.MIN_PATROL_Y_TILE = 9;
     this.nextFireTime = 0;
     this.nextFindPathTime = 0;
     this.initialX = x;
@@ -18,24 +18,12 @@ var Act4Ally = function (game, x, y, key, frame) {
 Act4Ally.prototype = Object.create(Phaser.Sprite.prototype);
 Act4Ally.prototype.constructor = Act4Ally;
 
-Act4Ally.prototype.randomXPathFindingGoal = function () {
-    this.currentPathFindingGoalXPosition = Math.max(
-        0,
-        this.initialX + (this.state.game.rnd.integerInRange(0, 50) * this.state.game.rnd.pick([1, -1]))
-    );
-    this.currentPathFindingGoalXTile = Math.floor(this.currentPathFindingGoalXPosition / this.state.map.tileWidth);
-};
-
-Act4Ally.prototype.updatePathFindingGoal = function () {
-    this.currentPathFindingGoalYTile = (this.currentPathFindingGoalYTile === this.MAX_PATROL_Y_TILE) ? this.MIN_PATROL_Y_TILE : this.MAX_PATROL_Y_TILE;
-    this.randomXPathFindingGoal();
-};
-
 Act4Ally.prototype.reset = function (x, y, health) {
     Phaser.Component.Reset.prototype.reset.call(this, x, y, health);
     this.initialX = x;
     this.initialY = y;
-    this.updatePathFindingGoal();
+    this.initialTiles = this.state.calculator.calcSpriteTiles(this);
+    this.pathFindingGoalReached();
 };
 
 Act4Ally.prototype.fireAtEnemy = function (closestOpponent) {
@@ -50,7 +38,22 @@ Act4Ally.prototype.fireAtEnemy = function (closestOpponent) {
     arrow.body.velocity.y = this.state.ALLY_ARROW_SPEED * closestOpponent.distance.distanceY / closestOpponent.distance.distance;
 };
 
+Act4Ally.prototype.randomXPathFindingGoal = function () {
+};
+
+Act4Ally.prototype.updatePathFindingGoal = function () {
+    this.currentPathFindingGoalXTile = this.initialTiles.tileX + (this.state.game.rnd.integerInRange(0, 5) * this.state.game.rnd.pick([1, -1]));
+    if (this.currentPathFindingGoalXTile < 0 ||
+        this.currentPathFindingGoalXTile >= this.state.map.width ||
+        this.currentPathFindingGoalYTile < 0 ||
+        this.currentPathFindingGoalYTile >= this.state.map.height ||
+        this.state.blockLayer.layer.data[this.currentPathFindingGoalYTile][this.currentPathFindingGoalXTile].index !== -1) {
+        this.updatePathFindingGoal();
+    }
+};
+
 Act4Ally.prototype.pathFindingGoalReached = function () {
+    this.currentPathFindingGoalYTile = (this.currentPathFindingGoalYTile === this.MAX_PATROL_Y_TILE) ? this.MIN_PATROL_Y_TILE : this.MAX_PATROL_Y_TILE;
     this.updatePathFindingGoal();
 };
 

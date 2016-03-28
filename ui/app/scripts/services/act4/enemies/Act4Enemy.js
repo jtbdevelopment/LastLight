@@ -25,21 +25,21 @@ Act4Enemy.prototype.randomXPathFindingGoal = function () {
     this.currentPathFindingGoalXTile = Math.floor(this.currentPathFindingGoalXPosition / this.state.map.tileWidth);
 };
 
-Act4Enemy.prototype.updatePathFindingGoal = function () {
-    this.currentPathFindingGoalYTile = this.SEE_WALL_TILE;
-    this.randomXPathFindingGoal();
-};
-
 Act4Enemy.prototype.resetEnemy = function (x, y, health, damage, size) {
     Phaser.Component.Reset.prototype.reset.call(this, x, y, health);
     this.initialX = x;
     this.initialY = y;
-    this.updatePathFindingGoal();
     this.damage = damage;
     this.body.height = size * this.state.currentScale;
     this.body.width = size * this.state.currentScale;
     this.height = size;
     this.width = size;
+    this.updatePathFindingGoal();
+};
+
+Act4Enemy.prototype.updatePathFindingGoal = function () {
+    this.currentPathFindingGoalYTile = this.SEE_WALL_TILE;
+    this.randomXPathFindingGoal();
 };
 
 Act4Enemy.prototype.pathFindingGoalReached = function () {

@@ -38,8 +38,8 @@ angular.module('uiApp').factory('CommonCalculator',
                 },
 
                 moveToPoint: function (sprite, distance, speed) {
-                    sprite.body.velocity.x = speed * distance.distanceX / distance.distance;
-                    sprite.body.velocity.y = speed * distance.distanceY / distance.distance;
+                    sprite.body.velocity.x = Math.round(speed * distance.distanceX / distance.distance);
+                    sprite.body.velocity.y = Math.round(speed * distance.distanceY / distance.distance);
                 },
 
                 initializeWorldShadowing: function (state) {

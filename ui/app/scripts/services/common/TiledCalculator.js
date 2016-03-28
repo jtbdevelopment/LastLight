@@ -10,37 +10,37 @@ angular.module('uiApp').factory('TiledCalculator',
                 sprite.body.velocity.y = speed * distance.distanceY / distance.distance;
             };
 
-            tiledCalc.calcSpriteTiles = function (body) {
-                var tileX = Math.floor(body.x / body.state.map.tileWidth);
-                var tileY = Math.floor(body.y / body.state.map.tileHeight);
+            tiledCalc.calcSpriteTiles = function (sprite) {
+                var tileX = Math.floor(this.calcSpriteCenterX(sprite, sprite.state.currentScale) / sprite.state.map.tileWidth);
+                var tileY = Math.floor(this.calcSpriteCenterY(sprite, sprite.state.currentScale) / sprite.state.map.tileHeight);
                 return {tileX: tileX, tileY: tileY};
             };
 
-            tiledCalc.performPathFind = function (body) {
-                if (angular.isDefined(body.state.easyStar)) {
-                    var tiles = this.calcSpriteTiles(body);
-                    if (tiles.tileX === body.currentPathFindingGoalXTile && tiles.tileY === body.currentPathFindingGoalYTile) {
-                        body.pathFindingGoalReached();
+            tiledCalc.performPathFind = function (sprite) {
+                if (angular.isDefined(sprite.state.easyStar)) {
+                    var tiles = this.calcSpriteTiles(sprite);
+                    if (tiles.tileX === sprite.currentPathFindingGoalXTile && tiles.tileY === sprite.currentPathFindingGoalYTile) {
+                        sprite.pathFindingGoalReached();
                     }
-                    if (body.state.game.time.now > body.nextFindPathTime) {
-                        body.nextFindPathTime = body.state.game.time.now + body.state.FIND_PATH_FREQUENCY;
-                        body.state.easyStar.findPath(tiles.tileX, tiles.tileY, body.currentPathFindingGoalXTile, body.currentPathFindingGoalYTile, function (path) {
+                    if (sprite.state.game.time.now > sprite.nextFindPathTime) {
+                        sprite.nextFindPathTime = sprite.state.game.time.now + sprite.state.FIND_PATH_FREQUENCY;
+                        sprite.state.easyStar.findPath(tiles.tileX, tiles.tileY, sprite.currentPathFindingGoalXTile, sprite.currentPathFindingGoalYTile, function (path) {
                             if (angular.isDefined(path) && path !== null && path.length > 1) {
                                 var calculated = path[1];
-                                var xGoal = (calculated.x * body.state.map.tileWidth) + (body.state.map.tileWidth / 2);
-                                var yGoal = (calculated.y * body.state.map.tileHeight) + (body.state.map.tileHeight / 2);
-                                var distance = body.state.calculator.calcDistanceFromSpriteToPoint(body, xGoal, yGoal);
-                                body.state.calculator.moveToPoint(body, distance, body.moveSpeed);
+                                var xGoal = (calculated.x * sprite.state.map.tileWidth) + (sprite.state.map.tileWidth / 2);
+                                var yGoal = (calculated.y * sprite.state.map.tileHeight) + (sprite.state.map.tileHeight / 2);
+                                var distance = sprite.state.calculator.calcDistanceFromSpriteToPoint(sprite, xGoal, yGoal);
+                                sprite.state.calculator.moveToPoint(sprite, distance, sprite.moveSpeed);
                             } else {
-                                body.updatePathFindingGoal();
+                                sprite.updatePathFindingGoal();
                             }
                         });
                     }
                 } else {
-                    body.state.calculator.moveToPoint(
-                        body,
-                        body.state.calculator.calcDistanceBetweenSprites(body, body.currentPathFindingGoalSprite),
-                        body.moveSpeed);
+                    sprite.state.calculator.moveToPoint(
+                        sprite,
+                        sprite.state.calculator.calcDistanceBetweenSprites(sprite, sprite.currentPathFindingGoalSprite),
+                        sprite.moveSpeed);
                 }
             };
 

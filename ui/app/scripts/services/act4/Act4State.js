@@ -24,11 +24,11 @@ angular.module('uiApp').factory('Act4State',
 
                 ALLY_FIRE_DISTANCE: 70,
                 ALLY_FIRE_RATE: 1200, //seconds in millis
-                ALLY_SEE_DISTANCE: 150,
+                ALLY_SEE_DISTANCE: 32 * 6,
                 ALLY_ARROW_SPEED: 55,
                 ALLY_ARROW_DISTANCE: 85,
 
-                FIND_PATH_FREQUENCY: 2000, // seconds in millis
+                FIND_PATH_FREQUENCY: 1000, // seconds in millis
 
                 TOTAL_TIME: 20, // minutes
 
@@ -77,6 +77,7 @@ angular.module('uiApp').factory('Act4State',
                     TiledDisplay.initializeTileMap(this, ['hyptosis_tile-art-batch-1', 'hyptosis_tile-art-batch-2', 'hyptosis_tile-art-batch-3']);
 
                     TiledDisplay.initializeEasyStar(this);
+                    this.easyStar.enableDiagonals();
 
                     this.game.physics.startSystem(Phaser.Physics.ARCADE);
                     this.game.physics.arcade.setBoundsToWorld();
