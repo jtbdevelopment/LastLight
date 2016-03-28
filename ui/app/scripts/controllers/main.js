@@ -8,7 +8,7 @@
  * Controller of the uiApp
  */
 angular.module('uiApp')
-    .controller('TitleCtrl', ['$scope', 'GameFactory', function ($scope, GameFactory) {
+    .controller('MainCtrl', ['$scope', 'GameFactory', function ($scope, GameFactory) {
         $scope.helpText = '';
         GameFactory.state.start('TitleScreen', true, false, 0, 0);
     }]);
